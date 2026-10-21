@@ -50,7 +50,7 @@ export function createMarkdown() {
 }
 
 /** Turn one file into a post object, or throw a ContentError that names the file. */
-export function parsePost(filename, text, md = createMarkdown()) {
+export function parsePost(filename, text, md = createMarkdown(), section = "tech") {
   const fm = FILE_RE.exec(filename);
   if (!fm) throw new ContentError(`${filename}: file name must look like YYYY-MM-DD-slug.zh.md or .en.md (lowercase, hyphens)`);
   const [, date, slug, lang] = fm;
@@ -66,7 +66,7 @@ export function parsePost(filename, text, md = createMarkdown()) {
   if ("draft" in data && typeof data.draft !== "boolean") throw new ContentError(`${filename}: 'draft' must be true or false`);
   if ("updated" in data && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.updated))) throw new ContentError(`${filename}: 'updated' must be YYYY-MM-DD`);
   return {
-    slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
+    section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
     html: md.render(body),
     words: body.split(/\s+/).filter(Boolean).length,
@@ -88,18 +88,21 @@ export function sortPosts(posts) {
 }
 
 /** Build the model the site renders from: per-language sorted posts, plus translation links by slug+date. */
-export function buildModel(posts, langs) {
+export function buildModel(posts, langs, sections) {
+  const ids = sections.map((s) => s.id);
   const seen = new Set();
   for (const p of posts) {
-    const key = `${p.lang}/${p.slug}`;
-    if (seen.has(key)) throw new ContentError(`two ${p.lang} posts share the slug '${p.slug}'`);
+    if (!ids.includes(p.section)) throw new ContentError(`post ${p.slug} is in unknown section '${p.section}'`);
+    const key = `${p.section}/${p.lang}/${p.slug}`;
+    if (seen.has(key)) throw new ContentError(`two ${p.lang} posts in '${p.section}' share the slug '${p.slug}'`);
     seen.add(key);
   }
   const byLang = Object.fromEntries(langs.map((l) => [l, sortPosts(posts.filter((p) => p.lang === l))]));
-  const translations = {};
-  for (const p of posts) (translations[p.slug] ??= {})[p.lang] = p.slug;
-  const missing = posts.filter((p) => langs.some((l) => l !== p.lang && !posts.some((q) => q.slug === p.slug && q.lang === l)));
-  return { byLang, translations, missing };
+  const bySection = Object.fromEntries(ids.map((s) => [s, Object.fromEntries(langs.map((l) => [l, byLang[l].filter((p) => p.section === s)]))]));
+  const translations = {};                                  // "section/slug" -> { lang: true }
+  for (const p of posts) (translations[`${p.section}/${p.slug}`] ??= {})[p.lang] = true;
+  const missing = posts.filter((p) => langs.some((l) => l !== p.lang && !translations[`${p.section}/${p.slug}`][l]));
+  return { byLang, bySection, translations, missing };
 }
 
 export function paginate(items, perPage) {
@@ -119,21 +122,24 @@ export function groupByDate(items) {
   return groups;
 }
 
-export const postPath = (lang, slug) => `/${lang}/blog/${slug}/`;
-export const indexPath = (lang, page = 1) => (page === 1 ? `/${lang}/blog/` : `/${lang}/blog/page/${page}/`);
+export const postPath = (lang, section, slug) => `/${lang}/${section}/${slug}/`;
+export const indexPath = (lang, section, page = 1) => (page === 1 ? `/${lang}/${section}/` : `/${lang}/${section}/page/${page}/`);
 
 const xml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
 
-export function atomFeed({ lang, title, baseUrl, author, posts, now = new Date() }) {
+export const feedPath = (lang, section) => `/${lang}/${section ? section + "/" : ""}atom.xml`;
+
+/** One feed per language (section omitted: all posts) or per section. */
+export function atomFeed({ lang, section, title, baseUrl, author, posts, now = new Date() }) {
   const latest = posts[0] ? `${posts[0].updated || posts[0].date}T00:00:00Z` : now.toISOString();
   const entries = posts.slice(0, 20).map((p) => {
-    const url = `${baseUrl}${postPath(lang, p.slug)}`;
+    const url = `${baseUrl}${postPath(lang, p.section, p.slug)}`;
     return `  <entry>\n    <title>${xml(p.title)}</title>\n    <link href="${xml(url)}"/>\n    <id>${xml(url)}</id>\n` +
       `    <published>${p.date}T00:00:00Z</published>\n    <updated>${p.updated || p.date}T00:00:00Z</updated>\n    <summary>${xml(p.summary)}</summary>\n  </entry>`;
   });
   return `<?xml version="1.0" encoding="utf-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="${lang}">\n` +
-    `  <title>${xml(title)}</title>\n  <link href="${xml(`${baseUrl}/${lang}/atom.xml`)}" rel="self"/>\n  <link href="${xml(`${baseUrl}/${lang}/blog/`)}"/>\n` +
-    `  <id>${xml(`${baseUrl}/${lang}/`)}</id>\n  <updated>${latest}</updated>\n  <author><name>${xml(author)}</name></author>\n${entries.join("\n")}\n</feed>\n`;
+    `  <title>${xml(title)}</title>\n  <link href="${xml(`${baseUrl}${feedPath(lang, section)}`)}" rel="self"/>\n  <link href="${xml(`${baseUrl}/${lang}/${section ? section + "/" : ""}`)}"/>\n` +
+    `  <id>${xml(`${baseUrl}/${lang}/${section ? section + "/" : ""}`)}</id>\n  <updated>${latest}</updated>\n  <author><name>${xml(author)}</name></author>\n${entries.join("\n")}\n</feed>\n`;
 }
 
 export function sitemap(baseUrl, urls) {

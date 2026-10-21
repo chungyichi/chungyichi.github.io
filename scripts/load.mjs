@@ -1,13 +1,27 @@
 // The only place that reads content from disk.
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { site } from "../site.config.mjs";
 import { createMarkdown, parsePost, ContentError } from "./content.mjs";
 
-export function loadPosts(root = "content/posts") {
+/**
+ * Posts of every section from content/<section>/. With includePrivate (dev only) also content/_private/<section>/,
+ * which is git-ignored (drafts and imports not yet cleared for publication); those posts are marked `private`.
+ */
+export function loadPosts({ root = "content", sections = site.sections.map((s) => s.id), includePrivate = false } = {}) {
   const md = createMarkdown();
-  if (!existsSync(root)) return [];
-  return readdirSync(root).filter((f) => f.endsWith(".md")).sort()
-    .map((f) => parsePost(f, readFileSync(join(root, f), "utf8"), md));
+  const posts = [];
+  const trees = [[root, false], ...(includePrivate ? [[join(root, "_private"), true]] : [])];
+  for (const [base, isPrivate] of trees) {
+    for (const section of sections) {
+      const dir = join(base, section);
+      if (!existsSync(dir)) continue;
+      for (const f of readdirSync(dir).filter((x) => x.endsWith(".md")).sort()) {
+        posts.push({ ...parsePost(f, readFileSync(join(dir, f), "utf8"), md, section), private: isPrivate });
+      }
+    }
+  }
+  return posts;
 }
 
 /** Pages like About: content/pages/<name>.<lang>.md with the same front matter (title, summary). */

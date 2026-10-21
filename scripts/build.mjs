@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "vite";
 import { site } from "../site.config.mjs";
-import { buildModel, selectPublished, todayIn, atomFeed, sitemap, postPath, ContentError } from "./content.mjs";
+import { buildModel, selectPublished, todayIn, atomFeed, sitemap, feedPath, ContentError } from "./content.mjs";
 import { loadPosts, loadPages } from "./load.mjs";
 import { buildRoutes } from "./routes.mjs";
 import { document_ } from "./template.mjs";
@@ -15,7 +15,7 @@ const write = (file, text) => { mkdirSync(dirname(file), { recursive: true }); w
 export async function main() {
   const today = todayIn(site.timezone);
   const posts = selectPublished(loadPosts(), today);
-  const model = buildModel(posts, site.langs);
+  const model = buildModel(posts, site.langs, site.sections);
   const pages = loadPages();
   const routes = buildRoutes(model, pages);
 
@@ -32,9 +32,12 @@ export async function main() {
 
   for (const route of routes) write(out(route.path), document_({ route, rendered: render(route), assets }));
   for (const lang of site.langs) {
-    write(join("dist", lang, "atom.xml"), atomFeed({ lang, title: site.title[lang], baseUrl: site.baseUrl, author: site.author, posts: model.byLang[lang] }));
+    write(join("dist", feedPath(lang)), atomFeed({ lang, title: site.title[lang], baseUrl: site.baseUrl, author: site.author, posts: model.byLang[lang] }));
+    for (const sec of site.sections) {
+      write(join("dist", feedPath(lang, sec.id)), atomFeed({ lang, section: sec.id, title: `${site.title[lang]} · ${sec.title[lang]}`, baseUrl: site.baseUrl, author: site.author, posts: model.bySection[sec.id][lang] }));
+    }
   }
-  write("dist/sitemap.xml", sitemap(site.baseUrl, routes.filter((r) => r.kind !== "notfound").map((r) => ({ path: r.path, alternates: (r.alternates || []).filter((a) => a.translated !== false) }))));
+  write("dist/sitemap.xml", sitemap(site.baseUrl, routes.filter((r) => r.kind !== "notfound" && r.kind !== "entry").map((r) => ({ path: r.path, alternates: (r.alternates || []).filter((a) => a.translated !== false) }))));
   write("dist/robots.txt", `User-agent: *\nAllow: /\nSitemap: ${site.baseUrl}/sitemap.xml\n`);
   write("dist/.nojekyll", "");
   rmSync(".ssr", { recursive: true, force: true });

@@ -41,11 +41,21 @@ else {
 
 // 2. translations (a reminder, not a failure)
 const all = loadPosts();
-const { missing } = buildModel(all, site.langs);
+const { missing } = buildModel(all, site.langs, site.sections);
 for (const p of missing) warn(`${p.date}-${p.slug}.${p.lang}.md has no translation`);
 for (const p of all.filter((p) => p.draft)) warn(`${p.date}-${p.slug}.${p.lang}.md is a draft (not published)`);
 
-// 3. dependency advisories
+// 3. private material must never be tracked or built
+{
+  const ls = spawnSync("git", ["ls-files", "content/_private", "backup"], { encoding: "utf8" });
+  if (ls.status === 0 && ls.stdout.trim()) fail(`private files are tracked by git (they would be public): ${ls.stdout.trim().split("\n").slice(0, 5).join(", ")}`);
+  const leaked = existsSync("dist") ? htmlFiles("dist").filter((f) => /Private \(will not be published\)|私有（不會發佈）/.test(readFileSync(f, "utf8"))) : [];
+  if (leaked.length) fail(`private posts appear in the build: ${leaked.join(", ")}`);
+  const priv = loadPosts({ includePrivate: true }).filter((p) => p.private).length;
+  if (priv) warn(`${priv} private post(s) exist locally (not published, not tracked)`);
+}
+
+// 4. dependency advisories
 const r = spawnSync("npm", ["audit", "--json"], { encoding: "utf8" });
 let report;
 try { report = JSON.parse(r.stdout || "{}"); } catch { report = null; }

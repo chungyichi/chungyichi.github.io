@@ -11,6 +11,10 @@ export function document_({ route, rendered, assets }) {
   const canonical = site.baseUrl + route.path;
   const alts = (route.alternates || []).filter((a) => a.translated !== false)
     .map((a) => `<link rel="alternate" hreflang="${a.lang}" href="${esc(site.baseUrl + a.path)}">`).join("\n    ");
+  // "/" has no content of its own: send the reader to the right language straight away (browser language, else the default).
+  const redirect = route.kind === "entry"
+    ? `<meta http-equiv="refresh" content="0; url=/${site.defaultLang}/">\n    <script>(function(){var l=(navigator.languages&&navigator.languages[0])||navigator.language||"";location.replace("/"+(/^zh/i.test(l)?"zh":"en")+"/")})()</script>`
+    : "";
   const css = (assets.css || []).map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join("\n    ");
   const feed = `<link rel="alternate" type="application/atom+xml" title="${esc(site.title[lang])}" href="/${lang}/atom.xml">`;
   return `<!doctype html>
@@ -23,6 +27,7 @@ export function document_({ route, rendered, assets }) {
     <meta name="color-scheme" content="light dark">
     <link rel="canonical" href="${esc(canonical)}">
     ${alts}
+    ${redirect}
     ${feed}
     ${css}
     <script>${THEME_INIT}</script>

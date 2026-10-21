@@ -2,5 +2,8 @@ node_modules/
 dist/
 .ssr/
 .npm-cache/
+# Not yet cleared for publication: drafts, imports, the original Medium export. Backed up by `npm run backup`.
+content/_private/
+backup/
 *.log
 .DS_Store

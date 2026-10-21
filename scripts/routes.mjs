@@ -2,33 +2,35 @@
 import { site } from "../site.config.mjs";
 import { paginate, groupByDate, postPath, indexPath } from "./content.mjs";
 
-const brief = (p) => ({ slug: p.slug, title: p.title, summary: p.summary, date: p.date });
+const sectionIds = () => site.sections.map((s) => s.id);
+
+const brief = (p) => ({ section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date });
 
 export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, homePosts = site.homePosts } = {}) {
   const routes = [];
   const other = (lang) => langs.filter((l) => l !== lang);
   const alt = (path, lang) => other(lang).map((l) => ({ lang: l, path: path.replace(`/${lang}/`, `/${l}/`) }));
 
-  routes.push({ path: "/", kind: "picker", lang: site.defaultLang, alternates: langs.map((l) => ({ lang: l, path: `/${l}/` })) });
+  routes.push({ path: "/", kind: "entry", lang: site.defaultLang, alternates: langs.map((l) => ({ lang: l, path: `/${l}/` })) });
 
   for (const lang of langs) {
-    const posts = model.byLang[lang];
     routes.push({ path: `/${lang}/`, kind: "home", lang, alternates: alt(`/${lang}/`, lang),
-      props: { latest: posts.slice(0, homePosts).map(brief), total: posts.length } });
+      props: { sections: sectionIds().map((id) => ({ id, latest: model.bySection[id][lang].slice(0, homePosts).map(brief), total: model.bySection[id][lang].length })) } });
 
-    for (const pg of paginate(posts, perPage)) {
-      const path = indexPath(lang, pg.number);
-      routes.push({ path, kind: "index", lang, alternates: alt(path, lang),
-        props: { groups: groupByDate(pg.items.map(brief)), page: pg.number, pages: pg.total } });
-    }
-
-    for (const p of posts) {
-      const path = postPath(lang, p.slug);
-      const alternates = other(lang).map((l) => ({
-        lang: l, path: model.translations[p.slug]?.[l] ? postPath(l, p.slug) : `/${l}/blog/`, translated: Boolean(model.translations[p.slug]?.[l]),
-      }));
-      routes.push({ path, kind: "post", lang, alternates,
-        props: { slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, html: p.html, draft: p.draft, words: p.words } });
+    for (const section of sectionIds()) {
+      const posts = model.bySection[section][lang];
+      for (const pg of paginate(posts, perPage)) {
+        const path = indexPath(lang, section, pg.number);
+        routes.push({ path, kind: "index", lang, alternates: alt(path, lang),
+          props: { section, groups: groupByDate(pg.items.map(brief)), page: pg.number, pages: pg.total } });
+      }
+      for (const p of posts) {
+        const path = postPath(lang, section, p.slug);
+        const has = (l) => Boolean(model.translations[`${section}/${p.slug}`]?.[l]);
+        const alternates = other(lang).map((l) => ({ lang: l, path: has(l) ? postPath(l, section, p.slug) : indexPath(l, section), translated: has(l) }));
+        routes.push({ path, kind: "post", lang, alternates,
+          props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, html: p.html, draft: p.draft, private: Boolean(p.private), words: p.words } });
+      }
     }
 
     for (const [name, byLang] of Object.entries(pages)) {

@@ -6,7 +6,8 @@ import {
 } from "../scripts/content.mjs";
 
 const fm = (extra = "") => `---\ntitle: "Hello"\nsummary: A short summary.\n${extra}---\nBody **text**.\n`;
-const post = (name, extra, body) => parsePost(name, body ?? fm(extra));
+const SECTIONS = [{ id: "tech" }, { id: "travel" }];
+const post = (name, extra, body, section = "tech") => parsePost(name, body ?? fm(extra), undefined, section);
 
 test("front matter: strings, booleans, quotes, comments", () => {
   const { data, body } = parseFrontMatter(`---\n# note\ntitle: 'It''s'\nsummary: "a: b"\ndraft: true\n---\nx`);
@@ -76,11 +77,11 @@ test("today is computed in the site's zone, not UTC", () => {
 
 test("model: sorting, translation pairing, missing translations, duplicate slugs", () => {
   const posts = [post("2026-10-01-a.zh.md", ""), post("2026-10-01-a.en.md", ""), post("2026-10-05-b.zh.md", ""), post("2026-10-05-aa.zh.md", "")];
-  const m = buildModel(posts, ["zh", "en"]);
+  const m = buildModel(posts, ["zh", "en"], SECTIONS);
   assert.deepEqual(m.byLang.zh.map((p) => p.slug), ["aa", "b", "a"]);          // newest first, ties by slug
-  assert.deepEqual(Object.keys(m.translations.a).sort(), ["en", "zh"]);
+  assert.deepEqual(Object.keys(m.translations["tech/a"]).sort(), ["en", "zh"]);
   assert.deepEqual(m.missing.map((p) => `${p.lang}/${p.slug}`).sort(), ["zh/aa", "zh/b"]);
-  assert.throws(() => buildModel([post("2026-10-01-a.zh.md", ""), post("2026-10-02-a.zh.md", "")], ["zh", "en"]), /share the slug 'a'/);
+  assert.throws(() => buildModel([post("2026-10-01-a.zh.md", ""), post("2026-10-02-a.zh.md", "")], ["zh", "en"], SECTIONS), /in 'tech' share the slug 'a'/);
 });
 
 test("pagination and date grouping", () => {
@@ -94,16 +95,16 @@ test("pagination and date grouping", () => {
 });
 
 test("paths", () => {
-  assert.equal(postPath("zh", "hi"), "/zh/blog/hi/");
-  assert.equal(indexPath("en"), "/en/blog/");
-  assert.equal(indexPath("en", 3), "/en/blog/page/3/");
+  assert.equal(postPath("zh", "travel", "hi"), "/zh/travel/hi/");
+  assert.equal(indexPath("en", "tech"), "/en/tech/");
+  assert.equal(indexPath("en", "tech", 3), "/en/tech/page/3/");
 });
 
 test("atom feed escapes everything and uses absolute URLs", () => {
   const p = post("2026-10-21-x.en.md", "", `---\ntitle: "A & <B>"\nsummary: 'say "hi" & bye'\n---\nx`);
   const xml = atomFeed({ lang: "en", title: "T & Co", baseUrl: "https://e.org", author: "Me", posts: [p], now: new Date("2026-10-21T00:00:00Z") });
   assert.match(xml, /<title>A &amp; &lt;B&gt;<\/title>/);
-  assert.match(xml, /<link href="https:\/\/e\.org\/en\/blog\/x\/"\/>/);
+  assert.match(xml, /<link href="https:\/\/e\.org\/en\/tech\/x\/"\/>/);
   assert.match(xml, /<title>T &amp; Co<\/title>/);
   assert.ok(!xml.includes("<B>"));
 });
@@ -112,4 +113,20 @@ test("sitemap lists alternates", () => {
   const x = sitemap("https://e.org", [{ path: "/zh/", alternates: [{ lang: "en", path: "/en/" }] }]);
   assert.match(x, /<loc>https:\/\/e\.org\/zh\/<\/loc>/);
   assert.match(x, /hreflang="en" href="https:\/\/e\.org\/en\/"/);
+});
+
+test("sections: same slug may exist in two sections, unknown sections are rejected, translations pair within a section", () => {
+  const a = post("2026-10-01-trip.zh.md", "", undefined, "travel"), b = post("2026-10-01-trip.en.md", "", undefined, "travel"), c = post("2026-10-01-trip.zh.md", "");
+  const m = buildModel([a, b, c], ["zh", "en"], SECTIONS);
+  assert.deepEqual(m.bySection.travel.zh.map((p) => p.slug), ["trip"]);
+  assert.equal(m.bySection.tech.en.length, 0);
+  assert.deepEqual(m.missing.map((p) => p.section), ["tech"]);       // only the tech one lacks an English version
+  assert.throws(() => buildModel([post("2026-10-01-x.zh.md", "", undefined, "food")], ["zh", "en"], SECTIONS), /unknown section 'food'/);
+});
+
+test("section feeds point at their own address", () => {
+  const p = post("2026-10-21-x.en.md", "", undefined, "travel");
+  const xml = atomFeed({ lang: "en", section: "travel", title: "T", baseUrl: "https://e.org", author: "Me", posts: [p], now: new Date("2026-10-21T00:00:00Z") });
+  assert.match(xml, /rel="self"/);
+  assert.ok(xml.includes("https://e.org/en/travel/atom.xml") && xml.includes("https://e.org/en/travel/x/"));
 });

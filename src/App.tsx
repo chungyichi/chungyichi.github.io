@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { site } from "../site.config.mjs";
-import { t, title, tagline, type Lang } from "./i18n";
+import { t, title, tagline, sectionTitle, type Lang } from "./i18n";
 import type { Brief, Route } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
 
-const postHref = (lang: Lang, slug: string) => `/${lang}/blog/${slug}/`;
-const pageHref = (lang: Lang, n: number) => (n === 1 ? `/${lang}/blog/` : `/${lang}/blog/page/${n}/`);
+const postHref = (lang: Lang, section: string, slug: string) => `/${lang}/${section}/${slug}/`;
+const pageHref = (lang: Lang, section: string, n: number) => (n === 1 ? `/${lang}/${section}/` : `/${lang}/${section}/page/${n}/`);
 
 function Layout({ route, children }: { route: Route; children: ReactNode }) {
   const lang = route.lang;
@@ -19,7 +19,7 @@ function Layout({ route, children }: { route: Route; children: ReactNode }) {
           <a className="brand" href={`/${lang}/`}>{title(lang)}</a>
           <nav aria-label="Main">
             <a href={`/${lang}/`}>{s.home}</a>
-            <a href={`/${lang}/blog/`}>{s.blog}</a>
+            {site.sections.map((sec: { id: string }) => <a key={sec.id} href={`/${lang}/${sec.id}/`}>{sectionTitle(lang, sec.id)}</a>)}
             <a href={`/${lang}/about/`}>{s.about}</a>
             <a href={site.github} rel="noopener noreferrer">{s.github}</a>
             <a href={`/${lang}/atom.xml`}>{s.feed}</a>
@@ -44,9 +44,9 @@ function Layout({ route, children }: { route: Route; children: ReactNode }) {
 function PostItem({ lang, p }: { lang: Lang; p: Brief }) {
   return (
     <article className="post-item">
-      <h3><a href={postHref(lang, p.slug)}>{p.title}</a></h3>
+      <h3><a href={postHref(lang, p.section, p.slug)}>{p.title}</a></h3>
       <p>{p.summary}</p>
-      <p className="more"><a href={postHref(lang, p.slug)}>{t[lang].readMore}</a></p>
+      <p className="more"><a href={postHref(lang, p.section, p.slug)}>{t[lang].readMore}</a></p>
     </article>
   );
 }
@@ -57,18 +57,22 @@ function Home({ route }: { route: Extract<Route, { kind: "home" }> }) {
     <>
       <h1>{title(lang)}</h1>
       <p className="lead">{tagline(lang)}</p>
-      <h2>{s.latest}</h2>
-      {route.props.latest.length === 0 ? <p>{s.noPosts}</p> : route.props.latest.map((p) => <PostItem key={p.slug} lang={lang} p={p} />)}
-      {route.props.total > route.props.latest.length && <p><a href={`/${lang}/blog/`}>{s.all}</a></p>}
+      {route.props.sections.map((sec) => (
+        <section key={sec.id}>
+          <h2>{sectionTitle(lang, sec.id)}</h2>
+          {sec.latest.length === 0 ? <p>{s.noPosts}</p> : sec.latest.map((p) => <PostItem key={p.slug} lang={lang} p={p} />)}
+          {sec.total > sec.latest.length && <p><a href={`/${lang}/${sec.id}/`}>{s.allInSection}</a></p>}
+        </section>
+      ))}
     </>
   );
 }
 
 function Index({ route }: { route: Extract<Route, { kind: "index" }> }) {
-  const { lang } = route, s = t[lang], { groups, page, pages } = route.props;
+  const { lang } = route, s = t[lang], { section, groups, page, pages } = route.props;
   return (
     <>
-      <h1>{s.blog}</h1>
+      <h1>{sectionTitle(lang, section)}</h1>
       {groups.length === 0 && <p>{s.noPosts}</p>}
       {groups.map((g) => (
         <section key={g.date}>
@@ -78,9 +82,9 @@ function Index({ route }: { route: Extract<Route, { kind: "index" }> }) {
       ))}
       {pages > 1 && (
         <nav className="pager" aria-label="Pagination">
-          {page > 1 ? <a rel="prev" href={pageHref(lang, page - 1)}>{s.prev}</a> : <span />}
+          {page > 1 ? <a rel="prev" href={pageHref(lang, section, page - 1)}>{s.prev}</a> : <span />}
           <span>{s.page(page, pages)}</span>
-          {page < pages ? <a rel="next" href={pageHref(lang, page + 1)}>{s.next}</a> : <span />}
+          {page < pages ? <a rel="next" href={pageHref(lang, section, page + 1)}>{s.next}</a> : <span />}
         </nav>
       )}
     </>
@@ -99,12 +103,13 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
           {p.updated && <> · {s.updated} <time dateTime={p.updated}>{p.updated}</time></>}
           {" · "}{s.words(p.words)}
           {p.draft && <> · <strong>{s.draft}</strong></>}
+          {p.private && <> · <strong>{s.privateNote}</strong></>}
         </p>
         {missing && <p className="notice">{t[missing.lang].noTranslation}</p>}
       </header>
       {/* The HTML comes from our own Markdown, rendered with raw HTML disabled (see scripts/content.mjs). */}
       <div className="prose" dangerouslySetInnerHTML={{ __html: p.html }} />
-      <p><a href={`/${lang}/blog/`}>← {s.blog}</a></p>
+      <p><a href={`/${lang}/${p.section}/`}>← {sectionTitle(lang, p.section)}</a></p>
     </article>
   );
 }
@@ -118,14 +123,11 @@ function Page({ route }: { route: Extract<Route, { kind: "page" }> }) {
   );
 }
 
-function Picker() {
+// "/" is only a redirect (see scripts/template.mjs); this is what a reader sees if the redirect is blocked.
+function Entry() {
   return (
     <main id="main" className="wrap picker">
-      <h1>{site.title.en}</h1>
-      <p>{t.zh.chooseLang}</p>
-      <ul>
-        {site.langs.map((l) => <li key={l}><a href={`/${l}/`} hrefLang={l} lang={l}>{t[l as Lang].langName}</a></li>)}
-      </ul>
+      <p>{site.langs.map((l: string, i: number) => <span key={l}>{i > 0 && " · "}<a href={`/${l}/`} hrefLang={l} lang={l}>{t[l as Lang].langName}</a></span>)}</p>
     </main>
   );
 }
@@ -142,7 +144,7 @@ function NotFound({ route }: { route: Route }) {
 
 export function App({ route }: { route: Route }) {
   switch (route.kind) {
-    case "picker": return <Picker />;
+    case "entry": return <Entry />;
     case "notfound": return <NotFound route={route} />;
     case "home": return <Layout route={route}><Home route={route} /></Layout>;
     case "index": return <Layout route={route}><Index route={route} /></Layout>;

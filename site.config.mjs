@@ -7,6 +7,11 @@ export const site = {
   github: "https://github.com/chungyichi",
   langs: ["zh", "en"],
   defaultLang: "zh",
+  // Posts live in content/<section>/ ; content/_private/<section>/ is git-ignored and only shown by `npm run dev`.
+  sections: [
+    { id: "tech", title: { zh: "技術", en: "Tech" } },
+    { id: "travel", title: { zh: "旅行", en: "Travel" } },
+  ],
   postsPerPage: 10,
   homePosts: 5,
   timezone: "Asia/Taipei", // a post dated "today" in this zone is published

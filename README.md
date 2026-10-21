@@ -6,15 +6,17 @@ Static HTML rendered by React at build time, bundled with Vite. No tracking, rea
 ## Write a post
 
 ```sh
-scripts/docker.sh npm run new -- "Post title"                  # creates content/posts/YYYY-MM-DD-slug.zh.md (a draft)
+scripts/docker.sh npm run new -- "Post title"                  # creates content/tech/YYYY-MM-DD-slug.zh.md (a draft)
 scripts/docker.sh npm run new -- "Post title" --lang en        # an English one
+scripts/docker.sh npm run new -- "Trip" --section travel       # sections: tech (default), travel
+scripts/docker.sh npm run new -- "Trip" --section travel --private   # content/_private/: never committed, never built
 scripts/docker.sh npm run new -- "中文標題" --slug zh-title     # a non-ASCII title needs --slug
 scripts/docker.sh npm run dev                                  # preview at http://localhost:5173 (drafts included)
 ```
 
 Fill in `summary`, write the body, then set `draft: false` (or delete the line).
 For the other language create the same slug with `.en.md` / `.zh.md`; the two files link to each other automatically.
-With no translation, the language switcher goes to that language's blog page and the post shows a notice. Nothing is machine-translated.
+With no translation, the language switcher goes to that language's section page and the post shows a notice. Nothing is machine-translated.
 
 A post is published when it is not a draft and its date (the date in the file name, in Asia/Taipei) is today or earlier.
 There is no scheduled build: a future-dated post goes live on the first push after its date (or via Actions → deploy → Run workflow).
@@ -45,8 +47,9 @@ All colours, fonts, widths and spacing are CSS variables in `src/styles/tokens.c
 
 | Path | What |
 |---|---|
-| `content/posts/`, `content/pages/` | Markdown (posts and pages such as About) |
-| `site.config.mjs` | title, tagline, base URL, languages, posts per page |
+| `content/tech/`, `content/travel/`, `content/pages/` | Markdown (posts per section, and pages such as About) |
+| `content/_private/<section>/`, `backup/` | **git-ignored**: unpublished drafts, imports, the original Medium export. Only `npm run dev` shows them; `check` fails if any gets tracked |
+| `site.config.mjs` | title, tagline, base URL, languages, sections, posts per page |
 | `scripts/content.mjs` | front matter, Markdown, publishing rules, translations, pagination, Atom, sitemap (pure, tested) |
 | `scripts/build.mjs`, `dev.mjs`, `new.mjs`, `check.mjs` | build, dev server, new post, post-build checks |
 | `src/` | React components, i18n strings, styles; the only hydrated piece is the theme button |
@@ -62,3 +65,12 @@ The site lives on `master`. Settings → Pages → Source is **GitHub Actions**;
 - `markdown-it` 15.0.2 has a known DoS advisory that needs hostile Markdown; accepted until 2026-10-24 in `scripts/check.mjs`
   (the fix, 15.0.3, was under the 7-day release-age rule). Bump it on or after 2026-10-23.
 - GitHub Pages cannot set HTTP headers, so there is no Content-Security-Policy; the site has one tiny inline script (theme).
+
+## Private vault
+
+`scripts/backup.sh` (run on the host, not in the container) copies everything (`content/` including `_private/`, and `backup/`)
+into a clone of the **private** repo `chungyichi/blog-vault` at `../blog-vault`, and commits there. It refuses to run if it cannot
+confirm that repo is private, and it never pushes: review, then `git -C ../blog-vault push`. The copy is one-way and a mirror,
+so the vault's history keeps what a later snapshot no longer has.
+
+`/` is only a redirect: browser language `zh*` goes to `/zh/`, anything else to `/en/` (no JavaScript: `/zh/`).
