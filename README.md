@@ -17,7 +17,7 @@ For the other language create the same slug with `.en.md` / `.zh.md`; the two fi
 With no translation, the language switcher goes to that language's blog page and the post shows a notice. Nothing is machine-translated.
 
 A post is published when it is not a draft and its date (the date in the file name, in Asia/Taipei) is today or earlier.
-Future-dated posts go live on their day through the daily scheduled build.
+There is no scheduled build: a future-dated post goes live on the first push after its date (or via Actions → deploy → Run workflow).
 
 Front matter (strict; unknown keys are an error): `title`, `summary` (required unless draft, at most 300 characters), `draft`, `updated` (`YYYY-MM-DD`).
 Images go in `public/posts/<slug>/` and are linked as `/posts/<slug>/pic.png`.

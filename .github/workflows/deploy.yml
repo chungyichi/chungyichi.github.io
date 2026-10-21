@@ -1,12 +1,10 @@
 name: deploy
 
-# Pushing to master publishes the site. A daily run lets posts dated in the future go live on their day.
+# Pushing to master publishes the site. There is no scheduled run, so the site is built only when you push (or run it by hand).
 on:
   push:
     branches: [master]
     paths-ignore: ["README.md", ".gitignore", "test/**"]
-  schedule:
-    - cron: "10 16 * * *" # 00:10 in Asia/Taipei
   workflow_dispatch:
 
 permissions:
