@@ -1,9 +1,9 @@
 name: deploy
 
-# Pushing to main publishes the site. A daily run lets posts dated in the future go live on their day.
+# Pushing to master publishes the site. A daily run lets posts dated in the future go live on their day.
 on:
   push:
-    branches: [main]
+    branches: [master]
   schedule:
     - cron: "10 16 * * *" # 00:10 in Asia/Taipei
   workflow_dispatch:

@@ -30,7 +30,7 @@ scripts/docker.sh npm run check     # types, tests, build, internal links, depen
 git add -A && git commit -m "Add a post" && git push
 ```
 
-A push to `main` runs `.github/workflows/deploy.yml`, which runs the same `npm run check` and deploys `dist/` to GitHub Pages.
+A push to `master` runs `.github/workflows/deploy.yml`, which runs the same `npm run check` and deploys `dist/` to GitHub Pages.
 
 ## Everything runs in Docker
 
@@ -52,11 +52,9 @@ All colours, fonts, widths and spacing are CSS variables in `src/styles/tokens.c
 | `src/` | React components, i18n strings, styles; the only hydrated piece is the theme button |
 | `test/` | `node --test` unit tests |
 
-## One-time setup before the first push to `main`
+## Hosting
 
-These are repository settings, not code, and are done by the owner:
-1. Make the new branch the default branch (`main`); keep the old content in `master` or rename it `archive`.
-2. Settings → Pages → Source: **GitHub Actions** (it is "Deploy from a branch: master" today).
+The site lives on `master`. Settings → Pages → Source is **GitHub Actions**; the old static site is in the git history.
 
 ## Known limits
 
