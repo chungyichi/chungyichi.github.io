@@ -126,6 +126,21 @@ export function groupByDate(items) {
   return groups;
 }
 
+const unescapeText = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&amp;/g, "&");
+
+/** Headings of a rendered post body, as plain text (for search). */
+export function headingsOf(html) {
+  return [...html.matchAll(/<h[2-4](?:\s[^>]*)?>([\s\S]*?)<\/h[2-4]>/g)].map((m) => unescapeText(m[1].replace(/<[^>]*>/g, "")).replace(/\s+/g, " ").trim()).filter(Boolean);
+}
+
+/** The search index for one language: title, summary, headings, date, section title and address. Titles and summaries only; no body text. */
+export function buildSearchIndex(posts, lang, sectionTitleOf) {
+  return posts.filter((p) => p.lang === lang).map((p) => ({
+    t: p.title, s: p.summary, h: headingsOf(p.html), d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
+  }));
+}
+
+export const searchPath = (lang) => `/${lang}/search/`;
 export const postPath = (lang, section, slug) => `/${lang}/${section}/${slug}/`;
 export const indexPath = (lang, section, page = 1) => (page === 1 ? `/${lang}/${section}/` : `/${lang}/${section}/page/${page}/`);
 

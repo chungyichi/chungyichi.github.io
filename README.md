@@ -24,6 +24,13 @@ There is no scheduled build: a future-dated post goes live on the first push aft
 Front matter (strict; unknown keys are an error): `title`, `summary` (required unless draft, at most 300 characters), `draft`, `updated` (`YYYY-MM-DD`).
 Raw HTML in Markdown is **escaped, not rendered**.
 
+## Search
+
+`/zh/search/` and `/en/search/` search titles, summaries and headings, in the browser, with no server and no third-party service.
+The build writes one small index per language (`/search/<lang>.<hash>.json`, about 0.25 KB per post) from the **published** posts only; the page downloads it when the box is focused.
+Matching is by substring (so Chinese works without word breaks), every word must match, title beats heading beats summary. Body text is not indexed; if that is wanted later, add a chunked indexer such as Pagefind rather than growing this file.
+`npm run check` fails if a private post's title appears in an index. Without JavaScript the page says so; browsing by section and the Atom feeds still work.
+
 ## Posts with their own layout (`.html`)
 
 A post whose layout does not fit Markdown (travel photo grids, timelines, ...) is a `.html` file with the same name rules and front matter:

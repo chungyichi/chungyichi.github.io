@@ -69,3 +69,11 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 .prose .full { width: 100vw; }
 .prose .full img, .prose .wide img { width: 100%; }
 @media (max-width: 36rem) { .prose .pair { grid-template-columns: 1fr; } }
+
+/* Search page */
+#search input[type=search] { display: block; width: 100%; margin-top: 0.3rem; padding: 0.55rem 0.7rem; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); }
+#search input[type=search]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.results { list-style: none; padding: 0; margin: 1rem 0 0; }
+.results li { margin: 1.2rem 0; }
+.results h3 { margin: 0 0 0.1em; }
+.results p { margin: 0.15em 0; }

@@ -9,3 +9,6 @@ if (island) {
   const lang = (document.documentElement.lang === "en" ? "en" : "zh") as Lang;
   hydrateRoot(island, <ThemeToggle label={t[lang].toggleTheme} />);
 }
+
+// The search page (only) loads its own small script.
+if (document.getElementById("search")) void import("./search-client");

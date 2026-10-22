@@ -20,6 +20,7 @@ function Layout({ route, children }: { route: Route; children: ReactNode }) {
           <nav aria-label="Main">
             <a href={`/${lang}/`}>{s.home}</a>
             {site.sections.map((sec: { id: string }) => <a key={sec.id} href={`/${lang}/${sec.id}/`}>{sectionTitle(lang, sec.id)}</a>)}
+            <a href={`/${lang}/search/`}>{s.search}</a>
             <a href={`/${lang}/about/`}>{s.about}</a>
             <a href={site.github} rel="noopener noreferrer">{s.github}</a>
             <a href={`/${lang}/atom.xml`}>{s.feed}</a>
@@ -114,6 +115,22 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
   );
 }
 
+function Search({ route }: { route: Extract<Route, { kind: "search" }> }) {
+  const { lang } = route, s = t[lang];
+  return (
+    <div id="search" data-index={route.props.index} data-loading={s.searchLoading} data-none={s.searchNone} data-count={s.searchCount} data-error={s.searchError}>
+      <h1>{s.search}</h1>
+      <form role="search" action={`/${lang}/search/`} method="get">
+        <label htmlFor="q" className="meta">{s.searchHint}</label>
+        <input id="q" name="q" type="search" autoComplete="off" />
+      </form>
+      <noscript><p className="notice">{s.searchNoJs}</p></noscript>
+      <p id="search-status" role="status" className="meta" />
+      <ul id="results" className="results" />
+    </div>
+  );
+}
+
 function Page({ route }: { route: Extract<Route, { kind: "page" }> }) {
   return (
     <article className="post">
@@ -150,5 +167,6 @@ export function App({ route }: { route: Route }) {
     case "index": return <Layout route={route}><Index route={route} /></Layout>;
     case "post": return <Layout route={route}><PostPage route={route} /></Layout>;
     case "page": return <Layout route={route}><Page route={route} /></Layout>;
+    case "search": return <Layout route={route}><Search route={route} /></Layout>;
   }
 }

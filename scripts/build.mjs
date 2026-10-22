@@ -33,6 +33,7 @@ export async function main() {
   for (const route of routes) {
     write(out(route.path), document_({ route, rendered: render(route), assets }));
     if (route.postCss) write(join("dist", route.postCss.href), route.postCss.text);   // same file for each language of the post
+    if (route.searchIndex) write(join("dist", route.searchIndex.href), route.searchIndex.text);
   }
   // Pictures and other files of published posts: content/<section>/media/** -> /media/<section>/** (private ones are never copied)
   for (const sec of site.sections) {
@@ -45,7 +46,7 @@ export async function main() {
       write(join("dist", feedPath(lang, sec.id)), atomFeed({ lang, section: sec.id, title: `${site.title[lang]} · ${sec.title[lang]}`, baseUrl: site.baseUrl, author: site.author, posts: model.bySection[sec.id][lang] }));
     }
   }
-  write("dist/sitemap.xml", sitemap(site.baseUrl, routes.filter((r) => r.kind !== "notfound" && r.kind !== "entry").map((r) => ({ path: r.path, alternates: (r.alternates || []).filter((a) => a.translated !== false) }))));
+  write("dist/sitemap.xml", sitemap(site.baseUrl, routes.filter((r) => r.kind !== "notfound" && r.kind !== "entry" && r.kind !== "search").map((r) => ({ path: r.path, alternates: (r.alternates || []).filter((a) => a.translated !== false) }))));
   write("dist/robots.txt", `User-agent: *\nAllow: /\nSitemap: ${site.baseUrl}/sitemap.xml\n`);
   write("dist/.nojekyll", "");
   rmSync(".ssr", { recursive: true, force: true });

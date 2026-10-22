@@ -39,6 +39,8 @@ const server = http.createServer((req, res) => {
       const path = url.endsWith("/") || url.endsWith(".html") ? url : url + "/";
       const posts = selectPublished(loadPosts({ includePrivate: true }), todayIn(site.timezone), { includeDrafts: true });
       const routes = buildRoutes(buildModel(posts, site.langs, site.sections), loadPages());
+      const idx = routes.find((r) => r.searchIndex?.href === url);
+      if (idx) { res.writeHead(200, { "content-type": "application/json; charset=utf-8" }).end(idx.searchIndex.text); return; }
       const route = routes.find((r) => r.path === path) ?? { ...routes.find((r) => r.kind === "notfound"), path };
       const { render } = await vite.ssrLoadModule("/src/entry-server.tsx");
       const html = await vite.transformIndexHtml(url, document_({ route, rendered: render(route), assets: { js: "/src/entry-client.tsx", css: [] } }));

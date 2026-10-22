@@ -51,7 +51,10 @@ for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slu
   if (ls.status === 0 && ls.stdout.trim()) fail(`private files are tracked by git (they would be public): ${ls.stdout.trim().split("\n").slice(0, 5).join(", ")}`);
   const leaked = existsSync("dist") ? htmlFiles("dist").filter((f) => /Private \(will not be published\)|私有（不會發佈）/.test(readFileSync(f, "utf8"))) : [];
   if (leaked.length) fail(`private posts appear in the build: ${leaked.join(", ")}`);
-  const priv = loadPosts({ includePrivate: true }).filter((p) => p.private).length;
+  const privatePosts = loadPosts({ includePrivate: true }).filter((p) => p.private);
+  const indexFiles = existsSync("dist/search") ? readdirSync("dist/search").map((f) => join("dist/search", f)) : [];
+  for (const f of indexFiles) for (const p of privatePosts) if (readFileSync(f, "utf8").includes(JSON.stringify(p.title).slice(1, -1))) fail(`private post "${p.title}" appears in the search index ${f}`);
+  const priv = privatePosts.length;
   if (priv) warn(`${priv} private post(s) exist locally (not published, not tracked)`);
 }
 

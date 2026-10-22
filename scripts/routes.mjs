@@ -1,6 +1,7 @@
 // Content model -> list of pages. Plain data only (it is serialised into nothing; pages are rendered at build time).
 import { site } from "../site.config.mjs";
-import { paginate, groupByDate, postPath, indexPath } from "./content.mjs";
+import { createHash } from "node:crypto";
+import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex } from "./content.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
@@ -33,6 +34,13 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, html: p.html, draft: p.draft, private: Boolean(p.private), words: p.words } });
       }
     }
+
+    // One search index per language, loaded by the search page on demand. The file name carries a content hash so a cached
+    // copy can never be paired with a newer page.
+    const indexText = JSON.stringify(buildSearchIndex(model.byLang[lang], lang, (id) => site.sections.find((s) => s.id === id)?.title[lang] ?? id));
+    const indexHref = `/search/${lang}.${createHash("sha1").update(indexText).digest("hex").slice(0, 10)}.json`;
+    routes.push({ path: searchPath(lang), kind: "search", lang, alternates: alt(searchPath(lang), lang),
+      searchIndex: { href: indexHref, text: indexText }, props: { index: indexHref } });
 
     for (const [name, byLang] of Object.entries(pages)) {
       const pg = byLang[lang];
