@@ -60,7 +60,14 @@ export async function convertMedium(html, { mediaDir, fetchImage, maxWidth = 120
       const n = list[i];
       if (!n.tagName) continue;
       if (hasClass(n, "graf--title")) { list.splice(i--, 1); continue; }                                    // the title is front matter (Medium repeats it in the body as h2/h3)
-      n.attrs = n.attrs.filter((a) => !["class", "id", "name", "data-image-id"].includes(a.name));         // Medium's own classes mean nothing here; layout is added by hand later
+      if (hasClass(n, "section-divider")) { list.splice(i--, 1); continue; }                                // Medium's decorative rule between sections
+      const row = hasClass(n, "sectionLayout--outsetRow"), wide = hasClass(n, "sectionLayout--outsetColumn");
+      n.attrs = n.attrs.filter((a) => !["class", "id", "name", "data-image-id"].includes(a.name));         // Medium's own classes mean nothing here
+      if (row || wide) {                                                                                     // ...except its picture layouts, mapped to the site's own classes
+        const figures = kids(n).filter((c) => c.tagName === "figure").length;
+        const cls = wide ? "wide" : figures === 2 ? "pair" : figures >= 3 ? "gallery" : "";
+        if (cls) n.attrs.push({ name: "class", value: cls });
+      }
       if (n.tagName === "h3") n.tagName = n.nodeName = "h2";                                                // Medium: h3 = section, h4 = sub-section
       else if (n.tagName === "h4") n.tagName = n.nodeName = "h3";
       if (n.tagName === "iframe") {                                                                          // embeds become a plain link, never a third-party frame

@@ -1,10 +1,12 @@
-// npm run import:medium -- <export-dir> --section tech|life [--public] [--dry] [--map-only] [--no-drafts] [--max-width 1200]
+// npm run import:medium -- <export-dir> --section tech|life [--public] [--dry] [--map-only] [--redo-text --only SLUG] [--no-drafts] [--max-width 1200]
 // Reads <export-dir>/posts/*.html (Medium's "Download your information" export, unzipped) and writes one .html post each,
 // plus its pictures, into content/_private/<section>/ (git-ignored: review first). --public writes into content/<section>/ instead.
 // Medium keeps unpublished drafts in posts/ as draft_*.html; they are imported too (private, dated today) unless --no-drafts.
 // --dry only reads the files and prints what would be written (titles, dates, languages, slugs, picture counts); it downloads nothing.
 // Every import also writes <output>/import-map.json: for each post its slug, the Medium export file, Medium id and canonical URL, title, and for each
 // local picture the Medium address it came from, so any generated name can be traced back. --map-only rebuilds that map for an earlier import without downloading or writing posts.
+// --redo-text --only SLUG re-renders the text of one already imported post with the current converter (no downloads; pictures matched by name
+// on disk), keeping a .bak of the file it replaces: use it to pick up converter improvements before you start editing a post.
 // Nothing is overwritten: an existing file is reported and skipped.
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -33,7 +35,7 @@ async function main() {
   const args = process.argv.slice(2);
   const dir = args.find((a) => !a.startsWith("--"));
   const section = args[args.indexOf("--section") + 1];
-  const isPublic = args.includes("--public"), dry = args.includes("--dry"), mapOnly = args.includes("--map-only"), withDrafts = !args.includes("--no-drafts");
+  const isPublic = args.includes("--public"), dry = args.includes("--dry"), mapOnly = args.includes("--map-only"), redo = args.includes("--redo-text"), only = args.includes("--only") ? args[args.indexOf("--only") + 1] : "", withDrafts = !args.includes("--no-drafts");
   const maxWidth = args.includes("--max-width") ? Number(args[args.indexOf("--max-width") + 1]) : 1200;
   if (!Number.isInteger(maxWidth) || maxWidth < 200 || maxWidth > 4000) { console.error("--max-width must be 200..4000"); process.exit(2); }
   if (!dir || args.indexOf("--section") < 0 || !site.sections.some((s) => s.id === section)) {
@@ -43,7 +45,8 @@ async function main() {
   const postsDir = join(dir, "posts");
   if (!existsSync(postsDir)) { console.error(`${postsDir} not found (unzip the Medium export first)`); process.exit(2); }
   const outBase = isPublic ? join("content", section) : join("content", "_private", section);
-  const stub = dry || mapOnly;
+  const stub = dry || mapOnly || redo;
+  if (redo && !only) { console.error("--redo-text needs --only SLUG (it replaces a file; one post at a time)"); process.exit(2); }
   if (!stub) mkdirSync(join(outBase, "media"), { recursive: true });
   const mapFile = join(outBase, "import-map.json");
   const map = existsSync(mapFile) ? JSON.parse(readFileSync(mapFile, "utf8")) : {};
@@ -66,6 +69,24 @@ async function main() {
           unpublishedInMedium: f.startsWith("draft_"), images: r.files.map((file, k) => ({ file: names[k], from: file.url })),
         };
       };
+      if (redo) {
+        if (slug !== only) continue;
+        const dest = join(outBase, `${date}-${slug}.${lang}.html`);
+        if (!existsSync(dest)) throw new Error(`${dest} does not exist (nothing to redo)`);
+        const present = existsSync(join(outBase, "media", slug)) ? readdirSync(join(outBase, "media", slug)) : [];
+        const byStem = new Map(r.files.map((file) => [file.name.replace(/\.[^.]+$/, ""), present.find((x) => x.startsWith(file.name.replace(/\.[^.]+$/, "") + "."))]));
+        let body = r.body;
+        for (const [stem, actual] of byStem) {
+          if (!actual) throw new Error(`picture ${stem} is not on disk; run the full import first`);
+          body = body.split(`/media/${section}/${slug}/${stem}.jpg`).join(`/media/${section}/${slug}/${actual}`);
+        }
+        const old = readFileSync(dest, "utf8");
+        const fmEnd = old.indexOf("\n---\n", 4) + 5;                      // keep the front matter as it is now (you may have edited it)
+        writeFileSync(dest + ".bak", old);
+        writeFileSync(dest, old.slice(0, fmEnd) + body + "\n");
+        console.log(`redone ${dest} (old version kept as ${dest}.bak)`);
+        done++; continue;
+      }
       if (mapOnly) {
         const present = existsSync(join(outBase, "media", slug)) ? readdirSync(join(outBase, "media", slug)) : [];
         const names = r.files.map((file) => present.find((x) => x.startsWith(file.name.replace(/\.[^.]+$/, "") + ".")) ?? (unmatched++, file.name));
