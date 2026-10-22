@@ -24,7 +24,7 @@ const EXT = { "image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif", "i
 
 /** Lowercase ASCII slug from a Medium file name like 2020-01-01_My-Title-1a2b3c4d5e6f.html (CJK titles fall back to a hash). */
 export function slugFromFilename(name) {
-  const base = name.replace(/\.html$/i, "").replace(/^\d{4}-\d{2}-\d{2}_/, "").replace(/-[0-9a-f]{10,14}$/i, "");
+  const base = name.replace(/\.html$/i, "").replace(/^(\d{4}-\d{2}-\d{2}|draft)_/, "").replace(/-[0-9a-f]{10,14}$/i, "");
   const s = base.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
   return s || "post-" + createHash("sha1").update(name).digest("hex").slice(0, 8);
 }
@@ -35,9 +35,10 @@ export const guessLang = (s) => ((s.match(/[㐀-鿿]/g) || []).length / Math.max
  * @param html       one exported post
  * @param opts.mediaDir  URL directory the pictures will be served from, e.g. /media/life/my-trip
  * @param opts.fetchImage async (url) => { bytes: Buffer, type: string }
+ * @param opts.maxWidth   pictures are requested at min(their original width, maxWidth) instead of the small size the page shows (default 1200)
  * @returns { title, date, summary, body, files: [{ name, bytes }], notes: [] }  (body is already sanitized)
  */
-export async function convertMedium(html, { mediaDir, fetchImage }) {
+export async function convertMedium(html, { mediaDir, fetchImage, maxWidth = 1200 }) {
   const doc = parse(html);
   const notes = [];
   const titleEl = find(doc, (n) => n.tagName === "h1" && hasClass(n, "p-name")) || find(doc, (n) => n.tagName === "title");
@@ -56,7 +57,7 @@ export async function convertMedium(html, { mediaDir, fetchImage }) {
     for (let i = 0; i < list.length; i++) {
       const n = list[i];
       if (!n.tagName) continue;
-      if (n.tagName === "h1" && hasClass(n, "graf--title")) { list.splice(i--, 1); continue; }            // the title is front matter
+      if (hasClass(n, "graf--title")) { list.splice(i--, 1); continue; }                                    // the title is front matter (Medium repeats it in the body as h2/h3)
       n.attrs = n.attrs.filter((a) => !["class", "id", "name", "data-image-id"].includes(a.name));         // Medium's own classes mean nothing here; layout is added by hand later
       if (n.tagName === "h3") n.tagName = n.nodeName = "h2";                                                // Medium: h3 = section, h4 = sub-section
       else if (n.tagName === "h4") n.tagName = n.nodeName = "h3";
@@ -70,7 +71,12 @@ export async function convertMedium(html, { mediaDir, fetchImage }) {
         const src = attr(n, "src") || "";
         if (/^https:\/\//i.test(src)) {
           if (!byUrl.has(src)) {
-            const { bytes, type } = await fetchImage(src);
+            // Medium's CDN serves any width at /max/<w>/<id>; the page asks for a small one. Ask for more, fall back to the page's own URL.
+            const ow = Number(attr(n, "data-width"));
+            const want = /\/max\/\d+\//.test(src) && ow > 0 ? src.replace(/\/max\/\d+\//, `/max/${Math.min(ow, maxWidth)}/`) : src;
+            let got;
+            try { got = await fetchImage(want); } catch (e) { if (want === src) throw e; notes.push(`larger picture unavailable (${e.message}); used ${src}`); got = await fetchImage(src); }
+            const { bytes, type } = got;
             const ext = EXT[String(type).split(";")[0].trim().toLowerCase()];
             if (!ext) throw new ContentError(`${src}: unsupported image type ${type}`);
             const name = createHash("sha1").update(src).digest("hex").slice(0, 12) + ext;
