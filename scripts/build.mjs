@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "vite";
 import { site } from "../site.config.mjs";
-import { buildModel, selectPublished, todayIn, atomFeed, sitemap, feedPath, ContentError } from "./content.mjs";
+import { buildModel, selectPublished, todayIn, sitemap, ContentError } from "./content.mjs";
 import { loadPosts, loadPages } from "./load.mjs";
 import { buildRoutes } from "./routes.mjs";
 import { document_ } from "./template.mjs";
@@ -39,12 +39,6 @@ export async function main() {
   for (const sec of site.sections) {
     const dir = join("content", sec.id, "media");
     if (existsSync(dir)) cpSync(dir, join("dist", "media", sec.id), { recursive: true });
-  }
-  for (const lang of site.langs) {
-    write(join("dist", feedPath(lang)), atomFeed({ lang, title: site.title[lang], baseUrl: site.baseUrl, author: site.author, posts: model.byLang[lang] }));
-    for (const sec of site.sections) {
-      write(join("dist", feedPath(lang, sec.id)), atomFeed({ lang, section: sec.id, title: `${site.title[lang]} · ${sec.title[lang]}`, baseUrl: site.baseUrl, author: site.author, posts: model.bySection[sec.id][lang] }));
-    }
   }
   write("dist/sitemap.xml", sitemap(site.baseUrl, routes.filter((r) => r.kind !== "notfound" && r.kind !== "entry" && r.kind !== "search").map((r) => ({ path: r.path, alternates: (r.alternates || []).filter((a) => a.translated !== false) }))));
   write("dist/robots.txt", `User-agent: *\nAllow: /\nSitemap: ${site.baseUrl}/sitemap.xml\n`);

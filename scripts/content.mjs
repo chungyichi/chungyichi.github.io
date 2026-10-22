@@ -1,4 +1,4 @@
-// Content pipeline: front matter, Markdown, publishing rules, translations, pagination, feeds.
+// Content pipeline: front matter, Markdown, publishing rules, translations, pagination, sitemap.
 // Pure functions (no file or network access) so they can be tested; the loader is in load.mjs.
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js/lib/common";
@@ -145,21 +145,6 @@ export const postPath = (lang, section, slug) => `/${lang}/${section}/${slug}/`;
 export const indexPath = (lang, section, page = 1) => (page === 1 ? `/${lang}/${section}/` : `/${lang}/${section}/page/${page}/`);
 
 const xml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
-
-export const feedPath = (lang, section) => `/${lang}/${section ? section + "/" : ""}atom.xml`;
-
-/** One feed per language (section omitted: all posts) or per section. */
-export function atomFeed({ lang, section, title, baseUrl, author, posts, now = new Date() }) {
-  const latest = posts[0] ? `${posts[0].updated || posts[0].date}T00:00:00Z` : now.toISOString();
-  const entries = posts.slice(0, 20).map((p) => {
-    const url = `${baseUrl}${postPath(lang, p.section, p.slug)}`;
-    return `  <entry>\n    <title>${xml(p.title)}</title>\n    <link href="${xml(url)}"/>\n    <id>${xml(url)}</id>\n` +
-      `    <published>${p.date}T00:00:00Z</published>\n    <updated>${p.updated || p.date}T00:00:00Z</updated>\n    <summary>${xml(p.summary)}</summary>\n  </entry>`;
-  });
-  return `<?xml version="1.0" encoding="utf-8"?>\n<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="${lang}">\n` +
-    `  <title>${xml(title)}</title>\n  <link href="${xml(`${baseUrl}${feedPath(lang, section)}`)}" rel="self"/>\n  <link href="${xml(`${baseUrl}/${lang}/${section ? section + "/" : ""}`)}"/>\n` +
-    `  <id>${xml(`${baseUrl}/${lang}/${section ? section + "/" : ""}`)}</id>\n  <updated>${latest}</updated>\n  <author><name>${xml(author)}</name></author>\n${entries.join("\n")}\n</feed>\n`;
-}
 
 export function sitemap(baseUrl, urls) {
   const body = urls.map((u) => `  <url><loc>${xml(baseUrl + u.path)}</loc>${(u.alternates || []).map((a) => `<xhtml:link rel="alternate" hreflang="${a.lang}" href="${xml(baseUrl + a.path)}"/>`).join("")}</url>`);

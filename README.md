@@ -29,7 +29,7 @@ Raw HTML in Markdown is **escaped, not rendered**.
 `/zh/search/` and `/en/search/` search titles, summaries and headings, in the browser, with no server and no third-party service.
 The build writes one small index per language (`/search/<lang>.<hash>.json`, about 0.25 KB per post) from the **published** posts only; the page downloads it when the box is focused.
 Matching is by substring (so Chinese works without word breaks), every word must match, title beats heading beats summary. Body text is not indexed; if that is wanted later, add a chunked indexer such as Pagefind rather than growing this file.
-`npm run check` fails if a private post's title appears in an index. Without JavaScript the page says so; browsing by section and the Atom feeds still work.
+`npm run check` fails if a private post's title appears in an index. Without JavaScript the page says so; browsing by section still works.
 
 ## Posts with their own layout (`.html`)
 
@@ -78,7 +78,7 @@ All colours, fonts, widths and spacing are CSS variables in `src/styles/tokens.c
 | `content/tech/`, `content/life/`, `content/pages/` | Posts per section (`.md`, or `.html` with its own layout) and pages such as About; `media/` and `<slug>.css` beside them |
 | `content/_private/<section>/`, `backup/` | **git-ignored**: unpublished drafts, imports, the original Medium export. Only `npm run dev` shows them; `check` fails if any gets tracked |
 | `site.config.mjs` | title, tagline, base URL, languages, sections, posts per page |
-| `scripts/content.mjs` | front matter, Markdown, publishing rules, translations, pagination, Atom, sitemap (pure, tested) |
+| `scripts/content.mjs` | front matter, Markdown, publishing rules, translations, pagination, sitemap (pure, tested) |
 | `scripts/build.mjs`, `dev.mjs`, `new.mjs`, `check.mjs` | build, dev server, new post, post-build checks |
 | `src/` | React components, i18n strings, styles; the only hydrated piece is the theme button |
 | `test/` | `node --test` unit tests |

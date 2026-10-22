@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   parseFrontMatter, parsePost, selectPublished, sortPosts, buildModel, paginate, groupByDate,
-  todayIn, atomFeed, sitemap, postPath, indexPath, ContentError,
+  todayIn, sitemap, postPath, indexPath, ContentError,
 } from "../scripts/content.mjs";
 
 const fm = (extra = "") => `---\ntitle: "Hello"\nsummary: A short summary.\n${extra}---\nBody **text**.\n`;
@@ -100,15 +100,6 @@ test("paths", () => {
   assert.equal(indexPath("en", "tech", 3), "/en/tech/page/3/");
 });
 
-test("atom feed escapes everything and uses absolute URLs", () => {
-  const p = post("2026-10-21-x.en.md", "", `---\ntitle: "A & <B>"\nsummary: 'say "hi" & bye'\n---\nx`);
-  const xml = atomFeed({ lang: "en", title: "T & Co", baseUrl: "https://e.org", author: "Me", posts: [p], now: new Date("2026-10-21T00:00:00Z") });
-  assert.match(xml, /<title>A &amp; &lt;B&gt;<\/title>/);
-  assert.match(xml, /<link href="https:\/\/e\.org\/en\/tech\/x\/"\/>/);
-  assert.match(xml, /<title>T &amp; Co<\/title>/);
-  assert.ok(!xml.includes("<B>"));
-});
-
 test("sitemap lists alternates", () => {
   const x = sitemap("https://e.org", [{ path: "/zh/", alternates: [{ lang: "en", path: "/en/" }] }]);
   assert.match(x, /<loc>https:\/\/e\.org\/zh\/<\/loc>/);
@@ -122,13 +113,6 @@ test("sections: same slug may exist in two sections, unknown sections are reject
   assert.equal(m.bySection.tech.en.length, 0);
   assert.deepEqual(m.missing.map((p) => p.section), ["tech"]);       // only the tech one lacks an English version
   assert.throws(() => buildModel([post("2026-10-01-x.zh.md", "", undefined, "food")], ["zh", "en"], SECTIONS), /unknown section 'food'/);
-});
-
-test("section feeds point at their own address", () => {
-  const p = post("2026-10-21-x.en.md", "", undefined, "life");
-  const xml = atomFeed({ lang: "en", section: "life", title: "T", baseUrl: "https://e.org", author: "Me", posts: [p], now: new Date("2026-10-21T00:00:00Z") });
-  assert.match(xml, /rel="self"/);
-  assert.ok(xml.includes("https://e.org/en/life/atom.xml") && xml.includes("https://e.org/en/life/x/"));
 });
 
 // ---- .html posts, sanitizer, per-post CSS ----

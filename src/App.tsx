@@ -23,7 +23,6 @@ function Layout({ route, children }: { route: Route; children: ReactNode }) {
             <a href={`/${lang}/search/`}>{s.search}</a>
             <a href={`/${lang}/about/`}>{s.about}</a>
             <a href={site.github} rel="noopener noreferrer">{s.github}</a>
-            <a href={`/${lang}/atom.xml`}>{s.feed}</a>
           </nav>
           <div className="tools">
             {other && <a className="lang" href={other.path} hrefLang={other.lang} lang={other.lang}>{t[other.lang].langName}</a>}

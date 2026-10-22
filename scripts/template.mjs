@@ -17,7 +17,6 @@ export function document_({ route, rendered, assets }) {
     : "";
   const css = (assets.css || []).map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join("\n    ");
   const postCss = route.postCss ? `<link rel="stylesheet" href="${esc(route.postCss.href)}">` : "";
-  const feed = `<link rel="alternate" type="application/atom+xml" title="${esc(site.title[lang])}" href="/${lang}/atom.xml">`;
   return `<!doctype html>
 <html lang="${lang}">
   <head>
@@ -29,7 +28,6 @@ export function document_({ route, rendered, assets }) {
     <link rel="canonical" href="${esc(canonical)}">
     ${alts}
     ${redirect}
-    ${feed}
     ${css}
     ${postCss}
     <script>${THEME_INIT}</script>
