@@ -39,9 +39,10 @@ nav a:hover { color: var(--accent); text-decoration: underline; }
 
 main { padding-bottom: 3rem; min-height: 60vh; }
 .lead { color: var(--muted); font-size: 1.1rem; }
-.motto { position: relative; font-size: clamp(1.3rem, 5.5vw, 2.2rem); font-weight: 700; line-height: 1.5; color: var(--fg); margin: 1.2em 0 1.4rem; padding-top: 0.9rem; }
-.motto::before { content: "\201C"; position: absolute; left: -0.12em; top: -0.05em; font: 5em/1 Georgia, serif; color: var(--accent); opacity: 0.22; pointer-events: none; }
-.motto span { position: relative; }
+.motto { font-size: clamp(1.3rem, 5.5vw, 2.2rem); font-weight: 700; line-height: 1.5; color: var(--fg); margin: 1.2em 0 1.4rem; }
+.motto::before, .motto::after { font: 400 1.9em/0 Georgia, "DejaVu Serif", "Liberation Serif", "Times New Roman", serif; color: var(--accent); vertical-align: -0.28em; }
+.motto::before { content: "\201C"; margin-right: 0.1em; }
+.motto::after { content: "\201D"; margin-left: 0.1em; }
 .more-sections { display: flex; gap: 1.2rem; margin-top: 1.2rem; }
 .date { font-size: 1rem; color: var(--muted); font-weight: 600; margin: 2rem 0 0.6rem; font-variant-numeric: tabular-nums; }
 .post-item { margin: 1.1rem 0; }

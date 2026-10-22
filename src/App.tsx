@@ -67,7 +67,7 @@ function Home({ route }: { route: Extract<Route, { kind: "home" }> }) {
   const { lang } = route, s = t[lang];
   return (
     <>
-      <h1 className="motto"><span>{tagline(lang)}</span></h1>
+      <h1 className="motto">{tagline(lang)}</h1>
       <section>
         <h2>{s.featured}</h2>
         {route.props.featured.length === 0 ? <p>{s.noPosts}</p> : route.props.featured.map((p) => <PostItem key={`${p.section}/${p.slug}`} lang={lang} p={p} />)}
