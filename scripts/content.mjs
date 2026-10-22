@@ -65,6 +65,14 @@ export function createMarkdown() {
   return md;
 }
 
+const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+/** Length of a post: every Chinese/Japanese/Korean character counts as one, every other run of letters or digits as one word. Markup, <style> and <script> are not text. */
+export function countWords(html) {
+  const text = String(html).replace(/<(style|script)\b[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]*>/g, " ")
+    .replace(/&(?:amp|lt|gt|quot|#39);/g, " ").replace(/&#?\w+;/g, " ");
+  return (text.match(CJK) || []).length + text.replace(CJK, " ").split(/[^\p{L}\p{N}]+/u).filter(Boolean).length;
+}
+
 /** Turn one file into a post object, or throw a ContentError that names the file. */
 export function parsePost(filename, text, md = createMarkdown(), section = "tech") {
   const fm = FILE_RE.exec(filename);
@@ -88,7 +96,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true,
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
-    words: (ext === "html" ? body.replace(/<[^>]*>/g, " ") : body).split(/\s+/).filter(Boolean).length,
+    words: countWords(ext === "html" ? body : md.render(body)),
   };
 }
 

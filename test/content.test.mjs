@@ -219,3 +219,19 @@ test("externalHosts finds the outside hosts of scripts, frames, images and style
   assert.deepEqual(externalHosts(text), ["api.example.io", "cdn.example.com", "fonts.example.net", "maps.example.org"]);
   assert.deepEqual(externalHosts('<a href="/zh/">x</a> <img src="/media/a.webp">'), []);
 });
+
+// ---- length ----
+import { countWords } from "../scripts/content.mjs";
+
+test("length counts Chinese characters one by one and other words once, ignoring markup, style and script", () => {
+  assert.equal(countWords("<p>今天去伊吹山，天氣很好。</p>"), 10);                 // 10 characters; punctuation is not counted
+  assert.equal(countWords("<p>Hello brave new world</p>"), 4);
+  assert.equal(countWords("<p>在 Google Map 上看 2019 年</p>"), 4 + 3);          // 在 上 看 年, plus Google Map 2019
+  assert.equal(countWords('<style>.a{color:red}</style><script>var x = 1;</script><p>字 a</p>'), 2);
+  assert.equal(countWords("<p>a&amp;b &nbsp; 好</p>"), 3);
+});
+
+test("a Markdown post is counted on its rendered text too", () => {
+  const p = parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\n---\n# 標題\n\n這是**一段**文字。\n");
+  assert.equal(p.words, 8);                                                       // 標題 這是 一段 文字
+});
