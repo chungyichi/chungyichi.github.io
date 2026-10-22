@@ -44,6 +44,15 @@ Any tag in the allowlist may carry `class` names and an `id`.
   It may not `@import` or load anything from another host (`url(/media/...)` is fine).
 - Private posts keep their pictures in `content/_private/<section>/media/`; the dev server serves them, the build never copies them.
 
+## Where pictures live
+
+- **Originals** (camera, phone, Medium downloads) stay on your own disk or cloud, **never in any GitHub repo**, not even the private vault.
+  Suggested local place: `sites/blog-originals/<section>/<post>/` next to this repo (outside git).
+- **Web versions** are made with `scripts/photo.sh <originals-dir> <output-dir>` (long edge 1600 px, WebP, metadata and GPS removed, sandboxed, no network)
+  and placed in `content/<section>/media/<post>/` (published) or `content/_private/<section>/media/<post>/` (private, git-ignored).
+- `scripts/backup.sh` copies texts to the vault and deliberately skips every `media/` folder and all picture files.
+- Only the web versions of **published** posts are committed to this public repo; every picture there is public for good.
+
 ## Import from Medium
 
 ```sh

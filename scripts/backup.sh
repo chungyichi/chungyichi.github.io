@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-way snapshot of ALL documents into the private vault repo: published posts and pages,
+# One-way snapshot of ALL texts (no pictures) into the private vault repo: published posts and pages,
 # content/_private/ (drafts, imports) and backup/ (the original Medium export). Runs on the host
 # (needs git and cp only). It commits in the vault; it never pushes, and it never touches this repo.
 #   scripts/backup.sh            # VAULT defaults to ../blog-vault (a clone of chungyichi/blog-vault)
@@ -17,6 +17,9 @@ for d in content backup; do
   rm -rf "${VAULT:?}/$d"
   cp -a "$d" "$VAULT/$d"
 done
+# Pictures never go to GitHub, not even to a private repo: texts only. Pictures live on local disk / your own cloud (see README).
+find "$VAULT/content" "$VAULT/backup" -type d -name media -prune -exec rm -rf {} + 2>/dev/null || true
+printf '%s\n' '# Pictures are not kept in git (see the site repo README).' '**/media/' '*.jpg' '*.jpeg' '*.png' '*.webp' '*.gif' '*.avif' '*.heic' > "$VAULT/.gitignore"
 git -C "$VAULT" add -A
 if git -C "$VAULT" diff --cached --quiet; then echo "vault is up to date"; exit 0; fi
 git -C "$VAULT" commit -q -m "Snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
