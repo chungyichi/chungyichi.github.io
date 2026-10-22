@@ -6,7 +6,7 @@ import {
 } from "../scripts/content.mjs";
 
 const fm = (extra = "") => `---\ntitle: "Hello"\nsummary: A short summary.\n${extra}---\nBody **text**.\n`;
-const SECTIONS = [{ id: "tech" }, { id: "travel" }];
+const SECTIONS = [{ id: "tech" }, { id: "life" }];
 const post = (name, extra, body, section = "tech") => parsePost(name, body ?? fm(extra), undefined, section);
 
 test("front matter: strings, booleans, quotes, comments", () => {
@@ -95,7 +95,7 @@ test("pagination and date grouping", () => {
 });
 
 test("paths", () => {
-  assert.equal(postPath("zh", "travel", "hi"), "/zh/travel/hi/");
+  assert.equal(postPath("zh", "life", "hi"), "/zh/life/hi/");
   assert.equal(indexPath("en", "tech"), "/en/tech/");
   assert.equal(indexPath("en", "tech", 3), "/en/tech/page/3/");
 });
@@ -116,17 +116,56 @@ test("sitemap lists alternates", () => {
 });
 
 test("sections: same slug may exist in two sections, unknown sections are rejected, translations pair within a section", () => {
-  const a = post("2026-10-01-trip.zh.md", "", undefined, "travel"), b = post("2026-10-01-trip.en.md", "", undefined, "travel"), c = post("2026-10-01-trip.zh.md", "");
+  const a = post("2026-10-01-trip.zh.md", "", undefined, "life"), b = post("2026-10-01-trip.en.md", "", undefined, "life"), c = post("2026-10-01-trip.zh.md", "");
   const m = buildModel([a, b, c], ["zh", "en"], SECTIONS);
-  assert.deepEqual(m.bySection.travel.zh.map((p) => p.slug), ["trip"]);
+  assert.deepEqual(m.bySection.life.zh.map((p) => p.slug), ["trip"]);
   assert.equal(m.bySection.tech.en.length, 0);
   assert.deepEqual(m.missing.map((p) => p.section), ["tech"]);       // only the tech one lacks an English version
   assert.throws(() => buildModel([post("2026-10-01-x.zh.md", "", undefined, "food")], ["zh", "en"], SECTIONS), /unknown section 'food'/);
 });
 
 test("section feeds point at their own address", () => {
-  const p = post("2026-10-21-x.en.md", "", undefined, "travel");
-  const xml = atomFeed({ lang: "en", section: "travel", title: "T", baseUrl: "https://e.org", author: "Me", posts: [p], now: new Date("2026-10-21T00:00:00Z") });
+  const p = post("2026-10-21-x.en.md", "", undefined, "life");
+  const xml = atomFeed({ lang: "en", section: "life", title: "T", baseUrl: "https://e.org", author: "Me", posts: [p], now: new Date("2026-10-21T00:00:00Z") });
   assert.match(xml, /rel="self"/);
-  assert.ok(xml.includes("https://e.org/en/travel/atom.xml") && xml.includes("https://e.org/en/travel/x/"));
+  assert.ok(xml.includes("https://e.org/en/life/atom.xml") && xml.includes("https://e.org/en/life/x/"));
+});
+
+// ---- .html posts, sanitizer, per-post CSS ----
+import { sanitizeHtml, safeUrl } from "../scripts/sanitize.mjs";
+import { checkPostCss } from "../scripts/load.mjs";
+
+test("sanitizer drops scripts, event handlers, style attributes and javascript: links", () => {
+  const out = sanitizeHtml('<p onclick="x()" style="background:url(//e)">hi<script>alert(1)</script></p><a href="javascript:alert(1)">bad</a><a href=" JaVa\nScript:alert(1)">bad2</a><iframe src="//e"></iframe>');
+  assert.equal(out, "<p>hi</p>badbad2");
+});
+
+test("sanitizer keeps structure, free class names and ids, and marks external links", () => {
+  const out = sanitizeHtml('<section class="route day-1" id="d1"><h1>T</h1><a href="https://e.org/x">x</a><span class="bad class!">y</span></section>');
+  assert.equal(out, '<section class="route day-1" id="d1"><h2>T</h2><a href="https://e.org/x" rel="noopener noreferrer">x</a><span class="bad">y</span></section>');
+});
+
+test("sanitizer requires local images and keeps size hints", () => {
+  assert.equal(sanitizeHtml('<img src="/media/life/a.jpg" alt="a&quot;b" width="800" height="x">'), '<img src="/media/life/a.jpg" alt="a&quot;b" loading="lazy" decoding="async" width="800">');
+  assert.throws(() => sanitizeHtml('<img src="https://cdn.example/a.jpg">', "p.html"), /images must be local/);
+  assert.throws(() => sanitizeHtml('<img src="//cdn.example/a.jpg">', "p.html"), /images must be local/);
+});
+
+test("safeUrl accepts only http(s), mailto, root-relative and fragments", () => {
+  for (const ok of ["https://a.b/c", "http://a.b", "mailto:a@b.c", "/x/y", "#top"]) assert.ok(safeUrl(ok), ok);
+  for (const bad of ["//evil.example", "/\\evil.example", "data:text/html,x", "vbscript:x", "ftp://a", "x/y", ""]) assert.equal(safeUrl(bad), null, bad);
+});
+
+test("an .html post is parsed with the same file rules and sanitized", () => {
+  const p = parsePost("2026-10-21-trip.zh.html", '---\ntitle: T\nsummary: S\n---\n<div class="gallery"><img src="/media/life/a.jpg" alt=""><script>x</script></div>', undefined, "life");
+  assert.equal(p.section, "life");
+  assert.ok(p.html.startsWith('<div class="gallery"><img src="/media/life/a.jpg"'));
+  assert.ok(!p.html.includes("script"));
+});
+
+test("per-post CSS may not load anything from other hosts", () => {
+  assert.ok(checkPostCss(".post-a .hero{background:url(/media/life/a.jpg)} .x{color:red}"));
+  for (const bad of ['@import "x.css";', ".a{background:url(https://e.org/a.png)}", ".a{background:url(//e.org/a.png)}", ".a{width:expression(alert(1))}"]) {
+    assert.throws(() => checkPostCss(bad, "x.css"), /x\.css/, bad);
+  }
 });

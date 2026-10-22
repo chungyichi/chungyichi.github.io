@@ -95,7 +95,7 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
   const { lang } = route, s = t[lang], p = route.props;
   const missing = route.alternates.find((a) => a.translated === false);
   return (
-    <article className="post">
+    <article className={`post post-${p.slug}`}>
       <header>
         <h1>{p.title}</h1>
         <p className="meta">
@@ -107,7 +107,7 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
         </p>
         {missing && <p className="notice">{t[missing.lang].noTranslation}</p>}
       </header>
-      {/* The HTML comes from our own Markdown, rendered with raw HTML disabled (see scripts/content.mjs). */}
+      {/* Markdown is rendered with raw HTML off; .html posts pass an allowlist sanitizer (scripts/sanitize.mjs). A post's own CSS targets .post-<slug>. */}
       <div className="prose" dangerouslySetInnerHTML={{ __html: p.html }} />
       <p><a href={`/${lang}/${p.section}/`}>← {sectionTitle(lang, p.section)}</a></p>
     </article>

@@ -8,8 +8,8 @@ Static HTML rendered by React at build time, bundled with Vite. No tracking, rea
 ```sh
 scripts/docker.sh npm run new -- "Post title"                  # creates content/tech/YYYY-MM-DD-slug.zh.md (a draft)
 scripts/docker.sh npm run new -- "Post title" --lang en        # an English one
-scripts/docker.sh npm run new -- "Trip" --section travel       # sections: tech (default), travel
-scripts/docker.sh npm run new -- "Trip" --section travel --private   # content/_private/: never committed, never built
+scripts/docker.sh npm run new -- "Trip" --section life       # sections: tech (default), life
+scripts/docker.sh npm run new -- "Trip" --section life --private   # content/_private/: never committed, never built
 scripts/docker.sh npm run new -- "中文標題" --slug zh-title     # a non-ASCII title needs --slug
 scripts/docker.sh npm run dev                                  # preview at http://localhost:5173 (drafts included)
 ```
@@ -22,8 +22,29 @@ A post is published when it is not a draft and its date (the date in the file na
 There is no scheduled build: a future-dated post goes live on the first push after its date (or via Actions → deploy → Run workflow).
 
 Front matter (strict; unknown keys are an error): `title`, `summary` (required unless draft, at most 300 characters), `draft`, `updated` (`YYYY-MM-DD`).
-Images go in `public/posts/<slug>/` and are linked as `/posts/<slug>/pic.png`.
 Raw HTML in Markdown is **escaped, not rendered**.
+
+## Posts with their own layout (`.html`)
+
+A post whose layout does not fit Markdown (travel photo grids, timelines, ...) is a `.html` file with the same name rules and front matter:
+`content/life/2026-10-20-kyoto.zh.html`. The body is HTML that passes an **allowlist sanitizer** (`scripts/sanitize.mjs`):
+no scripts, frames, forms, event handlers or `style` attributes; links are http(s), mailto, local or `#`; **images must be local** (`/media/...`, a build error otherwise).
+Any tag in the allowlist may carry `class` names and an `id`.
+
+- Pictures: `content/<section>/media/**` is published as `/media/<section>/**`. Use `<img src="/media/life/kyoto/a.jpg" alt="...">`.
+- Looks, shared: `.pair`, `.gallery`, `.wide`, `.full` exist in `src/styles/main.css`; add more there for anything reusable.
+- Looks, per post: `content/<section>/<slug>.css` is loaded on that post only (both languages); scope rules with `.post-<slug>`.
+  It may not `@import` or load anything from another host (`url(/media/...)` is fine).
+- Private posts keep their pictures in `content/_private/<section>/media/`; the dev server serves them, the build never copies them.
+
+## Import from Medium
+
+```sh
+scripts/docker.sh npm run import:medium -- ~/medium-export --section life     # writes content/_private/life/ (git-ignored)
+```
+
+Reads `posts/*.html` of the unzipped Medium export. Per post: an `.html` file marked `draft: true`, its pictures downloaded from Medium's image hosts (only), embeds turned into links, Medium's classes removed.
+Review each result with `npm run dev`, add layout, then move it out of `_private/` and drop `draft: true` to publish. Nothing is overwritten. Medium's export format is assumed from its documented shape and **has not been tried on a real export yet**.
 
 ## Publish
 
@@ -47,7 +68,7 @@ All colours, fonts, widths and spacing are CSS variables in `src/styles/tokens.c
 
 | Path | What |
 |---|---|
-| `content/tech/`, `content/travel/`, `content/pages/` | Markdown (posts per section, and pages such as About) |
+| `content/tech/`, `content/life/`, `content/pages/` | Posts per section (`.md`, or `.html` with its own layout) and pages such as About; `media/` and `<slug>.css` beside them |
 | `content/_private/<section>/`, `backup/` | **git-ignored**: unpublished drafts, imports, the original Medium export. Only `npm run dev` shows them; `check` fails if any gets tracked |
 | `site.config.mjs` | title, tagline, base URL, languages, sections, posts per page |
 | `scripts/content.mjs` | front matter, Markdown, publishing rules, translations, pagination, Atom, sitemap (pure, tested) |

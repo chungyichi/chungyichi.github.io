@@ -5,6 +5,21 @@ import { site } from "../site.config.mjs";
 import { createMarkdown, parsePost, ContentError } from "./content.mjs";
 
 /**
+ * A post's own CSS is trusted (it is in the repo) but must not pull anything from other hosts:
+ * no @import, no absolute or protocol-relative url(), no legacy script hooks. Local files are referenced as /media/....
+ */
+export function checkPostCss(text, where = "post css") {
+  if (text.length > 100_000) throw new ContentError(`${where}: larger than 100 KB`);
+  if (/@import/i.test(text)) throw new ContentError(`${where}: @import is not allowed (it would load another file)`);
+  if (/expression\s*\(|javascript:|behavior\s*:|-moz-binding/i.test(text)) throw new ContentError(`${where}: script hooks in CSS are not allowed`);
+  for (const m of text.matchAll(/url\(\s*(['"]?)([^)'"]*)\1\s*\)/gi)) {
+    const u = m[2].trim();
+    if (!(u.startsWith("/") && !u.startsWith("//")) && !u.startsWith("#")) throw new ContentError(`${where}: url(${u}) must be a local /media/... path`);
+  }
+  return text;
+}
+
+/**
  * Posts of every section from content/<section>/. With includePrivate (dev only) also content/_private/<section>/,
  * which is git-ignored (drafts and imports not yet cleared for publication); those posts are marked `private`.
  */
@@ -16,8 +31,12 @@ export function loadPosts({ root = "content", sections = site.sections.map((s) =
     for (const section of sections) {
       const dir = join(base, section);
       if (!existsSync(dir)) continue;
-      for (const f of readdirSync(dir).filter((x) => x.endsWith(".md")).sort()) {
-        posts.push({ ...parsePost(f, readFileSync(join(dir, f), "utf8"), md, section), private: isPrivate });
+      for (const f of readdirSync(dir).filter((x) => x.endsWith(".md") || x.endsWith(".html")).sort()) {
+        const post = parsePost(f, readFileSync(join(dir, f), "utf8"), md, section);
+        // content/<section>/<slug>.css: this post's own stylesheet (shared by its languages), loaded on its pages only
+        const cssFile = join(dir, `${post.slug}.css`);
+        const css = existsSync(cssFile) ? checkPostCss(readFileSync(cssFile, "utf8"), cssFile) : "";
+        posts.push({ ...post, css, private: isPrivate });
       }
     }
   }

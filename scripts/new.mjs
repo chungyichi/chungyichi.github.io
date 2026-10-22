@@ -1,4 +1,4 @@
-// npm run new -- "Post title" [--section tech|travel] [--lang zh|en] [--slug my-slug] [--date YYYY-MM-DD] [--private]
+// npm run new -- "Post title" [--section tech|life] [--lang zh|en] [--slug my-slug] [--date YYYY-MM-DD] [--private]
 import { writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { site } from "../site.config.mjs";
@@ -14,7 +14,7 @@ let slug = opt("slug");
 const title = args.join(" ").trim();
 
 const die = (m) => { console.error(`error: ${m}`); process.exit(1); };
-if (!title) die('usage: npm run new -- "Post title" [--section tech|travel] [--lang zh|en] [--slug my-slug] [--date YYYY-MM-DD] [--private]');
+if (!title) die('usage: npm run new -- "Post title" [--section tech|life] [--lang zh|en] [--slug my-slug] [--date YYYY-MM-DD] [--private]');
 if (!site.sections.some((s) => s.id === section)) die(`--section must be one of ${site.sections.map((s) => s.id).join(", ")}`);
 if (!site.langs.includes(lang)) die(`--lang must be one of ${site.langs.join(", ")}`);
 if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) die("--date must be YYYY-MM-DD");

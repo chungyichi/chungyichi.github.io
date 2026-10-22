@@ -29,6 +29,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
         const has = (l) => Boolean(model.translations[`${section}/${p.slug}`]?.[l]);
         const alternates = other(lang).map((l) => ({ lang: l, path: has(l) ? postPath(l, section, p.slug) : indexPath(l, section), translated: has(l) }));
         routes.push({ path, kind: "post", lang, alternates,
+          postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, html: p.html, draft: p.draft, private: Boolean(p.private), words: p.words } });
       }
     }

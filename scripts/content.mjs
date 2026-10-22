@@ -3,9 +3,12 @@
 import MarkdownIt from "markdown-it";
 import hljs from "highlight.js/lib/common";
 
-export class ContentError extends Error {}
+import { ContentError } from "./errors.mjs";
+import { sanitizeHtml } from "./sanitize.mjs";
 
-const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.md$/;
+export { ContentError };
+
+const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
 const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated"]);
 
 /** Parse the `---` front matter block. A strict YAML subset: `key: value`, quoted or bare strings, true/false. */
@@ -52,8 +55,8 @@ export function createMarkdown() {
 /** Turn one file into a post object, or throw a ContentError that names the file. */
 export function parsePost(filename, text, md = createMarkdown(), section = "tech") {
   const fm = FILE_RE.exec(filename);
-  if (!fm) throw new ContentError(`${filename}: file name must look like YYYY-MM-DD-slug.zh.md or .en.md (lowercase, hyphens)`);
-  const [, date, slug, lang] = fm;
+  if (!fm) throw new ContentError(`${filename}: file name must look like YYYY-MM-DD-slug.zh.md or .en.md, or .html for a hand-laid-out post (lowercase, hyphens)`);
+  const [, date, slug, lang, ext] = fm;
   const d = new Date(`${date}T00:00:00Z`);
   if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== date) throw new ContentError(`${filename}: ${date} is not a real date`);
   const { data, body } = parseFrontMatter(text, filename);
@@ -68,8 +71,9 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   return {
     section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
-    html: md.render(body),
-    words: body.split(/\s+/).filter(Boolean).length,
+    // .html bodies are sanitized (allowlist), .md bodies are rendered with raw HTML off
+    html: ext === "html" ? sanitizeHtml(body, filename) : md.render(body),
+    words: (ext === "html" ? body.replace(/<[^>]*>/g, " ") : body).split(/\s+/).filter(Boolean).length,
   };
 }
 

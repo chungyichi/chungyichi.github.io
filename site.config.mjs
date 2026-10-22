@@ -10,7 +10,7 @@ export const site = {
   // Posts live in content/<section>/ ; content/_private/<section>/ is git-ignored and only shown by `npm run dev`.
   sections: [
     { id: "tech", title: { zh: "技術", en: "Tech" } },
-    { id: "travel", title: { zh: "旅行", en: "Travel" } },
+    { id: "life", title: { zh: "生活", en: "Life" } },
   ],
   postsPerPage: 10,
   homePosts: 5,

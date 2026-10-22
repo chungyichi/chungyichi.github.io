@@ -16,6 +16,7 @@ export function document_({ route, rendered, assets }) {
     ? `<meta http-equiv="refresh" content="0; url=/${site.defaultLang}/">\n    <script>(function(){var l=(navigator.languages&&navigator.languages[0])||navigator.language||"";location.replace("/"+(/^zh/i.test(l)?"zh":"en")+"/")})()</script>`
     : "";
   const css = (assets.css || []).map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join("\n    ");
+  const postCss = route.postCss ? `<link rel="stylesheet" href="${esc(route.postCss.href)}">` : "";
   const feed = `<link rel="alternate" type="application/atom+xml" title="${esc(site.title[lang])}" href="/${lang}/atom.xml">`;
   return `<!doctype html>
 <html lang="${lang}">
@@ -30,6 +31,7 @@ export function document_({ route, rendered, assets }) {
     ${redirect}
     ${feed}
     ${css}
+    ${postCss}
     <script>${THEME_INIT}</script>
   </head>
   <body>

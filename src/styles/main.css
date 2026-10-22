@@ -57,3 +57,15 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 
 @media (min-width: 40rem) { :root { --gutter: 1.5rem; } }
 @media (prefers-reduced-motion: no-preference) { a, button { transition: color .15s, border-color .15s; } }
+
+/* Layout vocabulary for posts (a post may use these, add its own in content/<section>/<slug>.css, or both). */
+.prose figure { margin: 1.4em 0; }
+.prose figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 0.4em; text-align: center; }
+.prose .pair, .prose .gallery { display: grid; gap: 0.6rem; margin: 1.4em 0; }
+.prose .pair { grid-template-columns: repeat(2, 1fr); }
+.prose .gallery { grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); }
+.prose .pair img, .prose .gallery img { width: 100%; height: 100%; object-fit: cover; }
+.prose .wide, .prose .full { width: min(100vw - 2 * var(--gutter), 60rem); position: relative; left: 50%; transform: translateX(-50%); }
+.prose .full { width: 100vw; }
+.prose .full img, .prose .wide img { width: 100%; }
+@media (max-width: 36rem) { .prose .pair { grid-template-columns: 1fr; } }

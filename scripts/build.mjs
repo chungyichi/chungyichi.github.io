@@ -1,5 +1,5 @@
 // Build the static site into dist/: Vite bundles the island + CSS, React renders every page to HTML.
-import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync, existsSync, cpSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { build } from "vite";
@@ -30,7 +30,15 @@ export async function main() {
   const entry = manifest["src/entry-client.tsx"];
   const assets = { js: "/" + entry.file, css: (entry.css || []).map((c) => "/" + c) };
 
-  for (const route of routes) write(out(route.path), document_({ route, rendered: render(route), assets }));
+  for (const route of routes) {
+    write(out(route.path), document_({ route, rendered: render(route), assets }));
+    if (route.postCss) write(join("dist", route.postCss.href), route.postCss.text);   // same file for each language of the post
+  }
+  // Pictures and other files of published posts: content/<section>/media/** -> /media/<section>/** (private ones are never copied)
+  for (const sec of site.sections) {
+    const dir = join("content", sec.id, "media");
+    if (existsSync(dir)) cpSync(dir, join("dist", "media", sec.id), { recursive: true });
+  }
   for (const lang of site.langs) {
     write(join("dist", feedPath(lang)), atomFeed({ lang, title: site.title[lang], baseUrl: site.baseUrl, author: site.author, posts: model.byLang[lang] }));
     for (const sec of site.sections) {
