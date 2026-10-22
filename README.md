@@ -44,6 +44,20 @@ Any tag in the allowlist may carry `class` names and an `id`.
   It may not `@import` or load anything from another host (`url(/media/...)` is fine).
 - Private posts keep their pictures in `content/_private/<section>/media/`; the dev server serves them, the build never copies them.
 
+## Anything, per post (`trusted: true`)
+
+Every post can be customised without limit, case by case. Add `trusted: true` to the front matter and that post may have:
+
+- **`.html` body used as written**: `<style>`, `style=""`, inline SVG, `<details>`, `<video>`, frames, anything. No sanitizer.
+- **`content/<section>/<slug>.css`**: its own stylesheet (this one is also available to untrusted posts).
+- **`content/<section>/<slug>.js`**: its own script, loaded as a module on that post only. No script without `trusted: true`.
+- **Markdown plus interactive parts**: a `.md` post may be trusted too. A line `{{widget: tlsf-map}}` becomes `<div class="widget" data-widget="tlsf-map"></div>`;
+  the post's script finds it (`document.querySelector('[data-widget="tlsf-map"]')`) and draws into it. The text stays Markdown, raw HTML in it is still escaped.
+
+Write the readable text and fallback in the page itself; the script only enhances it, so the post still reads without JavaScript.
+Trust is yours to give: the importer never writes `trusted`, and `npm run check` lists every trusted post, whether it has a script, and which **outside hosts** its HTML/CSS/JS mention
+(so a third-party script or a tracker cannot slip in unnoticed). Untrusted `.html` posts (such as Medium imports) still go through the sanitizer.
+
 ## Where pictures live
 
 - **Originals** (camera, phone, Medium downloads) stay on your own disk or cloud, **never in any GitHub repo**, not even the private vault.

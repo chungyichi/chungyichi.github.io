@@ -191,3 +191,31 @@ test("pictures: path tricks are refused", () => {
   assert.equal(resolveMedia({ ...f, section: "../x", rest: "a" }), null);
   assert.equal(resolveMedia({ ...f, section: "Life", rest: "kyoto/001.webp" }), null);
 });
+
+// ---- trusted posts ----
+import { externalHosts } from "../scripts/content.mjs";
+
+test("a trusted .html post is used as written; an untrusted one is still sanitized", () => {
+  const body = '<style>.a{color:red}</style><svg viewBox="0 0 1 1"><circle r="1"/></svg><div style="x:1" onclick="f()">hi</div><script>go()</script>';
+  const t = parsePost("2026-10-21-x.zh.html", `---\ntitle: T\nsummary: S\ntrusted: true\n---\n${body}`);
+  assert.equal(t.trusted, true);
+  assert.equal(t.html, body);
+  const u = parsePost("2026-10-21-x.zh.html", `---\ntitle: T\nsummary: S\n---\n${body}`);
+  assert.equal(u.trusted, false);
+  assert.ok(!/script|svg|style=|onclick/.test(u.html));
+});
+
+test("a Markdown post can have widget mount points; raw HTML in it stays escaped; trusted must be a boolean", () => {
+  const p = parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\ntrusted: true\n---\nText\n\n{{widget: tlsf-map}}\n\n<script>x()</script>\n\n{{widget: Bad Name}}\n");
+  assert.equal(p.trusted, true);
+  assert.ok(p.html.includes('<div class="widget" data-widget="tlsf-map"></div>'));
+  assert.ok(p.html.includes("&lt;script&gt;"));
+  assert.ok(!p.html.includes('data-widget="bad'));
+  assert.throws(() => parsePost("2026-10-21-x.zh.html", '---\ntitle: T\nsummary: S\ntrusted: "yes"\n---\nx'), /must be true or false/);
+});
+
+test("externalHosts finds the outside hosts of scripts, frames, images and stylesheets", () => {
+  const text = '<script src="https://cdn.example.com/a.js"></script><iframe src="//maps.example.org/x?y=1"></iframe> url(https://fonts.example.net/f.woff2) /local/path fetch("http://api.example.io:8080/v")';
+  assert.deepEqual(externalHosts(text), ["api.example.io", "cdn.example.com", "fonts.example.net", "maps.example.org"]);
+  assert.deepEqual(externalHosts('<a href="/zh/">x</a> <img src="/media/a.webp">'), []);
+});

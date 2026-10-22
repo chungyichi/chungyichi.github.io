@@ -36,7 +36,12 @@ export function loadPosts({ root = "content", sections = site.sections.map((s) =
         // content/<section>/<slug>.css: this post's own stylesheet (shared by its languages), loaded on its pages only
         const cssFile = join(dir, `${post.slug}.css`);
         const css = existsSync(cssFile) ? checkPostCss(readFileSync(cssFile, "utf8"), cssFile) : "";
-        posts.push({ ...post, css, private: isPrivate });
+        // content/<section>/<slug>.js: this post's own script (module), for trusted posts only
+        const jsFile = join(dir, `${post.slug}.js`);
+        const js = existsSync(jsFile) ? readFileSync(jsFile, "utf8") : "";
+        if (js && !post.trusted) throw new ContentError(`${jsFile}: a post script needs 'trusted: true' in the post's front matter`);
+        if (js.length > 200_000) throw new ContentError(`${jsFile}: larger than 200 KB`);
+        posts.push({ ...post, css, js, private: isPrivate });
       }
     }
   }

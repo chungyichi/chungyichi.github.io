@@ -17,10 +17,10 @@ const port = Number(process.env.PORT || 5173);
 const ORIGINALS = process.env.BLOG_ORIGINALS && existsSync(process.env.BLOG_ORIGINALS) ? process.env.BLOG_ORIGINALS : "";
 const cookieMode = (req) => /(?:^|;\s*)img=(original|web)(?:;|$)/.exec(req.headers.cookie || "")?.[1];
 
-const TYPES = { ".css": "text/css", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif", ".avif": "image/avif", ".svg": "image/svg+xml" };
+const TYPES = { ".css": "text/css", ".js": "text/javascript", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif", ".avif": "image/avif", ".svg": "image/svg+xml" };
 /** /media/<section>/x (web version, or your original in original mode) and /post-css/<section>/x.css, from content/ and content/_private/ (dev only). */
 function serveContentFile(req, urlPath, res) {
-  const m = /^\/(media|post-css)\/([a-z0-9-]+)\/(.+)$/.exec(urlPath);
+  const m = /^\/(media|post-css|post-js)\/([a-z0-9-]+)\/(.+)$/.exec(urlPath);
   if (!m) return false;
   const [, kind, section, rest] = m;
   let file = null, source = "web";

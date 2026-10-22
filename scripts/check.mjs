@@ -4,7 +4,7 @@ import { join, posix } from "node:path";
 import { spawnSync } from "node:child_process";
 import { site } from "../site.config.mjs";
 import { loadPosts } from "./load.mjs";
-import { buildModel } from "./content.mjs";
+import { buildModel, externalHosts } from "./content.mjs";
 
 // Known advisories we accept for a limited time, with the reason. An expired entry fails the check.
 const ACCEPTED_ADVISORIES = [
@@ -56,6 +56,12 @@ for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slu
   for (const f of indexFiles) for (const p of privatePosts) if (readFileSync(f, "utf8").includes(JSON.stringify(p.title).slice(1, -1))) fail(`private post "${p.title}" appears in the search index ${f}`);
   const priv = privatePosts.length;
   if (priv) warn(`${priv} private post(s) exist locally (not published, not tracked)`);
+}
+
+// 3b. trusted (hand-written, unsanitized) posts: list them and the outside hosts they use
+for (const p of loadPosts({ includePrivate: true }).filter((p) => p.trusted)) {
+  const hosts = externalHosts([p.html, p.css, p.js].join("\n"));
+  warn(`${p.section}/${p.date}-${p.slug}.${p.lang} is trusted (not sanitized)${p.js ? ", has its own script" : ""}${hosts.length ? `; talks to: ${hosts.join(", ")}` : ""}`);
 }
 
 // 4. dependency advisories

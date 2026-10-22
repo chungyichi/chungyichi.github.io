@@ -9,7 +9,7 @@ import { sanitizeHtml } from "./sanitize.mjs";
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted"]);
 
 /** Parse the `---` front matter block. A strict YAML subset: `key: value`, quoted or bare strings, true/false. */
 export function parseFrontMatter(text, where = "post") {
@@ -43,6 +43,19 @@ export function createMarkdown() {
       return "";
     },
   });
+  // A line that is exactly {{widget: name}} becomes <div class="widget" data-widget="name"></div>: a mount point for the post's own script
+  // (content/<section>/<slug>.js, trusted posts only). Raw HTML stays off, so this is the only way Markdown gets an interactive spot.
+  md.block.ruler.before("paragraph", "widget", (state, start, end, silent) => {
+    const line = state.src.slice(state.bMarks[start] + state.tShift[start], state.eMarks[start]).trim();
+    const m = /^\{\{widget:\s*([a-z0-9][a-z0-9-]{0,40})\s*\}\}$/.exec(line);
+    if (!m) return false;
+    if (silent) return true;
+    const t = state.push("html_block", "", 0);
+    t.content = `<div class="widget" data-widget="${m[1]}"></div>\n`;
+    t.map = [start, start + 1];
+    state.line = start + 1;
+    return true;
+  });
   const defaultLink = md.renderer.rules.link_open || ((t, i, o, _e, self) => self.renderToken(t, i, o));
   md.renderer.rules.link_open = (tokens, idx, opts, env, self) => {
     const href = tokens[idx].attrGet("href") || "";
@@ -66,13 +79,15 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   // A draft may be unfinished (npm run new creates it with an empty summary); a published post may not.
   if (typeof data.summary !== "string" || (!data.summary.trim() && !isDraft)) throw new ContentError(`${filename}: front matter 'summary' is required`);
   if (data.summary.length > 300) throw new ContentError(`${filename}: summary is ${data.summary.length} characters (max 300)`);
+  if ("trusted" in data && typeof data.trusted !== "boolean") throw new ContentError(`${filename}: 'trusted' must be true or false`);
   if ("draft" in data && typeof data.draft !== "boolean") throw new ContentError(`${filename}: 'draft' must be true or false`);
   if ("updated" in data && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.updated))) throw new ContentError(`${filename}: 'updated' must be YYYY-MM-DD`);
   return {
     section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
-    // .html bodies are sanitized (allowlist), .md bodies are rendered with raw HTML off
-    html: ext === "html" ? sanitizeHtml(body, filename) : md.render(body),
+    // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
+    trusted: data.trusted === true,
+    html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: (ext === "html" ? body.replace(/<[^>]*>/g, " ") : body).split(/\s+/).filter(Boolean).length,
   };
 }
@@ -138,6 +153,13 @@ export function buildSearchIndex(posts, lang, sectionTitleOf) {
   return posts.filter((p) => p.lang === lang).map((p) => ({
     t: p.title, s: p.summary, h: headingsOf(p.html), d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
   }));
+}
+
+/** Hosts a piece of trusted content talks to (scripts, frames, stylesheets, images, fetches): shown by `npm run check` so nothing third-party sneaks in unnoticed. */
+export function externalHosts(text) {
+  const hosts = new Set();
+  for (const m of String(text).matchAll(/(?:https?:)?\/\/([a-z0-9][a-z0-9.-]*\.[a-z]{2,})(?::\d+)?(?=[/"'`\s)>?#]|$)/gi)) hosts.add(m[1].toLowerCase());
+  return [...hosts].sort();
 }
 
 export const searchPath = (lang) => `/${lang}/search/`;

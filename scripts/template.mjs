@@ -35,6 +35,7 @@ export function document_({ route, rendered, assets }) {
   <body>
     <div id="root">${rendered.html}</div>
     <script type="module" src="${esc(assets.js)}"></script>
+    ${route.postJs ? `<script type="module" src="${esc(route.postJs.href)}"></script>` : ""}
   </body>
 </html>
 `;

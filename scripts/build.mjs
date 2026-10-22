@@ -33,6 +33,7 @@ export async function main() {
   for (const route of routes) {
     write(out(route.path), document_({ route, rendered: render(route), assets }));
     if (route.postCss) write(join("dist", route.postCss.href), route.postCss.text);   // same file for each language of the post
+    if (route.postJs) write(join("dist", route.postJs.href), route.postJs.text);
     if (route.searchIndex) write(join("dist", route.searchIndex.href), route.searchIndex.text);
   }
   // Pictures and other files of published posts: content/<section>/media/** -> /media/<section>/** (private ones are never copied)
