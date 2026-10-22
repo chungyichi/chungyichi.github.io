@@ -11,5 +11,5 @@ export type Route =
   | { kind: "post"; path: string; lang: Lang; alternates: Alt[]; props: Brief & { updated: string; html: string; draft: boolean; private: boolean; words: number } }
   | { kind: "tags"; path: string; lang: Lang; alternates: Alt[]; props: { tags: { tag: string; slug: string; count: number }[] } }
   | { kind: "tag"; path: string; lang: Lang; alternates: Alt[]; props: { tag: string; slug: string; groups: { date: string; items: Brief[] }[]; page: number; pages: number } }
-  | { kind: "search"; path: string; lang: Lang; alternates: Alt[]; props: { index: string } }
+  | { kind: "search"; path: string; lang: Lang; alternates: Alt[]; props: { index: string; tags: { tag: string; slug: string; count: number }[] } }
   | { kind: "page"; path: string; lang: Lang; alternates: Alt[]; props: { name: string; title: string; summary: string; html: string } };

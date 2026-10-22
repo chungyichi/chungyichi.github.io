@@ -43,7 +43,8 @@ else {
 // 2. translations (a reminder, not a failure)
 const all = loadPosts();
 const { missing } = buildModel(all, site.langs, site.sections);
-for (const p of missing) warn(`${p.section}/${p.date}-${p.slug}.${p.lang} has no translation`);
+if (site.languageSwitcher !== false) for (const p of missing) warn(`${p.section}/${p.date}-${p.slug}.${p.lang} has no translation`);
+for (const p of all.filter((p) => !p.draft && !p.tags?.length)) fail(`${p.section}/${p.date}-${p.slug}.${p.lang} has no tag (every published post needs 1 to 3)`);
 for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slug}.${p.lang} is a draft (not published)`);
 
 // 3. private material must never be tracked or built

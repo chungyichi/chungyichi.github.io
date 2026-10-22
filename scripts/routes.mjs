@@ -60,7 +60,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
     const indexText = JSON.stringify(buildSearchIndex(model.byLang[lang], lang, (id) => site.sections.find((s) => s.id === id)?.title[lang] ?? id));
     const indexHref = `/search/${lang}.${createHash("sha1").update(indexText).digest("hex").slice(0, 10)}.json`;
     routes.push({ path: searchPath(lang), kind: "search", lang, alternates: alt(searchPath(lang), lang),
-      searchIndex: { href: indexHref, text: indexText }, props: { index: indexHref } });
+      searchIndex: { href: indexHref, text: indexText }, props: { index: indexHref, tags: tags.map((t) => ({ tag: t.tag, slug: t.slug, count: t.posts.length })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)) } });
 
     for (const [name, byLang] of Object.entries(pages)) {
       const pg = byLang[lang];

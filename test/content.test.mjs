@@ -289,7 +289,7 @@ test("tags: comma list or JSON list in the front matter, tidied and de-duplicate
 test("tags: bad ones are refused with a message that names the problem", () => {
   assert.throws(() => normalizeTags(["a/b"], "f"), /cannot be in an address/);
   assert.throws(() => normalizeTags(["x".repeat(31)], "f"), /longer than 30/);
-  assert.throws(() => normalizeTags(Array.from({ length: 11 }, (_, i) => `t${i}`), "f"), /more than 10/);
+  assert.throws(() => normalizeTags(Array.from({ length: 4 }, (_, i) => `t${i}`), "f"), /more than 3 tags/);
   assert.throws(() => parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\ntags: [oops\n---\nx"), /tags must look like/);
 });
 
@@ -301,4 +301,9 @@ test("tags: slugs, paths and the per-language tag list", () => {
   const mk = (slug, tags) => ({ ...post(`2026-10-0${slug}-p${slug}.zh.md`, ""), tags });
   const list = collectTags([mk(1, ["日本", "旅行"]), mk(2, ["旅行"]), mk(3, ["Linux", "linux"].slice(0, 1))]);
   assert.deepEqual(list.map((t) => [t.tag, t.posts.length]), [["旅行", 2], ["linux", 1], ["日本", 1]].map(([t, n]) => [t === "linux" ? "Linux" : t, n]));
+});
+
+test("tags: at most three per post", () => {
+  assert.equal(normalizeTags(["a", "b", "c"]).length, 3);
+  assert.throws(() => normalizeTags(["a", "b", "c", "d"], "x.md"), /more than 3 tags/);
 });

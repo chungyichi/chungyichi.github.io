@@ -21,9 +21,9 @@ With no translation, the language switcher goes to that language's section page 
 A post is published when it is not a draft and its date (the date in the file name, in Asia/Taipei) is today or earlier.
 There is no scheduled build: a future-dated post goes live on the first push after its date (or via Actions → deploy → Run workflow).
 
-**Tags**: `tags: 日本, 旅行, 自駕` (or `tags: ["日本", "旅行"]`) in the front matter, at most 10, up to 30 characters each, none of `/ \ ? # % < > " ' &`.
-Each tag gets a page, `/zh/tags/<tag>/` (all sections, newest first, paged), and `/zh/tags/` lists them with counts; tags are per language. They show on the post and in lists, and
-the search finds them: a plain word matches tags like titles, and `#bpf` matches tags only.
+**Tags**: `tags: 日本, 旅行, 自駕` (or `tags: ["日本", "旅行"]`) in the front matter, 1 to 3 per post (every published post needs at least one, none needs all three), up to 30 characters each, none of `/ \ ? # % < > " ' &`.
+Each tag gets a page, `/zh/tags/<tag>/` (all sections, newest first, paged); tags are per language. They show on the post and in lists, and live on the search page: popular tags are listed there,
+a plain word matches tags like titles, and typing `#bpf` plus a space turns it into a tag chip (matches tags only; chips and words combine). `/zh/tags/` redirects to the search page.
 **Thumbnail in lists**: `thumb.webp` (400x210) in the post's media folder, made with `og.jpg` by `scripts/og-image.sh <original> <dir>` (publish.sh does it for the first picture). A post without one shows no thumbnail.
 **Share**: every post has a copy-link button (and a share button where the browser offers one); both appear only when JavaScript runs. `image: file.jpg` in the front matter picks the share picture.
 
@@ -32,7 +32,7 @@ Raw HTML in Markdown is **escaped, not rendered**.
 
 ## Search
 
-`/zh/search/` and `/en/search/` search titles, summaries and headings, in the browser, with no server and no third-party service.
+`/zh/search/` and `/en/search/` search titles, summaries, headings and tags, in the browser, with no server and no third-party service.
 The build writes one small index per language (`/search/<lang>.<hash>.json`, about 0.25 KB per post) from the **published** posts only; the page downloads it when the box is focused.
 Matching is by substring (so Chinese works without word breaks), every word must match, title beats heading beats summary. Body text is not indexed; if that is wanted later, add a chunked indexer such as Pagefind rather than growing this file.
 `npm run check` fails if a private post's title appears in an index. Without JavaScript the page says so; browsing by section still works.
@@ -109,7 +109,7 @@ and a tmpfs `/tmp`. Nothing is installed on the host. `node_modules/`, `dist/` a
 
 ## Restyle
 
-All colours, fonts, widths and spacing are CSS variables in `src/styles/tokens.css` (light and dark). Edit that file only.
+All colours, fonts, widths and spacing are CSS variables in `src/styles/tokens.css` (light and dark). `src/styles/season.css` is the Halloween layer (on Oct 15 - Nov 2 in Asia/Taipei, decided in the browser; `?season=halloween|off`), `src/styles/ink.css` the About page's paper-and-bamboo look (`.page-about`).
 
 ## Layout
 
@@ -120,7 +120,7 @@ All colours, fonts, widths and spacing are CSS variables in `src/styles/tokens.c
 | `site.config.mjs` | title, tagline, base URL, languages, sections, posts per page |
 | `scripts/content.mjs` | front matter, Markdown, publishing rules, translations, pagination, sitemap (pure, tested) |
 | `scripts/build.mjs`, `dev.mjs`, `new.mjs`, `check.mjs` | build, dev server, new post, post-build checks |
-| `src/` | React components, i18n strings, styles; the only hydrated piece is the theme button |
+| `src/` | React components, i18n strings, styles; hydrated pieces are small: theme and season buttons, copy-link, search |
 | `test/` | `node --test` unit tests |
 
 ## Hosting

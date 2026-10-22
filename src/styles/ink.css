@@ -1,0 +1,49 @@
+/*
+ * "About" page: ink-and-paper look with bamboo along both sides (Chinese classical, kept quiet).
+ * Scoped to .page-about; the class comes from the page name (src/App.tsx). Local fonts only, no network.
+ * The panel brings its own colours, so the Halloween tokens do not repaint it.
+ */
+:root {
+  --paper: #f3ecdc; --paper-line: #ddd0b4; --ink: #1f1d1a; --ink-soft: #4b463d;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --paper: #1a201c; --paper-line: #33402f; --ink: #ebe6d8; --ink-soft: #b9b3a3; }
+}
+:root[data-theme="dark"] { --paper: #1a201c; --paper-line: #33402f; --ink: #ebe6d8; --ink-soft: #b9b3a3; }
+
+.page-about {
+  --bamboo: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 480'%3E%3Cg fill='%236f8f6a'%3E%3Crect x='30' y='-6' width='14' height='492'/%3E%3Crect x='96' y='-6' width='10' height='492' fill='%2388a583'/%3E%3C/g%3E%3Cg fill='%233f5c3d'%3E%3Crect x='27' y='78' width='20' height='5' rx='2'/%3E%3Crect x='27' y='196' width='20' height='5' rx='2'/%3E%3Crect x='27' y='328' width='20' height='5' rx='2'/%3E%3Crect x='27' y='440' width='20' height='5' rx='2'/%3E%3Crect x='93' y='130' width='16' height='4' rx='2'/%3E%3Crect x='93' y='262' width='16' height='4' rx='2'/%3E%3Crect x='93' y='392' width='16' height='4' rx='2'/%3E%3C/g%3E%3Cg fill='%237aa070' opacity='.85'%3E%3Cpath d='M46 76q44-34 86-8-40 24-86 8z'/%3E%3Cpath d='M46 80q34 10 62 44-40-6-62-44z'/%3E%3Cpath d='M28 194q-40-30-24-64 30 24 24 64z'/%3E%3Cpath d='M46 326q42-26 80 0-40 20-80 0z'/%3E%3Cpath d='M98 128q36-30 38-62-34 22-38 62z'/%3E%3Cpath d='M94 260q-30-20-52-14 22 18 52 14z'/%3E%3Cpath d='M46 438q34-30 70-14-34 22-70 14z'/%3E%3C/g%3E%3C/svg%3E");
+  position: relative; margin: 1.5rem 0 3rem; padding: 1.5rem clamp(1.1rem, 5vw, 2.6rem) 2.4rem;
+  background: var(--paper); color: var(--ink); border: 1px solid var(--paper-line); border-radius: 4px;
+  font-family: "Noto Serif TC", "Noto Serif CJK TC", "Source Han Serif TC", "Songti TC", "PMingLiU", "Kaiti TC", serif;
+  overflow: hidden;
+}
+.page-about h1 {
+  margin: 0.2em 0 1.1em; text-align: center; font-weight: 700; letter-spacing: 0.6em; text-indent: 0.6em; color: var(--ink);
+}
+.page-about h1::after {                                   /* one brush stroke under the title */
+  content: ""; display: block; width: 5.5rem; height: 3px; margin: 0.7rem auto 0; border-radius: 3px;
+  background: linear-gradient(90deg, transparent, var(--ink) 18%, var(--ink) 82%, transparent); opacity: 0.75;
+}
+.page-about .prose { position: relative; z-index: 1; }
+.page-about .prose p { text-indent: 2em; line-height: 2.25; letter-spacing: 0.08em; margin: 1.15em 0; text-align: justify; color: var(--ink); }
+.page-about .prose a { color: inherit; }
+/* A bamboo sprig in the corner on small screens. */
+.page-about::before {
+  content: ""; position: absolute; top: 0; right: 0; width: 84px; height: 260px; opacity: 0.22; pointer-events: none;
+  background: var(--bamboo) no-repeat right top / 84px auto;
+}
+/* Wide screens: full bamboo groves on both sides, outside the paper edge. */
+@media (min-width: 1000px) {
+  .page-about { overflow: visible; }
+  .page-about::before, .page-about::after {
+    content: ""; position: absolute; top: 0; bottom: 0; width: 150px; opacity: 0.5; pointer-events: none;
+    background: var(--bamboo) repeat-y center top / 140px 480px;
+  }
+  .page-about::before { right: calc(100% + 8px); left: auto; height: auto; }
+  .page-about::after { left: calc(100% + 8px); transform: scaleX(-1); }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .page-about::before, :root:not([data-theme="light"]) .page-about::after { filter: brightness(1.35) saturate(0.9); }
+}
+:root[data-theme="dark"] .page-about::before, :root[data-theme="dark"] .page-about::after { filter: brightness(1.35) saturate(0.9); }

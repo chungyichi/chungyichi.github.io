@@ -79,7 +79,9 @@ export function countWords(html) {
 }
 
 const TAG_BAD = /[\u0000-\u001f\u007f/\\?#%<>"'&]/;
-/** Validate and tidy the tags of a post: trimmed, single-spaced, 1-30 characters, none of / \ ? # % < > " ' &, at most 10, duplicates (by address) dropped. */
+/** Validate and tidy the tags of a post: trimmed, single-spaced, 1-30 characters, none of / \ ? # % < > " ' &, at most 3, duplicates (by address) dropped. */
+/** At most this many tags per post. Fewer is fine; a published post needs at least one (checked in scripts/check.mjs). */
+export const MAX_TAGS = 3;
 export function normalizeTags(raw, where = "post") {
   if (raw === undefined) return [];
   if (!Array.isArray(raw)) throw new ContentError(`${where}: tags must be a list`);
@@ -92,7 +94,7 @@ export function normalizeTags(raw, where = "post") {
     if (TAG_BAD.test(tag)) throw new ContentError(`${where}: tag "${tag}" has a character that cannot be in an address (one of / \\ ? # % < > " ' &)`);
     if (!seen.has(tagSlug(tag))) { seen.add(tagSlug(tag)); out.push(tag); }
   }
-  if (out.length > 10) throw new ContentError(`${where}: more than 10 tags`);
+  if (out.length > MAX_TAGS) throw new ContentError(`${where}: more than ${MAX_TAGS} tags (use the few that matter; a post does not need all ${MAX_TAGS})`);
   return out;
 }
 

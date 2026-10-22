@@ -3,6 +3,7 @@ import { site } from "../site.config.mjs";
 import { t, title, tagline, sectionTitle, type Lang } from "./i18n";
 import type { Brief, Route } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
+import { SEASON_ISLAND_ID } from "./SeasonToggle";
 import { tagPath, tagsIndexPath } from "./tags.mjs";
 
 import { tagSlug as tagSlugOf } from "./tags.mjs";
@@ -22,22 +23,21 @@ function Layout({ route, children }: { route: Route; children: ReactNode }) {
           <nav aria-label="Main">
             <a href={`/${lang}/`}>{s.home}</a>
             {site.sections.map((sec: { id: string }) => <a key={sec.id} href={`/${lang}/${sec.id}/`}>{sectionTitle(lang, sec.id)}</a>)}
-            <a href={tagsIndexPath(lang)}>{s.tags}</a>
             <a href={`/${lang}/search/`}>{s.search}</a>
             <a href={`/${lang}/about/`}>{s.about}</a>
             <a href={site.github} rel="noopener noreferrer">{s.github}</a>
           </nav>
           <div className="tools">
-            {other && <a className="lang" href={other.path} hrefLang={other.lang} lang={other.lang}>{t[other.lang].langName}</a>}
+            {other && site.languageSwitcher !== false && <a className="lang" href={other.path} hrefLang={other.lang} lang={other.lang}>{t[other.lang].langName}</a>}
+            <span id={SEASON_ISLAND_ID} />
             <span id="theme-island"><ThemeToggle label={s.toggleTheme} /></span>
           </div>
         </div>
-        <p className="wrap tagline">{tagline(lang)}</p>
       </header>
       <main id="main" className="wrap">{children}</main>
       <footer className="site-footer">
         <div className="wrap">
-          <p>© {new Date().getUTCFullYear()} {site.author} · {s.built}</p>
+          <p>© {new Date().getUTCFullYear()} {site.author}</p>
         </div>
       </footer>
     </>
@@ -147,7 +147,7 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
           <button type="button" data-copy>{s.copyLink}</button>
           <button type="button" data-native hidden>{s.share}</button>
         </p>
-        {missing && <p className="notice">{t[missing.lang].noTranslation}</p>}
+        {missing && site.languageSwitcher !== false && <p className="notice">{t[missing.lang].noTranslation}</p>}
       </header>
       {/* Markdown is rendered with raw HTML off; .html posts pass an allowlist sanitizer (scripts/sanitize.mjs). A post's own CSS targets .post-<slug>. */}
       <div className="prose" dangerouslySetInnerHTML={{ __html: p.html }} />
@@ -159,12 +159,25 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
 function Search({ route }: { route: Extract<Route, { kind: "search" }> }) {
   const { lang } = route, s = t[lang];
   return (
-    <div id="search" data-index={route.props.index} data-loading={s.searchLoading} data-none={s.searchNone} data-count={s.searchCount} data-error={s.searchError}>
+    <div id="search" data-index={route.props.index} data-loading={s.searchLoading} data-none={s.searchNone} data-count={s.searchCount} data-error={s.searchError} data-remove={s.removeTag} data-shown="12">
       <h1>{s.search}</h1>
       <form role="search" action={`/${lang}/search/`} method="get">
         <label htmlFor="q" className="meta">{s.searchHint}</label>
-        <input id="q" name="q" type="search" autoComplete="off" />
+        <div className="tokens">
+          <ul id="chips" className="chips" aria-label={s.tags} />
+          <input id="q" name="q" type="search" autoComplete="off" placeholder={s.searchPlaceholder} />
+        </div>
       </form>
+      {route.props.tags.length > 0 && (
+        <div id="tag-suggest">
+          <p className="meta">{s.tags}</p>
+          <ul className="tags tags-suggest">
+            {route.props.tags.map((x, i) => (
+              <li key={x.slug} hidden={i >= 12}><a href={tagPath(lang, x.slug)} data-tag={x.tag}>{x.tag}<span className="count">{x.count}</span></a></li>
+            ))}
+          </ul>
+        </div>
+      )}
       <noscript><p className="notice">{s.searchNoJs}</p></noscript>
       <p id="search-status" role="status" className="meta" />
       <ul id="results" className="results" />
@@ -174,7 +187,7 @@ function Search({ route }: { route: Extract<Route, { kind: "search" }> }) {
 
 function Page({ route }: { route: Extract<Route, { kind: "page" }> }) {
   return (
-    <article className="post">
+    <article className={`post page-${route.props.name}`}>
       <h1>{route.props.title}</h1>
       <div className="prose" dangerouslySetInnerHTML={{ __html: route.props.html }} />
     </article>

@@ -53,3 +53,19 @@ test("tags are searched too, and #term means tags only", () => {
   assert.deepEqual(search(p, "#"), []);
   assert.deepEqual(search(p, "#bpf allocator").map((e) => e.t), ["Allocator"]);  // combined with a normal term
 });
+
+test("parseQuery and buildQuery round-trip tags (also tags with a space) and free text", async () => {
+  const { parseQuery, buildQuery } = await import("../src/search-core.mjs");
+  const q = '#日本 #"road trip" 伊吹山';
+  const { tags, text } = parseQuery(q);
+  assert.deepEqual(tags, ["日本", "road trip"]);
+  assert.equal(text, "伊吹山");
+  assert.equal(buildQuery(tags, text), q);
+  assert.deepEqual(parseQuery("#a #A # x").tags, ["a"]);        // duplicates fold, a lone # is ignored
+  assert.equal(buildQuery([], "  "), "");
+});
+
+test("a quoted #tag with a space matches that tag only", async () => {
+  const p = prepare([{ ...E("A"), g: ["road trip"] }, { ...E("B"), g: ["road", "trip"] }]);
+  assert.deepEqual(search(p, '#"road trip"').map((e) => e.t), ["A"]);
+});

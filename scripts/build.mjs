@@ -43,7 +43,7 @@ export async function main() {
     const dir = join("content", sec.id, "media");
     if (existsSync(dir)) cpSync(dir, join("dist", "media", sec.id), { recursive: true });
   }
-  write("dist/sitemap.xml", sitemap(site.baseUrl, routes.filter((r) => r.kind !== "notfound" && r.kind !== "entry" && r.kind !== "search").map((r) => ({ path: r.path, alternates: (r.alternates || []).filter((a) => a.translated !== false) }))));
+  write("dist/sitemap.xml", sitemap(site.baseUrl, routes.filter((r) => r.kind !== "notfound" && r.kind !== "entry" && r.kind !== "search" && r.kind !== "tags").map((r) => ({ path: r.path, alternates: (r.alternates || []).filter((a) => a.translated !== false) }))));
   write("dist/robots.txt", `User-agent: *\nAllow: /\nSitemap: ${site.baseUrl}/sitemap.xml\n`);
   write("dist/.nojekyll", "");
   rmSync(".ssr", { recursive: true, force: true });
@@ -51,7 +51,7 @@ export async function main() {
 
   const counts = Object.fromEntries(site.langs.map((l) => [l, model.byLang[l].length]));
   console.log(`built ${routes.length} pages, posts: ${JSON.stringify(counts)}, today (${site.timezone}): ${today}`);
-  if (model.missing.length) console.log(`note: ${model.missing.length} post(s) have no translation: ${model.missing.map((p) => p.lang + "/" + p.slug).join(", ")}`);
+  if (model.missing.length && site.languageSwitcher !== false) console.log(`note: ${model.missing.length} post(s) have no translation: ${model.missing.map((p) => p.lang + "/" + p.slug).join(", ")}`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
