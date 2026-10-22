@@ -78,6 +78,8 @@ scripts/docker.sh npm run import:medium -- ~/medium-export --section life     # 
 ```
 
 Reads `posts/*.html` of the unzipped Medium export. Per post: an `.html` file marked `draft: true`, its pictures downloaded from Medium's image hosts (only), embeds turned into links, Medium's classes removed.
+Every import also writes `import-map.json` next to the posts (git-ignored with them, copied to the vault as text): per post its slug, the Medium export file, Medium id and canonical URL, title, and for each picture the Medium address it came from.
+So a generated name such as `post-d9935911` or `495c7ed1c555.jpg` can always be traced back. `--map-only` rebuilds the map for an earlier import without downloading anything.
 Review each result with `npm run dev`, add layout, then move it out of `_private/` and drop `draft: true` to publish. Nothing is overwritten. Medium's export format is assumed from its documented shape and **has not been tried on a real export yet**.
 
 ## Publish

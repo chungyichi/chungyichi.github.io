@@ -50,3 +50,12 @@ test("file names and language", () => {
   assert.equal(guessLang("京都三日 慢慢走"), "zh");
   assert.equal(guessLang("Three days in Kyoto"), "en");
 });
+
+test("the canonical Medium URL and each picture's source address are returned for the import map", async () => {
+  const html = SAMPLE.replace("</footer>", '<a href="https://medium.com/@x/kyoto-1a2b3c4d5e6f" class="p-canonical">c</a></footer>');
+  const r = await convertMedium(html, { mediaDir: "/m", fetchImage: async () => ({ bytes: Buffer.from("x"), type: "image/png" }) });
+  assert.equal(r.canonical, "https://medium.com/@x/kyoto-1a2b3c4d5e6f");
+  assert.equal(r.files[0].url, "https://cdn-images-1.medium.com/max/800/1*abc.jpeg");
+  const evil = SAMPLE.replace("</footer>", '<a href="https://evil.example/x" class="p-canonical">c</a></footer>');
+  assert.equal((await convertMedium(evil, { mediaDir: "/m", fetchImage: async () => ({ bytes: Buffer.from("x"), type: "image/png" }) })).canonical, "");
+});

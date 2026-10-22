@@ -36,7 +36,7 @@ export const guessLang = (s) => ((s.match(/[㐀-鿿]/g) || []).length / Math.max
  * @param opts.mediaDir  URL directory the pictures will be served from, e.g. /media/life/my-trip
  * @param opts.fetchImage async (url) => { bytes: Buffer, type: string }
  * @param opts.maxWidth   pictures are requested at min(their original width, maxWidth) instead of the small size the page shows (default 1200)
- * @returns { title, date, summary, body, files: [{ name, bytes }], notes: [] }  (body is already sanitized)
+ * @returns { title, date, summary, body, canonical, files: [{ name, bytes, url }], notes: [] }  (url: the picture's original Medium address)  (body is already sanitized)
  */
 export async function convertMedium(html, { mediaDir, fetchImage, maxWidth = 1200 }) {
   const doc = parse(html);
@@ -46,6 +46,8 @@ export async function convertMedium(html, { mediaDir, fetchImage, maxWidth = 120
   if (!title) throw new ContentError("no title found in the Medium file");
   const t = find(doc, (n) => n.tagName === "time" && hasClass(n, "dt-published"));
   const date = (attr(t || { attrs: [] }, "datetime") || "").slice(0, 10) || null;
+  const canon = find(doc, (n) => n.tagName === "a" && hasClass(n, "p-canonical"));
+  const canonical = /^https:\/\/medium\.com\//.test(attr(canon || { attrs: [] }, "href") || "") ? attr(canon, "href") : "";
   const sub = find(doc, (n) => n.tagName === "section" && attr(n, "data-field") === "subtitle");
   const bodyEl = find(doc, (n) => n.tagName === "section" && attr(n, "data-field") === "body") || find(doc, (n) => n.tagName === "article");
   if (!bodyEl) throw new ContentError("no post body found (section[data-field=body])");
@@ -80,7 +82,7 @@ export async function convertMedium(html, { mediaDir, fetchImage, maxWidth = 120
             const ext = EXT[String(type).split(";")[0].trim().toLowerCase()];
             if (!ext) throw new ContentError(`${src}: unsupported image type ${type}`);
             const name = createHash("sha1").update(src).digest("hex").slice(0, 12) + ext;
-            files.push({ name, bytes });
+            files.push({ name, bytes, url: src });
             byUrl.set(src, name);
           }
           setAttr(n, "src", `${mediaDir}/${byUrl.get(src)}`);
@@ -95,5 +97,5 @@ export async function convertMedium(html, { mediaDir, fetchImage, maxWidth = 120
   const rawBody = serialize(bodyEl);
   const body = sanitizeHtml(rawBody, "medium import").replace(/<p>\s*<\/p>/g, "").trim();
   const summary = (sub ? text(sub) : text(bodyEl)).replace(/\s+/g, " ").trim().slice(0, 200);
-  return { title, date, summary, body, files, notes };
+  return { title, date, summary, body, files, notes, canonical };
 }
