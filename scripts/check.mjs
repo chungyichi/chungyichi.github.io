@@ -30,7 +30,8 @@ else {
       if (/^(https?:|mailto:|#|data:)/.test(u)) continue;
       if (!u.startsWith("/")) { fail(`${f}: relative URL ${u} (use root-relative paths)`); continue; }
       links++;
-      const path = posix.normalize(u.split("#")[0].split("?")[0]);
+      let path;
+      try { path = posix.normalize(decodeURIComponent(u.split("#")[0].split("?")[0])); } catch { fail(`${f}: malformed URL ${u}`); continue; }   // like the server: decode, then look at the disk
       const target = join("dist", path);
       const ok = (existsSync(target) && statSync(target).isFile()) || existsSync(join(target, "index.html"));
       if (!ok) fail(`${f}: broken link ${u}`);

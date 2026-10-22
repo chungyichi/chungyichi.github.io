@@ -10,7 +10,9 @@ export const t = {
     noTranslation: "這篇文章尚無中文版本。", otherLang: "English", toggleTheme: "切換深淺色", redirecting: "正在前往中文版…",
     notFound: "找不到這一頁", backHome: "回首頁", draft: "草稿（尚未發佈）", privateNote: "私有（不會發佈）", skip: "跳到內容", langName: "中文",
     rights: "文章內容", built: "靜態網站，無追蹤。",
-    search: "搜尋", searchHint: "搜尋標題、摘要與小標題", searchNoJs: "搜尋需要 JavaScript。沒有的話，請從上方的分類瀏覽。",
+    tags: "標籤", tagged: (t: string) => `標籤：${t}`, postCount: (n: number) => `${n} 篇`, noTags: "還沒有標籤。",
+    copyLink: "複製連結", copied: "已複製 ✓", copyFailed: "複製失敗，請手動複製網址", share: "分享",
+    search: "搜尋", searchHint: "搜尋標題、摘要、小標題與標籤（#標籤 只找標籤）", searchNoJs: "搜尋需要 JavaScript。沒有的話，請從上方的分類瀏覽。",
     searchLoading: "載入中…", searchNone: "沒有符合的文章。", searchCount: "找到 {n} 篇", searchError: "搜尋索引載入失敗，請重新整理。",
   },
   en: {
@@ -20,7 +22,9 @@ export const t = {
     noTranslation: "This post has no English version yet.", otherLang: "中文", toggleTheme: "Toggle light/dark", redirecting: "Redirecting to the English site…",
     notFound: "Page not found", backHome: "Back to the home page", draft: "Draft (not published)", privateNote: "Private (will not be published)", skip: "Skip to content", langName: "English",
     rights: "Posts", built: "A static site, no tracking.",
-    search: "Search", searchHint: "Search titles, summaries and headings", searchNoJs: "Search needs JavaScript. Without it, browse by section above.",
+    tags: "Tags", tagged: (t: string) => `Tag: ${t}`, postCount: (n: number) => `${n} ${n === 1 ? "post" : "posts"}`, noTags: "No tags yet.",
+    copyLink: "Copy link", copied: "Copied ✓", copyFailed: "Could not copy; copy the address by hand", share: "Share",
+    search: "Search", searchHint: "Search titles, summaries, headings and tags (#tag matches tags only)", searchNoJs: "Search needs JavaScript. Without it, browse by section above.",
     searchLoading: "Loading…", searchNone: "No matching posts.", searchCount: "{n} found", searchError: "The search index failed to load; reload the page.",
   },
 } as const;

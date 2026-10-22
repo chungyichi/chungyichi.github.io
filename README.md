@@ -21,7 +21,13 @@ With no translation, the language switcher goes to that language's section page 
 A post is published when it is not a draft and its date (the date in the file name, in Asia/Taipei) is today or earlier.
 There is no scheduled build: a future-dated post goes live on the first push after its date (or via Actions → deploy → Run workflow).
 
-Front matter (strict; unknown keys are an error): `title`, `summary` (required unless draft, at most 300 characters), `draft`, `updated` (`YYYY-MM-DD`).
+**Tags**: `tags: 日本, 旅行, 自駕` (or `tags: ["日本", "旅行"]`) in the front matter, at most 10, up to 30 characters each, none of `/ \ ? # % < > " ' &`.
+Each tag gets a page, `/zh/tags/<tag>/` (all sections, newest first, paged), and `/zh/tags/` lists them with counts; tags are per language. They show on the post and in lists, and
+the search finds them: a plain word matches tags like titles, and `#bpf` matches tags only.
+**Thumbnail in lists**: `thumb.webp` (400x210) in the post's media folder, made with `og.jpg` by `scripts/og-image.sh <original> <dir>` (publish.sh does it for the first picture). A post without one shows no thumbnail.
+**Share**: every post has a copy-link button (and a share button where the browser offers one); both appear only when JavaScript runs. `image: file.jpg` in the front matter picks the share picture.
+
+Front matter keys: `title`, `summary` (required unless draft, at most 300 characters), `draft`, `updated` (`YYYY-MM-DD`), `tags`, `image`, `trusted`.
 Raw HTML in Markdown is **escaped, not rendered**.
 
 ## Search

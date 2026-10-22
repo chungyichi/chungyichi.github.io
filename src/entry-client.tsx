@@ -12,3 +12,6 @@ if (island) {
 
 // The search page (only) loads its own small script.
 if (document.getElementById("search")) void import("./search-client");
+
+// Posts get copy-link / share buttons.
+if (document.querySelector("[data-share]")) void import("./share-client");

@@ -77,3 +77,19 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 .results li { margin: 1.2rem 0; }
 .results h3 { margin: 0 0 0.1em; }
 .results p { margin: 0.15em 0; }
+
+/* Tags, thumbnails in lists, share buttons */
+.tags { list-style: none; display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; padding: 0; margin: 0.4rem 0; }
+.tags a { display: inline-block; padding: 0.05rem 0.6rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 0.85rem; text-decoration: none; }
+.tags a:hover { border-color: var(--accent); color: var(--accent); }
+.tags-all { gap: 0.6rem; }
+.tags-all a { font-size: 1rem; padding: 0.25rem 0.8rem; }
+.tags .count { margin-left: 0.4rem; opacity: 0.7; font-size: 0.8rem; }
+.post-item.has-thumb { display: grid; grid-template-columns: 9.5rem 1fr; gap: 0.2rem 1rem; align-items: start; }
+.post-item .thumb img { width: 100%; height: auto; aspect-ratio: 400 / 210; object-fit: cover; border-radius: var(--radius); display: block; }
+.post-item-text > :first-child { margin-top: 0; }
+@media (max-width: 36rem) { .post-item.has-thumb { grid-template-columns: 5.5rem 1fr; gap: 0.1rem 0.7rem; } .post-item.has-thumb .more { display: none; } }
+.share { display: flex; gap: 0.5rem; margin: 0.6rem 0; }
+.share[hidden], .share [hidden] { display: none; }
+.share button { font: inherit; font-size: 0.9rem; padding: 0.25rem 0.8rem; color: var(--fg); background: none; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
+.share button:hover { border-color: var(--accent); color: var(--accent); }

@@ -41,5 +41,15 @@ test("the index is per language and carries section title, address and headings"
   const md = (name, extra = "") => parsePost(name, `---\ntitle: T ${name}\nsummary: S\n---\n## Part one\n\ntext`, undefined, "life");
   const idx = buildSearchIndex([md("2026-10-01-a.zh.md"), md("2026-10-01-a.en.md")], "zh", () => "生活");
   assert.equal(idx.length, 1);
-  assert.deepEqual(idx[0], { t: "T 2026-10-01-a.zh.md", s: "S", h: ["Part one"], d: "2026-10-01", c: "生活", u: "/zh/life/a/" });
+  assert.deepEqual(idx[0], { t: "T 2026-10-01-a.zh.md", s: "S", h: ["Part one"], g: [], d: "2026-10-01", c: "生活", u: "/zh/life/a/" });
+});
+
+test("tags are searched too, and #term means tags only", () => {
+  const p = prepare([{ t: "Allocator", s: "about memory", h: [], g: ["Linux", "BPF"], d: "2026-01-01" }, { t: "bpf notes", s: "", h: [], g: ["日本"], d: "2026-01-02" }]);
+  assert.deepEqual(search(p, "linux").map((e) => e.t), ["Allocator"]);          // a plain word finds the tag
+  assert.deepEqual(search(p, "#bpf").map((e) => e.t), ["Allocator"]);           // #bpf: only the tagged post, not the title match
+  assert.deepEqual(search(p, "#日本").map((e) => e.t), ["bpf notes"]);
+  assert.deepEqual(search(p, "#lin").map((e) => e.t), ["Allocator"]);
+  assert.deepEqual(search(p, "#"), []);
+  assert.deepEqual(search(p, "#bpf allocator").map((e) => e.t), ["Allocator"]);  // combined with a normal term
 });

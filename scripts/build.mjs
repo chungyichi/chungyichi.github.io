@@ -10,7 +10,8 @@ import { buildRoutes } from "./routes.mjs";
 import { publishedFileExists } from "./files.mjs";
 import { document_ } from "./template.mjs";
 
-const out = (p) => join("dist", p.endsWith("/") ? p + "index.html" : p);
+// URLs are percent-encoded (a Chinese tag is /zh/tags/%E6%97%A5%E6%9C%AC/); the server decodes the request before it looks at the disk, so the folder is named with the real characters.
+const out = (p) => join("dist", decodeURI(p.endsWith("/") ? p + "index.html" : p));
 const write = (file, text) => { mkdirSync(dirname(file), { recursive: true }); writeFileSync(file, text); };
 
 export async function main() {

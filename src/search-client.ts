@@ -1,8 +1,10 @@
 // Search page behaviour. Loaded only on the search page. Results are built with textContent, never innerHTML,
 // so nothing in the index can inject markup.
 import { prepare, search } from "./search-core.mjs";
+import { tagSlug, tagPath } from "./tags.mjs";
 
-type Entry = { t: string; s: string; h: string[]; d: string; c: string; u: string };
+type Entry = { t: string; s: string; h: string[]; g?: string[]; d: string; c: string; u: string };
+const lang = document.documentElement.lang === "en" ? "en" : "zh";
 
 const root = document.getElementById("search");
 if (root) {
@@ -35,6 +37,16 @@ if (root) {
       const sum = document.createElement("p");
       sum.textContent = e.s;
       li.append(h, meta, sum);
+      if (e.g?.length) {
+        const ul = document.createElement("ul");
+        ul.className = "tags";
+        for (const name of e.g) {
+          const item = document.createElement("li"), link = document.createElement("a");
+          link.href = tagPath(lang, tagSlug(name)); link.textContent = name;
+          item.append(link); ul.append(item);
+        }
+        li.append(ul);
+      }
       list.append(li);
     }
   }

@@ -6,12 +6,13 @@ export const normalize = (s) => String(s).normalize("NFKC").toLowerCase();
 
 /** entries: [{ t: title, s: summary, h: [headings], d: date, ... }] -> entries with normalized fields, computed once. */
 export function prepare(entries) {
-  return entries.map((entry) => ({ entry, t: normalize(entry.t), h: normalize(entry.h.join(" ")), s: normalize(entry.s) }));
+  return entries.map((entry) => ({ entry, t: normalize(entry.t), h: normalize(entry.h.join(" ")), s: normalize(entry.s), g: (entry.g || []).map(normalize) }));
 }
 
 /**
  * Every whitespace-separated term must match somewhere (AND). A term scores by where it matches best:
- * title 3, heading 2, summary 1; the post's score is the sum. Highest score first, then newest.
+ * title 3, tag 3, heading 2, summary 1; the post's score is the sum. Highest score first, then newest.
+ * A term that starts with # matches tags only (#bpf finds posts tagged bpf, also partly: #lin finds linux).
  */
 export function search(prepared, query, limit = 50) {
   const terms = normalize(query).split(/\s+/).filter(Boolean);
@@ -20,7 +21,11 @@ export function search(prepared, query, limit = 50) {
   for (const p of prepared) {
     let score = 0;
     for (const term of terms) {
-      const best = p.t.includes(term) ? 3 : p.h.includes(term) ? 2 : p.s.includes(term) ? 1 : 0;
+      const tagOnly = term.startsWith("#");
+      const needle = tagOnly ? term.slice(1) : term;
+      if (!needle) { score = 0; break; }
+      const inTag = p.g.some((g) => g.includes(needle));
+      const best = tagOnly ? (inTag ? 3 : 0) : p.t.includes(needle) || inTag ? 3 : p.h.includes(needle) ? 2 : p.s.includes(needle) ? 1 : 0;
       if (!best) { score = 0; break; }
       score += best;
     }

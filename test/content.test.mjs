@@ -273,3 +273,32 @@ test("meta tags: no picture means a plain summary card, and a page is a website"
   const out = metaTags({ kind: "home", lang: "en", path: "/en/", alternates: [] }, { siteName: "S", baseUrl: BASE, title: "T", description: "D", author: "Me" });
   assert.ok(out.includes('twitter:card" content="summary"') && out.includes('og:type" content="website"') && !out.includes("og:image"));
 });
+
+// ---- tags ----
+import { normalizeTags, collectTags } from "../scripts/content.mjs";
+import { tagSlug, tagPath } from "../src/tags.mjs";
+
+test("tags: comma list or JSON list in the front matter, tidied and de-duplicated", () => {
+  const a = parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\ntags: 日本,  旅行 , Linux  BPF, linux bpf\n---\nx");
+  assert.deepEqual(a.tags, ["日本", "旅行", "Linux BPF"]);
+  const b = parsePost("2026-10-21-x.zh.md", '---\ntitle: T\nsummary: S\ntags: ["日本", "旅行"]\n---\nx');
+  assert.deepEqual(b.tags, ["日本", "旅行"]);
+  assert.deepEqual(parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\n---\nx").tags, []);
+});
+
+test("tags: bad ones are refused with a message that names the problem", () => {
+  assert.throws(() => normalizeTags(["a/b"], "f"), /cannot be in an address/);
+  assert.throws(() => normalizeTags(["x".repeat(31)], "f"), /longer than 30/);
+  assert.throws(() => normalizeTags(Array.from({ length: 11 }, (_, i) => `t${i}`), "f"), /more than 10/);
+  assert.throws(() => parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\ntags: [oops\n---\nx"), /tags must look like/);
+});
+
+test("tags: slugs, paths and the per-language tag list", () => {
+  assert.equal(tagSlug("Linux BPF"), "linux-bpf");
+  assert.equal(tagSlug("日本"), "日本");
+  assert.equal(tagPath("zh", "日本"), "/zh/tags/%E6%97%A5%E6%9C%AC/");
+  assert.equal(tagPath("en", "bpf", 2), "/en/tags/bpf/page/2/");
+  const mk = (slug, tags) => ({ ...post(`2026-10-0${slug}-p${slug}.zh.md`, ""), tags });
+  const list = collectTags([mk(1, ["日本", "旅行"]), mk(2, ["旅行"]), mk(3, ["Linux", "linux"].slice(0, 1))]);
+  assert.deepEqual(list.map((t) => [t.tag, t.posts.length]), [["旅行", 2], ["linux", 1], ["日本", 1]].map(([t, n]) => [t === "linux" ? "Linux" : t, n]));
+});

@@ -1,14 +1,19 @@
 // Content model -> list of pages. Plain data only (it is serialised into nothing; pages are rendered at build time).
 import { site } from "../site.config.mjs";
 import { createHash } from "node:crypto";
-import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor } from "./content.mjs";
+import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor, collectTags } from "./content.mjs";
+import { tagPath, tagsIndexPath } from "../src/tags.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
-const brief = (p) => ({ section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date });
+const briefOf = (fileExists) => (p) => ({
+  section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [],
+  thumb: fileExists(`/media/${p.section}/${p.slug}/thumb.webp`) ? `/media/${p.section}/${p.slug}/thumb.webp` : "",   // 400x210, made by scripts/og-image.sh
+});
 
 export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, homePosts = site.homePosts, fileExists = () => false } = {}) {
   const routes = [];
+  const brief = briefOf(fileExists);
   const other = (lang) => langs.filter((l) => l !== lang);
   const alt = (path, lang) => other(lang).map((l) => ({ lang: l, path: path.replace(`/${lang}/`, `/${l}/`) }));
 
@@ -34,7 +39,19 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
           ogImage: ogImageFor(p, { baseUrl: site.baseUrl, exists: fileExists, fallback: defaultImage ? site.ogImage : "" }),
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
-          props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, html: p.html, draft: p.draft, private: Boolean(p.private), words: p.words } });
+          props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: p.html, draft: p.draft, private: Boolean(p.private), words: p.words } });
+      }
+    }
+
+    // Tags: /<lang>/tags/ lists them, /<lang>/tags/<tag>/ the posts that carry one (all sections, newest first)
+    const tags = collectTags(model.byLang[lang]);
+    routes.push({ path: tagsIndexPath(lang), kind: "tags", lang, alternates: alt(tagsIndexPath(lang), lang),
+      props: { tags: tags.map((t) => ({ tag: t.tag, slug: t.slug, count: t.posts.length })) } });
+    for (const t of tags) {
+      for (const pg of paginate(t.posts, perPage)) {
+        const path = tagPath(lang, t.slug, pg.number);
+        routes.push({ path, kind: "tag", lang, alternates: other(lang).map((l) => ({ lang: l, path: tagsIndexPath(l), translated: false })),
+          props: { tag: t.tag, slug: t.slug, groups: groupByDate(pg.items.map(brief)), page: pg.number, pages: pg.total } });
       }
     }
 

@@ -5,11 +5,12 @@ import hljs from "highlight.js/lib/common";
 
 import { ContentError } from "./errors.mjs";
 import { sanitizeHtml } from "./sanitize.mjs";
+import { tagSlug } from "../src/tags.mjs";
 
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
 /** Parse the `---` front matter block. A strict YAML subset: `key: value`, quoted or bare strings, true/false. */
@@ -26,8 +27,11 @@ export function parseFrontMatter(text, where = "post") {
     if (key in data) throw new ContentError(`${where}: duplicate front matter key '${key}'`);
     let val = val0.trim();
     if (val === "true" || val === "false") val = val === "true";
-    else if (/^".*"$/.test(val)) val = JSON.parse(val);
+    else if (key === "tags" && val.startsWith("[")) {                        // tags: ["日本", "旅行"]
+      try { val = JSON.parse(val); } catch { throw new ContentError(`${where}: tags must look like: tags: 日本, 旅行   or   tags: ["日本", "旅行"]`); }
+    } else if (/^".*"$/.test(val)) val = JSON.parse(val);
     else if (/^'.*'$/.test(val)) val = val.slice(1, -1).replace(/''/g, "'");
+    if (key === "tags" && typeof val === "string") val = val.split(/[,，、]/);   // tags: 日本, 旅行
     data[key] = val;
   }
   return { data, body: m[2] };
@@ -74,6 +78,35 @@ export function countWords(html) {
   return (text.match(CJK) || []).length + text.replace(CJK, " ").split(/[^\p{L}\p{N}]+/u).filter(Boolean).length;
 }
 
+const TAG_BAD = /[\u0000-\u001f\u007f/\\?#%<>"'&]/;
+/** Validate and tidy the tags of a post: trimmed, single-spaced, 1-30 characters, none of / \ ? # % < > " ' &, at most 10, duplicates (by address) dropped. */
+export function normalizeTags(raw, where = "post") {
+  if (raw === undefined) return [];
+  if (!Array.isArray(raw)) throw new ContentError(`${where}: tags must be a list`);
+  const seen = new Set(), out = [];
+  for (const t of raw) {
+    if (typeof t !== "string") throw new ContentError(`${where}: every tag must be text`);
+    const tag = t.trim().replace(/\s+/g, " ");
+    if (!tag) continue;
+    if (tag.length > 30) throw new ContentError(`${where}: tag "${tag.slice(0, 12)}..." is longer than 30 characters`);
+    if (TAG_BAD.test(tag)) throw new ContentError(`${where}: tag "${tag}" has a character that cannot be in an address (one of / \\ ? # % < > " ' &)`);
+    if (!seen.has(tagSlug(tag))) { seen.add(tagSlug(tag)); out.push(tag); }
+  }
+  if (out.length > 10) throw new ContentError(`${where}: more than 10 tags`);
+  return out;
+}
+
+/** The tags used by a list of posts (one language): [{ tag, slug, posts }] by number of posts, then name. */
+export function collectTags(posts) {
+  const by = new Map();
+  for (const p of posts) for (const tag of p.tags || []) {
+    const slug = tagSlug(tag);
+    if (!by.has(slug)) by.set(slug, { tag, slug, posts: [] });
+    by.get(slug).posts.push(p);
+  }
+  return [...by.values()].sort((a, b) => b.posts.length - a.posts.length || a.slug.localeCompare(b.slug));
+}
+
 /** Turn one file into a post object, or throw a ContentError that names the file. */
 export function parsePost(filename, text, md = createMarkdown(), section = "tech") {
   const fm = FILE_RE.exec(filename);
@@ -96,7 +129,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
     section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
-    trusted: data.trusted === true, image: data.image || "",
+    trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
   };
@@ -161,7 +194,7 @@ export function headingsOf(html) {
 /** The search index for one language: title, summary, headings, date, section title and address. Titles and summaries only; no body text. */
 export function buildSearchIndex(posts, lang, sectionTitleOf) {
   return posts.filter((p) => p.lang === lang).map((p) => ({
-    t: p.title, s: p.summary, h: headingsOf(p.html), d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
+    t: p.title, s: p.summary, h: headingsOf(p.html), g: p.tags || [], d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
   }));
 }
 

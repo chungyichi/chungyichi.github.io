@@ -31,11 +31,11 @@ if [ -d "$priv" ]; then
 fi
 rm -rf "$tmp"; mkdir -p "$(dirname "$tmp")"
 scripts/photo.sh "$orig" "$tmp"
-# share picture: the post's first picture, cropped to 1200x630 (override later with `image:` in the front matter)
+# share picture (og.jpg) and list thumbnail (thumb.webp): the post's first picture, cropped (override the share picture later with `image:` in the front matter)
 first=$(grep -o "/media/$section/$slug/[A-Za-z0-9._-]*" content/_private/$section/*-$slug.*.html 2>/dev/null | head -1 | sed 's#.*/##') || true
 if [ -n "${first:-}" ]; then
   src=$(ls "$orig/${first%.*}".* 2>/dev/null | head -1 || true)
-  [ -n "$src" ] && scripts/og-image.sh "$src" "$tmp/og.jpg" || echo "note: could not make a share picture"
+  [ -n "$src" ] && scripts/og-image.sh "$src" "$tmp" || echo "note: could not make the share picture and thumbnail"
 fi
 docker_node node scripts/publish.mjs "$section" "$slug" "$@"
 rm -rf "$tmp"

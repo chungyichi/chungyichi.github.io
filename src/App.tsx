@@ -3,7 +3,9 @@ import { site } from "../site.config.mjs";
 import { t, title, tagline, sectionTitle, type Lang } from "./i18n";
 import type { Brief, Route } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
+import { tagPath, tagsIndexPath } from "./tags.mjs";
 
+import { tagSlug as tagSlugOf } from "./tags.mjs";
 const postHref = (lang: Lang, section: string, slug: string) => `/${lang}/${section}/${slug}/`;
 const pageHref = (lang: Lang, section: string, n: number) => (n === 1 ? `/${lang}/${section}/` : `/${lang}/${section}/page/${n}/`);
 
@@ -20,6 +22,7 @@ function Layout({ route, children }: { route: Route; children: ReactNode }) {
           <nav aria-label="Main">
             <a href={`/${lang}/`}>{s.home}</a>
             {site.sections.map((sec: { id: string }) => <a key={sec.id} href={`/${lang}/${sec.id}/`}>{sectionTitle(lang, sec.id)}</a>)}
+            <a href={tagsIndexPath(lang)}>{s.tags}</a>
             <a href={`/${lang}/search/`}>{s.search}</a>
             <a href={`/${lang}/about/`}>{s.about}</a>
             <a href={site.github} rel="noopener noreferrer">{s.github}</a>
@@ -41,12 +44,22 @@ function Layout({ route, children }: { route: Route; children: ReactNode }) {
   );
 }
 
+function TagList({ lang, tags }: { lang: Lang; tags: string[] }) {
+  if (tags.length === 0) return null;
+  return <ul className="tags" aria-label={t[lang].tags}>{tags.map((x) => <li key={x}><a href={tagPath(lang, tagSlugOf(x))}>{x}</a></li>)}</ul>;
+}
+
 function PostItem({ lang, p }: { lang: Lang; p: Brief }) {
+  const href = postHref(lang, p.section, p.slug);
   return (
-    <article className="post-item">
-      <h3><a href={postHref(lang, p.section, p.slug)}>{p.title}</a></h3>
-      <p>{p.summary}</p>
-      <p className="more"><a href={postHref(lang, p.section, p.slug)}>{t[lang].readMore}</a></p>
+    <article className={p.thumb ? "post-item has-thumb" : "post-item"}>
+      {p.thumb && <a className="thumb" href={href} tabIndex={-1} aria-hidden="true"><img src={p.thumb} alt="" width={400} height={210} loading="lazy" decoding="async" /></a>}
+      <div className="post-item-text">
+        <h3><a href={href}>{p.title}</a></h3>
+        <p>{p.summary}</p>
+        <TagList lang={lang} tags={p.tags} />
+        <p className="more"><a href={href}>{t[lang].readMore}</a></p>
+      </div>
     </article>
   );
 }
@@ -68,25 +81,48 @@ function Home({ route }: { route: Extract<Route, { kind: "home" }> }) {
   );
 }
 
-function Index({ route }: { route: Extract<Route, { kind: "index" }> }) {
-  const { lang } = route, s = t[lang], { section, groups, page, pages } = route.props;
+function PostList({ lang, heading, groups, page, pages, hrefFor }: {
+  lang: Lang; heading: ReactNode; groups: { date: string; items: Brief[] }[]; page: number; pages: number; hrefFor: (n: number) => string;
+}) {
+  const s = t[lang];
   return (
     <>
-      <h1>{sectionTitle(lang, section)}</h1>
+      <h1>{heading}</h1>
       {groups.length === 0 && <p>{s.noPosts}</p>}
       {groups.map((g) => (
         <section key={g.date}>
           <h2 className="date"><time dateTime={g.date}>{g.date}</time></h2>
-          {g.items.map((p) => <PostItem key={p.slug} lang={lang} p={p} />)}
+          {g.items.map((p) => <PostItem key={`${p.section}/${p.slug}`} lang={lang} p={p} />)}
         </section>
       ))}
       {pages > 1 && (
         <nav className="pager" aria-label="Pagination">
-          {page > 1 ? <a rel="prev" href={pageHref(lang, section, page - 1)}>{s.prev}</a> : <span />}
+          {page > 1 ? <a rel="prev" href={hrefFor(page - 1)}>{s.prev}</a> : <span />}
           <span>{s.page(page, pages)}</span>
-          {page < pages ? <a rel="next" href={pageHref(lang, section, page + 1)}>{s.next}</a> : <span />}
+          {page < pages ? <a rel="next" href={hrefFor(page + 1)}>{s.next}</a> : <span />}
         </nav>
       )}
+    </>
+  );
+}
+
+function Index({ route }: { route: Extract<Route, { kind: "index" }> }) {
+  const { lang } = route, { section, groups, page, pages } = route.props;
+  return <PostList lang={lang} heading={sectionTitle(lang, section)} groups={groups} page={page} pages={pages} hrefFor={(n) => pageHref(lang, section, n)} />;
+}
+
+function TagPage({ route }: { route: Extract<Route, { kind: "tag" }> }) {
+  const { lang } = route, { tag, slug, groups, page, pages } = route.props;
+  return <PostList lang={lang} heading={t[lang].tagged(tag)} groups={groups} page={page} pages={pages} hrefFor={(n) => tagPath(lang, slug, n)} />;
+}
+
+function TagsIndex({ route }: { route: Extract<Route, { kind: "tags" }> }) {
+  const { lang } = route, s = t[lang];
+  return (
+    <>
+      <h1>{s.tags}</h1>
+      {route.props.tags.length === 0 && <p>{s.noTags}</p>}
+      <ul className="tags tags-all">{route.props.tags.map((x) => <li key={x.slug}><a href={tagPath(lang, x.slug)}>{x.tag}<span className="count">{s.postCount(x.count)}</span></a></li>)}</ul>
     </>
   );
 }
@@ -104,6 +140,12 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
           {" · "}{s.words(p.words)}
           {p.draft && <> · <strong>{s.draft}</strong></>}
           {p.private && <> · <strong>{s.privateNote}</strong></>}
+        </p>
+        <TagList lang={lang} tags={p.tags} />
+        {/* Shown by /src/share-client.ts when JavaScript runs; without it there is nothing to click, so it stays hidden. */}
+        <p className="share" data-share data-title={p.title} data-copied={s.copied} data-failed={s.copyFailed} hidden>
+          <button type="button" data-copy>{s.copyLink}</button>
+          <button type="button" data-native hidden>{s.share}</button>
         </p>
         {missing && <p className="notice">{t[missing.lang].noTranslation}</p>}
       </header>
@@ -167,5 +209,7 @@ export function App({ route }: { route: Route }) {
     case "post": return <Layout route={route}><PostPage route={route} /></Layout>;
     case "page": return <Layout route={route}><Page route={route} /></Layout>;
     case "search": return <Layout route={route}><Search route={route} /></Layout>;
+    case "tags": return <Layout route={route}><TagsIndex route={route} /></Layout>;
+    case "tag": return <Layout route={route}><TagPage route={route} /></Layout>;
   }
 }
