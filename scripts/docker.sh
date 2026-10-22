@@ -9,10 +9,13 @@ IMAGE=${NODE_IMAGE:-node:24-bookworm}
 mkdir -p .npm-cache
 dk() { if docker info >/dev/null 2>&1; then docker "$@"; else sg docker -c "docker $(printf '%q ' "$@")"; fi; }
 tty=(); [ -t 0 ] && tty=(-it)
+# Your full-size originals (outside git) are mounted read-only so the dev server can show them: ../blog-originals, or BLOG_ORIGINALS=/path
+ORIG=${BLOG_ORIGINALS:-$PWD/../blog-originals}
+orig=(); [ -d "$ORIG" ] && orig=(-v "$(realpath "$ORIG"):/originals:ro" -e BLOG_ORIGINALS=/originals)
 dk run --rm "${tty[@]}" --user "$(id -u):$(id -g)" --read-only --cap-drop ALL \
   --security-opt no-new-privileges --pids-limit 2048 --memory 8g \
   --tmpfs /tmp:rw,exec,nosuid,size=2g \
-  -v "$PWD:/app" -w /app \
+  -v "$PWD:/app" "${orig[@]}" -w /app \
   -e HOME=/tmp/home -e npm_config_cache=/app/.npm-cache -e CI="${CI:-}" \
   -p 127.0.0.1:5173:5173 \
   "$IMAGE" "$@"

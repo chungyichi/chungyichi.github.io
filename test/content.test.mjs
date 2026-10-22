@@ -153,3 +153,41 @@ test("per-post CSS may not load anything from other hosts", () => {
     assert.throws(() => checkPostCss(bad, "x.css"), /x\.css/, bad);
   }
 });
+
+// ---- picture lookup while previewing ----
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join as pjoin } from "node:path";
+import { resolveMedia } from "../scripts/media.mjs";
+
+function mediaFixture() {
+  const root = mkdtempSync(pjoin(tmpdir(), "media-"));
+  const touch = (p) => { mkdirSync(pjoin(p, ".."), { recursive: true }); writeFileSync(p, "x"); };
+  touch(pjoin(root, "content/life/media/kyoto/001.webp"));
+  touch(pjoin(root, "content/_private/life/media/draft/002.webp"));
+  touch(pjoin(root, "originals/life/kyoto/001.jpg"));
+  return { contentRoot: pjoin(root, "content"), originals: pjoin(root, "originals"), root };
+}
+
+test("pictures: web versions by default, originals only in original mode, matched without the extension", () => {
+  const f = mediaFixture();
+  assert.equal(resolveMedia({ ...f, section: "life", rest: "kyoto/001.webp" }).source, "web");
+  assert.equal(resolveMedia({ ...f, section: "life", rest: "kyoto/001.webp", mode: "web" }).source, "web");
+  const o = resolveMedia({ ...f, section: "life", rest: "kyoto/001.webp", mode: "original" });
+  assert.equal(o.source, "original");
+  assert.ok(o.file.endsWith("001.jpg"));
+});
+
+test("pictures: no original -> the web version; private drafts are found; nothing found -> null", () => {
+  const f = mediaFixture();
+  assert.equal(resolveMedia({ ...f, section: "life", rest: "draft/002.webp", mode: "original" }).source, "web");
+  assert.equal(resolveMedia({ ...f, section: "life", rest: "draft/nope.webp" }), null);
+  assert.equal(resolveMedia({ ...f, section: "life", rest: "kyoto/001.webp", mode: "original", originals: "" }).source, "web");
+});
+
+test("pictures: path tricks are refused", () => {
+  const f = mediaFixture();
+  for (const rest of ["../../../etc/passwd", "/etc/passwd", "kyoto/../../x", ".."]) assert.equal(resolveMedia({ ...f, section: "life", rest, mode: "original" }), null, rest);
+  assert.equal(resolveMedia({ ...f, section: "../x", rest: "a" }), null);
+  assert.equal(resolveMedia({ ...f, section: "Life", rest: "kyoto/001.webp" }), null);
+});

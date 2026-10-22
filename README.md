@@ -51,6 +51,10 @@ Any tag in the allowlist may carry `class` names and an `id`.
 - **Web versions** are made with `scripts/photo.sh <originals-dir> <output-dir>` (long edge 1600 px, WebP, metadata and GPS removed, sandboxed, no network)
   and placed in `content/<section>/media/<post>/` (published) or `content/_private/<section>/media/<post>/` (private, git-ignored).
 - `scripts/backup.sh` copies texts to the vault and deliberately skips every `media/` folder and all picture files.
+- **Preview switch**: with originals in `sites/blog-originals/<section>/<post>/<name>.<any image extension>` (same path and name as the web version, extension may differ),
+  `scripts/docker.sh npm run dev` shows a corner link on every page: **圖片：網頁版 ⇄ 切到原圖**. It sets a cookie, so it applies to all pages until you switch back
+  (`?img=original` / `?img=web` in the URL does the same). A picture without an original falls back to its web version. Dev only: the build and the published site always use the web versions.
+  Another originals folder: `BLOG_ORIGINALS=/path scripts/docker.sh npm run dev`.
 - Only the web versions of **published** posts are committed to this public repo; every picture there is public for good.
 
 ## Import from Medium
