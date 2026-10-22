@@ -9,7 +9,8 @@ import { sanitizeHtml } from "./sanitize.mjs";
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image"]);
+const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
 /** Parse the `---` front matter block. A strict YAML subset: `key: value`, quoted or bare strings, true/false. */
 export function parseFrontMatter(text, where = "post") {
@@ -87,6 +88,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   // A draft may be unfinished (npm run new creates it with an empty summary); a published post may not.
   if (typeof data.summary !== "string" || (!data.summary.trim() && !isDraft)) throw new ContentError(`${filename}: front matter 'summary' is required`);
   if (data.summary.length > 300) throw new ContentError(`${filename}: summary is ${data.summary.length} characters (max 300)`);
+  if ("image" in data && !(typeof data.image === "string" && IMAGE_NAME.test(data.image))) throw new ContentError(`${filename}: 'image' must be a file name in the post's media folder, such as cover.jpg`);
   if ("trusted" in data && typeof data.trusted !== "boolean") throw new ContentError(`${filename}: 'trusted' must be true or false`);
   if ("draft" in data && typeof data.draft !== "boolean") throw new ContentError(`${filename}: 'draft' must be true or false`);
   if ("updated" in data && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.updated))) throw new ContentError(`${filename}: 'updated' must be YYYY-MM-DD`);
@@ -94,7 +96,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
     section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
-    trusted: data.trusted === true,
+    trusted: data.trusted === true, image: data.image || "",
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
   };
@@ -168,6 +170,26 @@ export function externalHosts(text) {
   const hosts = new Set();
   for (const m of String(text).matchAll(/(?:https?:)?\/\/([a-z0-9][a-z0-9.-]*\.[a-z]{2,})(?::\d+)?(?=[/"'`\s)>?#]|$)/gi)) hosts.add(m[1].toLowerCase());
   return [...hosts].sort();
+}
+
+export const OG_SIZE = { width: 1200, height: 630 };
+
+/**
+ * The picture shown when a post is shared. In order: the front matter `image`, then og.jpg in the post's media folder (what publish.sh makes),
+ * then the first picture in the body, then the site default. `exists(path)` says whether a root-relative file such as
+ * /media/life/trip/og.jpg is available. Returns { url, width, height, alt } with an absolute url, or null.
+ */
+export function ogImageFor(post, { baseUrl, exists = () => false, fallback = "" }) {
+  const dir = `/media/${post.section}/${post.slug}`;
+  const abs = (p) => baseUrl + p;
+  if (post.image && exists(`${dir}/${post.image}`)) return { url: abs(`${dir}/${post.image}`), alt: post.title };
+  if (exists(`${dir}/og.jpg`)) return { url: abs(`${dir}/og.jpg`), ...OG_SIZE, alt: post.title };
+  const m = /<img\b[^>]*?src="(\/media\/[^"]+)"[^>]*>/.exec(post.html);
+  if (m) {
+    const w = /\swidth="(\d+)"/.exec(m[0])?.[1], h = /\sheight="(\d+)"/.exec(m[0])?.[1];
+    return { url: abs(m[1]), ...(w && h ? { width: w, height: h } : {}), alt: post.title };
+  }
+  return fallback ? { url: abs(fallback), alt: post.title } : null;
 }
 
 export const searchPath = (lang) => `/${lang}/search/`;

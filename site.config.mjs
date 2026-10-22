@@ -12,6 +12,8 @@ export const site = {
     { id: "tech", title: { zh: "技術", en: "Tech" } },
     { id: "life", title: { zh: "生活", en: "Life" } },
   ],
+  // Picture for sharing pages that have none of their own (a 1200x630 JPEG in public/); absent file = no default picture.
+  ogImage: "/og-default.jpg",
   postsPerPage: 10,
   homePosts: 5,
   timezone: "Asia/Taipei", // a post dated "today" in this zone is published

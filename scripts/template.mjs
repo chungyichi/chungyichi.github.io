@@ -1,5 +1,6 @@
 // Assemble one HTML document. Shared by the build and the dev server.
 import { site } from "../site.config.mjs";
+import { metaTags } from "./meta.mjs";
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -25,6 +26,7 @@ export function document_({ route, rendered, assets }) {
     <title>${esc(rendered.title)}</title>
     <meta name="description" content="${esc(rendered.description)}">
     <meta name="color-scheme" content="light dark">
+    ${route.kind === "entry" || route.kind === "notfound" ? "" : metaTags(route, { siteName: site.title[lang], baseUrl: site.baseUrl, title: route.props?.title ?? rendered.title, description: rendered.description, image: route.ogImage, author: site.author })}
     <link rel="canonical" href="${esc(canonical)}">
     ${alts}
     ${redirect}

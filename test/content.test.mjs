@@ -235,3 +235,41 @@ test("a Markdown post is counted on its rendered text too", () => {
   const p = parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\n---\n# 標題\n\n這是**一段**文字。\n");
   assert.equal(p.words, 8);                                                       // 標題 這是 一段 文字
 });
+
+// ---- share meta ----
+import { metaTags } from "../scripts/meta.mjs";
+import { ogImageFor } from "../scripts/content.mjs";
+
+const BASE = "https://e.org";
+const P = (over = {}) => ({ section: "life", slug: "trip", title: "T", html: "<p>x</p>", image: "", ...over });
+
+test("share picture: front matter image, then og.jpg, then the first body picture, then the default, else none", () => {
+  const has = (set) => (p) => set.includes(p);
+  const body = '<img alt="" src="/media/life/trip/a.webp" width="1200" height="800">';
+  assert.equal(ogImageFor(P({ image: "cover.jpg", html: body }), { baseUrl: BASE, exists: has(["/media/life/trip/cover.jpg", "/media/life/trip/og.jpg"]) }).url, `${BASE}/media/life/trip/cover.jpg`);
+  const og = ogImageFor(P({ html: body }), { baseUrl: BASE, exists: has(["/media/life/trip/og.jpg"]) });
+  assert.deepEqual([og.url, og.width, og.height], [`${BASE}/media/life/trip/og.jpg`, 1200, 630]);
+  const first = ogImageFor(P({ html: body }), { baseUrl: BASE, exists: has([]) });
+  assert.deepEqual([first.url, first.width, first.height], [`${BASE}/media/life/trip/a.webp`, "1200", "800"]);
+  assert.equal(ogImageFor(P(), { baseUrl: BASE, exists: has([]), fallback: "/og-default.jpg" }).url, `${BASE}/og-default.jpg`);
+  assert.equal(ogImageFor(P(), { baseUrl: BASE, exists: has([]) }), null);
+});
+
+test("share picture: a front matter image that does not exist is skipped, not published as a broken link", () => {
+  assert.equal(ogImageFor(P({ image: "gone.jpg" }), { baseUrl: BASE, exists: () => false }), null);
+  assert.throws(() => parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\nimage: ../x.jpg\n---\nx"), /'image' must be a file name/);
+});
+
+test("meta tags: article type, picture, locale alternates, and everything escaped", () => {
+  const route = { kind: "post", lang: "zh", path: "/zh/life/trip/", alternates: [{ lang: "en", path: "/en/life/trip/", translated: true }], props: { date: "2026-10-01", section: "life", updated: "" } };
+  const out = metaTags(route, { siteName: 'S "x"', baseUrl: BASE, title: 'A & <B>', description: "d", image: { url: `${BASE}/media/life/trip/og.jpg`, width: 1200, height: 630 }, author: "Me" });
+  for (const want of ['og:type" content="article"', 'og:title" content="A &amp; &lt;B&gt;"', `og:url" content="${BASE}/zh/life/trip/"`, 'og:locale" content="zh_TW"',
+    'og:locale:alternate" content="en_US"', 'article:published_time" content="2026-10-01"', 'og:image:width" content="1200"', 'twitter:card" content="summary_large_image"',
+    'og:site_name" content="S &quot;x&quot;"']) assert.ok(out.includes(want), want);
+  assert.ok(!out.includes("<B>"));
+});
+
+test("meta tags: no picture means a plain summary card, and a page is a website", () => {
+  const out = metaTags({ kind: "home", lang: "en", path: "/en/", alternates: [] }, { siteName: "S", baseUrl: BASE, title: "T", description: "D", author: "Me" });
+  assert.ok(out.includes('twitter:card" content="summary"') && out.includes('og:type" content="website"') && !out.includes("og:image"));
+});

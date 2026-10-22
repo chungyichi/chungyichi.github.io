@@ -1,17 +1,18 @@
 // Content model -> list of pages. Plain data only (it is serialised into nothing; pages are rendered at build time).
 import { site } from "../site.config.mjs";
 import { createHash } from "node:crypto";
-import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex } from "./content.mjs";
+import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor } from "./content.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
 const brief = (p) => ({ section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date });
 
-export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, homePosts = site.homePosts } = {}) {
+export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, homePosts = site.homePosts, fileExists = () => false } = {}) {
   const routes = [];
   const other = (lang) => langs.filter((l) => l !== lang);
   const alt = (path, lang) => other(lang).map((l) => ({ lang: l, path: path.replace(`/${lang}/`, `/${l}/`) }));
 
+  const defaultImage = site.ogImage && fileExists(site.ogImage) ? { url: site.baseUrl + site.ogImage, alt: site.title.en } : null;
   routes.push({ path: "/", kind: "entry", lang: site.defaultLang, alternates: langs.map((l) => ({ lang: l, path: `/${l}/` })) });
 
   for (const lang of langs) {
@@ -30,6 +31,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
         const has = (l) => Boolean(model.translations[`${section}/${p.slug}`]?.[l]);
         const alternates = other(lang).map((l) => ({ lang: l, path: has(l) ? postPath(l, section, p.slug) : indexPath(l, section), translated: has(l) }));
         routes.push({ path, kind: "post", lang, alternates,
+          ogImage: ogImageFor(p, { baseUrl: site.baseUrl, exists: fileExists, fallback: defaultImage ? site.ogImage : "" }),
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, html: p.html, draft: p.draft, private: Boolean(p.private), words: p.words } });
@@ -50,6 +52,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
       routes.push({ path, kind: "page", lang, alternates: alt(path, lang).filter((a) => byLang[a.lang]), props: { name, ...pg } });
     }
   }
+  for (const route of routes) if (route.kind !== "post" && route.kind !== "entry" && route.kind !== "notfound" && defaultImage) route.ogImage = defaultImage;
   routes.push({ path: "/404.html", kind: "notfound", lang: site.defaultLang, alternates: [] });
   return routes;
 }

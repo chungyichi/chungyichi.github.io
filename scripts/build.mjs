@@ -7,6 +7,7 @@ import { site } from "../site.config.mjs";
 import { buildModel, selectPublished, todayIn, sitemap, ContentError } from "./content.mjs";
 import { loadPosts, loadPages } from "./load.mjs";
 import { buildRoutes } from "./routes.mjs";
+import { publishedFileExists } from "./files.mjs";
 import { document_ } from "./template.mjs";
 
 const out = (p) => join("dist", p.endsWith("/") ? p + "index.html" : p);
@@ -17,7 +18,7 @@ export async function main() {
   const posts = selectPublished(loadPosts(), today);
   const model = buildModel(posts, site.langs, site.sections);
   const pages = loadPages();
-  const routes = buildRoutes(model, pages);
+  const routes = buildRoutes(model, pages, { fileExists: (u) => publishedFileExists(u) });
 
   await build({ logLevel: "warn" });                                     // client: dist/assets + manifest
   rmSync(".ssr", { recursive: true, force: true });

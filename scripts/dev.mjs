@@ -8,6 +8,7 @@ import { site } from "../site.config.mjs";
 import { buildModel, selectPublished, todayIn } from "./content.mjs";
 import { loadPosts, loadPages } from "./load.mjs";
 import { buildRoutes } from "./routes.mjs";
+import { publishedFileExists } from "./files.mjs";
 import { document_ } from "./template.mjs";
 
 const vite = await createServer({ server: { middlewareMode: true }, appType: "custom" });
@@ -58,7 +59,7 @@ const server = http.createServer((req, res) => {
       const mode = asked === "original" || asked === "web" ? asked : cookieMode(req) ?? "web";
       const path = url.endsWith("/") || url.endsWith(".html") ? url : url + "/";
       const posts = selectPublished(loadPosts({ includePrivate: true }), todayIn(site.timezone), { includeDrafts: true });
-      const routes = buildRoutes(buildModel(posts, site.langs, site.sections), loadPages());
+      const routes = buildRoutes(buildModel(posts, site.langs, site.sections), loadPages(), { fileExists: (u) => publishedFileExists(u, { includePrivate: true }) });
       const idx = routes.find((r) => r.searchIndex?.href === url);
       if (idx) { res.writeHead(200, { "content-type": "application/json; charset=utf-8" }).end(idx.searchIndex.text); return; }
       const route = routes.find((r) => r.path === path) ?? { ...routes.find((r) => r.kind === "notfound"), path };

@@ -42,7 +42,7 @@ const plan = files.map((f) => {
 });
 
 mkdirSync(join(pub, "media", slug), { recursive: true });
-for (const f of readdirSync(tmp).filter((n) => n.endsWith(".webp"))) copyFileSync(join(tmp, f), join(pub, "media", slug, f));
+for (const f of readdirSync(tmp).filter((n) => n.endsWith(".webp") || n === "og.jpg")) copyFileSync(join(tmp, f), join(pub, "media", slug, f));
 mkdirSync(join("backup", "published-from-private", section), { recursive: true });
 for (const { f, text } of plan) {
   writeFileSync(join(pub, f), text);
