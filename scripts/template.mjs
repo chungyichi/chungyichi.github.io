@@ -34,8 +34,8 @@ export function document_({ route, rendered, assets }) {
     <title>${esc(rendered.title)}</title>
     <meta name="description" content="${esc(rendered.description)}">
     <meta name="color-scheme" content="light dark">
-    ${route.kind === "entry" || route.kind === "notfound" ? "" : metaTags(route, { siteName: site.title[lang], baseUrl: site.baseUrl, title: route.props?.title ?? rendered.title, description: rendered.description, image: route.ogImage, author: site.author })}
-    <link rel="canonical" href="${esc(canonical)}">
+    ${route.kind === "notfound" ? "" : metaTags(route, { siteName: site.title[lang], baseUrl: site.baseUrl, title: route.kind === "post" ? route.props.title : rendered.title, description: rendered.description, image: route.ogImage, author: site.author })}
+    ${route.kind === "notfound" ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${esc(canonical)}">`}
     ${alts}
     ${redirect}
     ${css}

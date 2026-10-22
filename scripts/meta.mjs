@@ -16,7 +16,7 @@ export function metaTags(route, { siteName, baseUrl, title, description, image, 
     tag("property", "og:description", description),
     tag("property", "og:url", baseUrl + route.path),
     tag("property", "og:locale", LOCALE[route.lang]),
-    ...(route.alternates || []).filter((a) => a.translated !== false).map((a) => tag("property", "og:locale:alternate", LOCALE[a.lang])),
+    ...(route.alternates || []).filter((a) => a.translated !== false && a.lang !== route.lang).map((a) => tag("property", "og:locale:alternate", LOCALE[a.lang])),
   ];
   if (isPost) {
     lines.push(tag("property", "article:published_time", route.props.date), tag("property", "article:author", author),

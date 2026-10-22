@@ -75,7 +75,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
       routes.push({ path, kind: "page", lang, alternates: alt(path, lang).filter((a) => byLang[a.lang]), props: { name, ...pg } });
     }
   }
-  for (const route of routes) if (route.kind !== "post" && route.kind !== "entry" && route.kind !== "notfound" && defaultImage) route.ogImage = defaultImage;
+  for (const route of routes) if (route.kind !== "post" && route.kind !== "notfound" && defaultImage) route.ogImage = defaultImage;
   routes.push({ path: "/404.html", kind: "notfound", lang: site.defaultLang, alternates: [] });
   return routes;
 }
