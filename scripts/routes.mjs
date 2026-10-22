@@ -11,7 +11,13 @@ const briefOf = (fileExists) => (p) => ({
   thumb: fileExists(`/media/${p.section}/${p.slug}/thumb.webp`) ? `/media/${p.section}/${p.slug}/thumb.webp` : "",   // 400x210, made by scripts/og-image.sh
 });
 
-export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, homePosts = site.homePosts, fileExists = () => false } = {}) {
+/** The posts shown on the home page: the featured ones that exist in this language, else the latest few; newest first. */
+function homeList(posts, featured, limit) {
+  const pick = featured.length ? posts.filter((p) => featured.includes(`${p.section}/${p.slug}`)) : posts.slice(0, limit);
+  return pick.slice(0, Math.max(limit, 5));
+}
+
+export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, homePosts = site.homePosts, featured = site.featured ?? [], fileExists = () => false } = {}) {
   const routes = [];
   const brief = briefOf(fileExists);
   const other = (lang) => langs.filter((l) => l !== lang);
@@ -22,7 +28,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
 
   for (const lang of langs) {
     routes.push({ path: `/${lang}/`, kind: "home", lang, alternates: alt(`/${lang}/`, lang),
-      props: { sections: sectionIds().map((id) => ({ id, latest: model.bySection[id][lang].slice(0, homePosts).map(brief), total: model.bySection[id][lang].length })) } });
+      props: { featured: homeList(model.byLang[lang], featured, homePosts).map(brief), sections: sectionIds().map((id) => ({ id, total: model.bySection[id][lang].length })) } });
 
     for (const section of sectionIds()) {
       const posts = model.bySection[section][lang];

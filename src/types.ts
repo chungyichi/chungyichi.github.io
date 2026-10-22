@@ -6,7 +6,7 @@ export type Alt = { lang: Lang; path: string; translated?: boolean };
 export type Route =
   | { kind: "entry"; path: string; lang: Lang; alternates: Alt[] }
   | { kind: "notfound"; path: string; lang: Lang; alternates: Alt[] }
-  | { kind: "home"; path: string; lang: Lang; alternates: Alt[]; props: { sections: { id: string; latest: Brief[]; total: number }[] } }
+  | { kind: "home"; path: string; lang: Lang; alternates: Alt[]; props: { featured: Brief[]; sections: { id: string; total: number }[] } }
   | { kind: "index"; path: string; lang: Lang; alternates: Alt[]; props: { section: string; groups: { date: string; items: Brief[] }[]; page: number; pages: number } }
   | { kind: "post"; path: string; lang: Lang; alternates: Alt[]; props: Brief & { updated: string; html: string; draft: boolean; private: boolean; words: number } }
   | { kind: "tags"; path: string; lang: Lang; alternates: Alt[]; props: { tags: { tag: string; slug: string; count: number }[] } }

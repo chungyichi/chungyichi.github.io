@@ -58,7 +58,6 @@ function PostItem({ lang, p }: { lang: Lang; p: Brief }) {
         <h3><a href={href}>{p.title}</a></h3>
         <p>{p.summary}</p>
         <TagList lang={lang} tags={p.tags} />
-        <p className="more"><a href={href}>{t[lang].readMore}</a></p>
       </div>
     </article>
   );
@@ -68,15 +67,12 @@ function Home({ route }: { route: Extract<Route, { kind: "home" }> }) {
   const { lang } = route, s = t[lang];
   return (
     <>
-      <h1>{title(lang)}</h1>
-      <p className="lead">{tagline(lang)}</p>
-      {route.props.sections.map((sec) => (
-        <section key={sec.id}>
-          <h2>{sectionTitle(lang, sec.id)}</h2>
-          {sec.latest.length === 0 ? <p>{s.noPosts}</p> : sec.latest.map((p) => <PostItem key={p.slug} lang={lang} p={p} />)}
-          {sec.total > sec.latest.length && <p><a href={`/${lang}/${sec.id}/`}>{s.allInSection}</a></p>}
-        </section>
-      ))}
+      <h1 className="lead">{tagline(lang)}</h1>
+      <section>
+        <h2>{s.featured}</h2>
+        {route.props.featured.length === 0 ? <p>{s.noPosts}</p> : route.props.featured.map((p) => <PostItem key={`${p.section}/${p.slug}`} lang={lang} p={p} />)}
+        <p className="more-sections">{route.props.sections.map((sec) => <a key={sec.id} href={`/${lang}/${sec.id}/`}>{sectionTitle(lang, sec.id)}（{sec.total}）</a>)}</p>
+      </section>
     </>
   );
 }

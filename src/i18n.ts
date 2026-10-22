@@ -4,7 +4,7 @@ export type Lang = "zh" | "en";
 
 export const t = {
   zh: {
-    home: "首頁", about: "關於", github: "GitHub", latest: "最新文章", all: "全部文章", allInSection: "更多",
+    home: "首頁", about: "關於", github: "GitHub", latest: "最新文章", featured: "精選文章", all: "全部文章", allInSection: "更多",
     readMore: "閱讀全文 →", prev: "← 較新", next: "較舊 →", page: (n: number, m: number) => `第 ${n} / ${m} 頁`,
     updated: "更新於", noPosts: "還沒有文章。", words: (n: number) => `${n} 字`,
     noTranslation: "這篇文章尚無中文版本。", otherLang: "English", toggleTheme: "切換深淺色", toggleSeason: "開關萬聖節裝飾", redirecting: "正在前往中文版…",
@@ -16,7 +16,7 @@ export const t = {
     searchLoading: "載入中…", searchNone: "沒有符合的文章。", searchCount: "找到 {n} 篇", searchError: "搜尋索引載入失敗，請重新整理。",
   },
   en: {
-    home: "Home", about: "About", github: "GitHub", latest: "Latest posts", all: "All posts", allInSection: "More",
+    home: "Home", about: "About", github: "GitHub", latest: "Latest posts", featured: "Featured", all: "All posts", allInSection: "More",
     readMore: "Read more →", prev: "← Newer", next: "Older →", page: (n: number, m: number) => `Page ${n} of ${m}`,
     updated: "Updated", noPosts: "No posts yet.", words: (n: number) => `${n} words`,
     noTranslation: "This post has no English version yet.", otherLang: "中文", toggleTheme: "Toggle light/dark", toggleSeason: "Turn Halloween decoration on/off", redirecting: "Redirecting to the English site…",

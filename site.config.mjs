@@ -17,6 +17,8 @@ export const site = {
   // Picture for sharing pages that have none of their own (a 1200x630 JPEG in public/); absent file = no default picture.
   ogImage: "/og-default.jpg",
   postsPerPage: 10,
+  // Posts on the home page, as "<section>/<slug>" (a post missing in a language is skipped); newest first. An empty list shows the latest few.
+  featured: ["tech/site-design", "tech/technique-behind-git", "life/part-1", "life/2023-nikko-day-1-jr", "life/2019-day-1"],
   homePosts: 5,
   timezone: "Asia/Taipei", // a post dated "today" in this zone is published
 };

@@ -38,6 +38,8 @@ nav a:hover { color: var(--accent); text-decoration: underline; }
 
 main { padding-bottom: 3rem; min-height: 60vh; }
 .lead { color: var(--muted); font-size: 1.1rem; }
+h1.lead { font-weight: 500; margin: 1.4em 0 0.2em; }
+.more-sections { display: flex; gap: 1.2rem; margin-top: 1.2rem; }
 .date { font-size: 1rem; color: var(--muted); font-weight: 600; margin: 2rem 0 0.6rem; font-variant-numeric: tabular-nums; }
 .post-item { margin: 1.1rem 0; }
 .post-item p { margin: 0.2em 0; }
