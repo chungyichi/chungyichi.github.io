@@ -3,7 +3,7 @@
 #   scripts/publish.sh <section> <slug> [--allow-unpublished]
 # Steps: (1) move the post's downloaded pictures out of the repo to ../blog-originals/<section>/<slug>/ (your originals, never in git),
 # (2) shrink + convert them in the no-network container, (3) rewrite and move the post. It does not commit or push: review with
-# `scripts/docker.sh npm run dev` and `npm run check`, then commit yourself. Posts never published on Medium are refused unless --allow-unpublished.
+# `scripts/docker.sh npm run dev` and `npm run check`, then upload the pictures (scripts/media.sh push) and commit the post yourself. Posts never published on Medium are refused unless --allow-unpublished.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 [ $# -ge 2 ] || { sed -n '2,7p' "$0"; exit 2; }
@@ -33,4 +33,5 @@ rm -rf "$tmp"; mkdir -p "$(dirname "$tmp")"
 scripts/photo.sh "$orig" "$tmp"
 docker_node node scripts/publish.mjs "$section" "$slug" "$@"
 rm -rf "$tmp"
-echo "done. Originals: $(realpath "$orig")  Web versions: content/$section/media/$slug"
+echo "done. Originals: $(realpath "$orig")  Web versions: content/$section/media/$slug (git-ignored)"
+echo "next: 1) scripts/docker.sh npm run dev (look)  2) scripts/media.sh push $section $slug  3) commit the post file and push"

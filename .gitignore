@@ -4,6 +4,8 @@ dist/
 .npm-cache/
 # Not yet cleared for publication: drafts, imports, the original Medium export. Backed up by `npm run backup`.
 content/_private/
+# Pictures of published posts live in the "media" release, not in git (scripts/media.sh); originals stay outside the repo.
+content/*/media/
 backup/
 *.log
 .DS_Store

@@ -61,15 +61,20 @@ Trust is yours to give: the importer never writes `trusted`, and `npm run check`
 ## Where pictures live
 
 - **Originals** (camera, phone, Medium downloads) stay on your own disk or cloud, **never in any GitHub repo**, not even the private vault.
-  Suggested local place: `sites/blog-originals/<section>/<post>/` next to this repo (outside git).
+  They are kept in `sites/blog-originals/<section>/<post>/` next to this repo (outside git).
 - **Web versions** are made with `scripts/photo.sh <originals-dir> <output-dir>` (long edge 1600 px, WebP, metadata and GPS removed, sandboxed, no network)
-  and placed in `content/<section>/media/<post>/` (published) or `content/_private/<section>/media/<post>/` (private, git-ignored).
+  and placed in `content/<section>/media/<post>/`. **That folder is git-ignored**: published pictures are not in git history at all.
+- They are stored in a GitHub Release named `media` (one archive per post, `media-<section>-<post>.tar`): `scripts/media.sh push <section> <post>` uploads
+  (replaces) one, `scripts/media.sh delete <section> <post>` removes one for real, `scripts/media.sh pull` downloads all into `content/` (the deploy does this before every build;
+  a fresh clone runs it too). So replacing or deleting a post's pictures leaves no blob in git. The archives are public, like the pictures on the site.
+- The archive is untrusted input in the deploy: `scripts/media-extract.sh` accepts only plain files named `<section>/media/<slug>/<file>.<image extension>` and refuses everything else.
+- `npm run check` fails if a picture is tracked by git.
+- Order for a new post: `scripts/publish.sh` (or put the pictures in place), look at it with `npm run dev`, `scripts/media.sh push ...`, then commit and push the post file. Uploading changes nothing on the site until a deploy runs.
 - `scripts/backup.sh` copies texts to the vault and deliberately skips every `media/` folder and all picture files.
 - **Preview switch**: with originals in `sites/blog-originals/<section>/<post>/<name>.<any image extension>` (same path and name as the web version, extension may differ),
   `scripts/docker.sh npm run dev` shows a corner link on every page: **圖片：網頁版 ⇄ 切到原圖**. It sets a cookie, so it applies to all pages until you switch back
   (`?img=original` / `?img=web` in the URL does the same). A picture without an original falls back to its web version. Dev only: the build and the published site always use the web versions.
   Another originals folder: `BLOG_ORIGINALS=/path scripts/docker.sh npm run dev`.
-- Only the web versions of **published** posts are committed to this public repo; every picture there is public for good.
 
 ## Import from Medium
 

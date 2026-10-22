@@ -58,6 +58,13 @@ for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slu
   if (priv) warn(`${priv} private post(s) exist locally (not published, not tracked)`);
 }
 
+// 3a. pictures must never be committed (they live in the "media" release so that a deleted post leaves no blob in git history)
+{
+  const ls = spawnSync("git", ["ls-files", "content"], { encoding: "utf8" });
+  const pics = ls.status === 0 ? ls.stdout.split("\n").filter((f) => /\.(webp|jpe?g|png|gif|avif|heic)$/i.test(f)) : [];
+  if (pics.length) fail(`pictures are tracked by git (${pics.slice(0, 3).join(", ")}${pics.length > 3 ? ", ..." : ""}); keep them out: scripts/media.sh push <section> <slug>, and git rm --cached`);
+}
+
 // 3b. trusted (hand-written, unsanitized) posts: list them and the outside hosts they use
 for (const p of loadPosts({ includePrivate: true }).filter((p) => p.trusted)) {
   const hosts = externalHosts([p.html, p.css, p.js].join("\n"));
