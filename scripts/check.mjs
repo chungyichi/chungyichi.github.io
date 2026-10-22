@@ -59,10 +59,12 @@ for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slu
 }
 
 // 4. dependency advisories
-const r = spawnSync("npm", ["audit", "--json"], { encoding: "utf8" });
+// npm's audit endpoint can hang (it did on 2026-10-22 and stalled a deploy for 12+ minutes): give up after 60 s and say so.
+const r = spawnSync("npm", ["audit", "--json"], { encoding: "utf8", timeout: 60_000, killSignal: "SIGKILL" });
 let report;
 try { report = JSON.parse(r.stdout || "{}"); } catch { report = null; }
-if (!report || report.error) warn("npm audit could not run (offline?); skipped");
+if (r.error?.code === "ETIMEDOUT") warn("npm audit timed out after 60 s (npm audit service not answering); skipped, run it again later");
+else if (!report || report.error) warn("npm audit could not run (offline?); skipped");
 else {
   const today = new Date().toISOString().slice(0, 10);
   for (const [name, v] of Object.entries(report.vulnerabilities || {})) {
