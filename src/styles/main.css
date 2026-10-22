@@ -68,7 +68,7 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 .hljs-title, .hljs-function, .hljs-class { color: var(--hl-title); }
 
 .site-footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 0.8rem; padding: 0.55rem 0 0.8rem; margin-top: 2rem; }
-.site-footer p { margin: 0; }
+.site-footer p { margin: 0; text-align: center; }
 .picker ul { list-style: none; padding: 0; display: flex; gap: 1rem; }
 .picker a { display: inline-block; border: 1px solid var(--line); border-radius: var(--radius); padding: 0.6rem 1.2rem; text-decoration: none; }
 
