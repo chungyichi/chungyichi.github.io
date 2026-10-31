@@ -248,15 +248,27 @@ export function ogImageFor(post, { baseUrl, exists = () => false, fallback = "" 
 }
 
 /**
- * The picture a toy page shows beside its facts: the front matter `image`, else the first picture in the body, else cover.webp
- * in the media folder (what toy-add.sh makes). When the body's first paragraph is that same picture it is dropped from the body,
- * so the toy is not shown twice. Returns { src, html }; src is "" when there is no picture.
+ * The pictures a toy page shows on the panel beside its facts, in order: the front matter `image` (when the file exists), then the
+ * pictures that open the body (a run of paragraphs that are one picture each; toy-add.sh writes one per --image). Those are taken out
+ * of the body so the toy is not shown twice; the text after them stays. With no `image` and no opening run, the first picture
+ * anywhere in the body is used (and dropped from the body), else cover.webp in the media folder.
+ * Returns { pictures: [{ src, alt }], src, html }; src is the first picture's address ("" when there is none), kept for one-picture callers.
  */
+const PICTURE_P = /<p><img\b[^>]*?\ssrc="(\/media\/[^"]+)"[^>]*><\/p>\n?/;
 export function toyHero(post, exists = () => false) {
   const dir = `/media/${post.section}/${post.slug}`;
-  const first = /<p><img\b[^>]*?\ssrc="(\/media\/[^"]+)"[^>]*><\/p>\n?/.exec(post.html);
-  const src = post.image && exists(`${dir}/${post.image}`) ? `${dir}/${post.image}` : first ? first[1] : exists(`${dir}/cover.webp`) ? `${dir}/cover.webp` : "";
-  return { src, html: first && first[1] === src ? post.html.replace(first[0], "") : post.html };
+  const picture = (m) => ({ src: m[1], alt: unescapeText(/\salt="([^"]*)"/.exec(m[0])?.[1] ?? "") || post.title });
+  const own = post.image && exists(`${dir}/${post.image}`) ? `${dir}/${post.image}` : "";
+  let html = post.html;
+  const run = [];
+  for (let m; (m = new RegExp(`^${PICTURE_P.source}`).exec(html));) { run.push(picture(m)); html = html.slice(m[0].length); }
+  if (!run.length && !own) {
+    const m = PICTURE_P.exec(html);
+    if (m) { run.push(picture(m)); html = html.replace(m[0], ""); }
+  }
+  const pictures = own ? [{ src: own, alt: post.title }, ...run.filter((p) => p.src !== own)] : run;
+  if (!pictures.length && exists(`${dir}/cover.webp`)) pictures.push({ src: `${dir}/cover.webp`, alt: post.title });
+  return { pictures, src: pictures[0]?.src ?? "", html };
 }
 
 export const searchPath = (lang) => `/${lang}/search/`;

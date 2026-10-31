@@ -23,3 +23,6 @@ if (document.getElementById("search")) void import("./search-client");
 
 // Posts get copy-link / share buttons.
 if (document.querySelector("[data-share]")) void import("./share-client");
+
+// A toy page with several pictures gets the picture strip's buttons.
+if (document.querySelector("[data-gallery]")) void import("./gallery-client");

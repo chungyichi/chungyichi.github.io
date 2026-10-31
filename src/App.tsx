@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { site } from "../site.config.mjs";
 import { t, title, tagline, sectionTitle, ownerTitle, type Lang } from "./i18n";
-import type { Brief, Route } from "./types";
+import type { Brief, Picture, Route } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
 import { SEASON_ISLAND_ID } from "./SeasonToggle";
 import { tagPath, tagsIndexPath } from "./tags.mjs";
@@ -185,17 +185,41 @@ function Share({ lang, title }: { lang: Lang; title: string }) {
 type Post = Extract<Route, { kind: "post" }>["props"];
 
 /**
- * The head of a toy page: the picture on a soft panel beside the facts (price, date, tags), the shop button and copy-link.
- * The owner and a wish are icon badges in the picture's corner, as on the cards (in the text column when there is no picture).
+ * The pictures of a toy page on one soft panel. Several pictures are a horizontal strip that snaps one picture at a time, so it works
+ * with a swipe, the scrollbar or the arrow keys and no script; /src/gallery-client.ts adds the round buttons, marks the current dot and
+ * disables the arrow keys' page scrolling. The dots are links to #pic-N, so a picture can be deep-linked. One picture: the plain panel.
+ */
+function ToyPictures({ lang, pictures, badges }: { lang: Lang; pictures: Picture[]; badges: ReactNode }) {
+  const s = t[lang], many = pictures.length > 1;
+  return (
+    <div className="toy-hero-pic" data-gallery={many ? "" : undefined}>
+      <div className="toy-slides" tabIndex={many ? 0 : undefined} role={many ? "group" : undefined} aria-label={many ? s.pictures : undefined}>
+        {pictures.map((pic, i) => <div key={pic.src} className="toy-slide" id={many ? `pic-${i + 1}` : undefined}><img src={pic.src} alt={pic.alt} decoding="async" /></div>)}
+      </div>
+      {badges}
+      {many && (
+        <>
+          <button type="button" className="toy-nav toy-prev" data-prev aria-label={s.prevPicture} hidden><Icon name="chevronLeft" /></button>
+          <button type="button" className="toy-nav toy-next" data-next aria-label={s.nextPicture} hidden><Icon name="chevronRight" /></button>
+          <span className="toy-dots">{pictures.map((pic, i) => <a key={pic.src} href={`#pic-${i + 1}`} data-dot aria-label={s.pictureN(i + 1)} />)}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The head of a toy page: the picture panel beside the facts (price, date, tags), the shop button and copy-link.
+ * The owner and a wish are icon badges in the panel's corner, as on the cards (in the text column when there is no picture).
  */
 function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
-  const s = t[lang];
+  const s = t[lang], hasPic = p.pictures.length > 0;
   const badges = <span className="badges"><OwnerBadge lang={lang} id={p.owner} />{p.status === "want" && <WantBadge label={s.statusWant} />}</span>;
   return (
-    <header className={p.hero ? "toy-hero has-pic" : "toy-hero"}>
-      {p.hero && <div className="toy-hero-pic"><img src={p.hero} alt={p.title} decoding="async" />{badges}</div>}
+    <header className={hasPic ? "toy-hero has-pic" : "toy-hero"}>
+      {hasPic && <ToyPictures lang={lang} pictures={p.pictures} badges={badges} />}
       <div className="toy-hero-info">
-        {!p.hero && badges}
+        {!hasPic && badges}
         <h1>{p.title}</h1>
         {(p.draft || p.private) && <p className="meta"><strong>{p.draft ? s.draft : s.privateNote}</strong></p>}
         <dl className="toy-facts">

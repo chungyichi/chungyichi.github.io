@@ -16,6 +16,7 @@ export const t = {
     searchLoading: "載入中…", searchNone: "沒有符合的文章。", searchCount: "找到 {n} 篇", searchError: "搜尋索引載入失敗，請重新整理。",
     owner: "擁有者", ownerAll: "全部", scope: "範圍", scopePosts: "文章", scopeToys: "玩具", statusWant: "想要", noToys: "還沒有玩具。",
     price: "價格", added: "加入", shop: "購買來源", viewShop: "前往購買",
+    pictures: "圖片", prevPicture: "上一張", nextPicture: "下一張", pictureN: (n: number) => `第 ${n} 張`,
   },
   en: {
     home: "Home", about: "About", github: "GitHub", latest: "Latest posts", featured: "Featured", all: "All posts", allInSection: "More",
@@ -30,6 +31,7 @@ export const t = {
     searchLoading: "Loading…", searchNone: "No matching posts.", searchCount: "{n} found", searchError: "The search index failed to load; reload the page.",
     owner: "Owner", ownerAll: "All", scope: "Scope", scopePosts: "Posts", scopeToys: "Toys", statusWant: "Wish list", noToys: "No toys yet.",
     price: "Price", added: "Added", shop: "Shop", viewShop: "Shop",
+    pictures: "Pictures", prevPicture: "Previous picture", nextPicture: "Next picture", pictureN: (n: number) => `Picture ${n}`,
   },
 } as const;
 

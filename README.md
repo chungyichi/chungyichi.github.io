@@ -99,7 +99,10 @@ Review each result with `npm run dev`, add layout, then move it out of `_private
 (`/zh/toys/owner/me/`, `/zh/toys/owner/son/`; the ids, labels and icons are `toyOwners` in `site.config.mjs`). Toys share tags, search (by name and tag; the result says 玩具庫), thumbnails and the media release with the other sections.
 Extra front matter, toys only: `owner: me` (required to publish), `source: https://...` (the shop page: a 前往購買 button with `rel="nofollow"`), `status: want` (a wish; absent = owned),
 `price: "NT$15,525"` (text, shown as written). The owner and a wish are shown as icon badges in a colour per owner (`--owner-<id>` in `tokens.css`), never as text.
-The toy page is two columns on a wide screen: the picture (the front matter `image`, else the first picture in the body, which is then not repeated below, else `cover.webp`) beside the facts; the toys pages use a wider column than the reading sections.
+The toy page is two columns on a wide screen: the picture panel beside the facts; the toys pages use a wider column than the reading sections.
+The panel shows the front matter `image` and then the pictures that open the body (one picture per paragraph, as toy-add.sh writes them; they are not repeated below, the text after them stays);
+with none of those, the body's first picture, else `cover.webp`. Several pictures share the panel as a strip that snaps one picture at a time: swipe, scrollbar or arrow keys with no JavaScript,
+plus round left/right buttons, the current dot and `#pic-2` deep links from `src/gallery-client.ts` (loaded only on such pages).
 The grid card uses `card.webp` (480x480, `scripts/og-image.sh ... --square`, toy-add.sh does it) and falls back to `thumb.webp` letterboxed.
 `npm run check` fails a published toy without an owner from the config or without a picture, and warns when `thumb.webp` is missing.
 

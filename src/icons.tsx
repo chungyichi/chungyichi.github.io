@@ -9,6 +9,8 @@ const PATHS = {
   tag: "M20 13l-7 7-9-9V4h7zM8 8h.01",
   heart: "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z",
   arrow: "M7 17L17 7M9 7h8v8",
+  chevronLeft: "M15 6l-6 6 6 6",
+  chevronRight: "M9 6l6 6-6 6",
 } as const;
 export type IconName = keyof typeof PATHS;
 

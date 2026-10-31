@@ -383,21 +383,67 @@ test("toys: the square card picture is used when it exists, the list thumbnail o
   assert.deepEqual([tech.card, tech.thumb], ["", "/media/tech/t/thumb.webp"]);
 });
 
+const COVER = "/media/toys/robot/cover.webp", OWN = "/media/toys/robot/own.webp";
+const robot = (body, extra = "") => parsePost("2026-10-21-robot.zh.md", `---\ntitle: Robot\nsummary: S\n${extra}---\n${body}`, undefined, "toys");
+
 test("toys: the page picture is the front matter image, else the body's first picture (then dropped from the body), else cover.webp; the price reaches the page", () => {
-  const exists = (u) => ["/media/toys/robot/own.webp", "/media/toys/robot/cover.webp"].includes(u);
+  const exists = (u) => [OWN, COVER].includes(u);
   const body = toy('price: "NT$1,250"\n');                                               // ![Robot](/media/toys/robot/cover.webp) as the body
-  assert.deepEqual(toyHero(body, exists), { src: "/media/toys/robot/cover.webp", html: "" });
-  const text = parsePost("2026-10-21-robot.zh.md", "---\ntitle: Robot\nsummary: S\n---\nHello\n\n![R](/media/toys/robot/cover.webp)\n\nMore\n", undefined, "toys");
-  assert.deepEqual(toyHero(text, exists), { src: "/media/toys/robot/cover.webp", html: "<p>Hello</p>\n<p>More</p>\n" });
-  const own = parsePost("2026-10-21-robot.zh.md", "---\ntitle: Robot\nsummary: S\nimage: own.webp\n---\n![R](/media/toys/robot/cover.webp)\n", undefined, "toys");
-  assert.equal(toyHero(own, exists).src, "/media/toys/robot/own.webp");
-  assert.ok(toyHero(own, exists).html.includes("cover.webp"));                            // a different picture in the body stays there
-  const none = parsePost("2026-10-21-robot.zh.md", "---\ntitle: Robot\nsummary: S\n---\nJust text\n", undefined, "toys");
-  assert.deepEqual(toyHero(none, exists), { src: "/media/toys/robot/cover.webp", html: "<p>Just text</p>\n" });
-  assert.equal(toyHero(none, () => false).src, "");
+  assert.deepEqual(toyHero(body, exists), { pictures: [{ src: COVER, alt: "Robot" }], src: COVER, html: "" });
+  const text = robot("Hello\n\n![R](/media/toys/robot/cover.webp)\n\nMore\n");
+  assert.deepEqual(toyHero(text, exists), { pictures: [{ src: COVER, alt: "R" }], src: COVER, html: "<p>Hello</p>\n<p>More</p>\n" });
+  const own = robot("Hello\n\n![R](/media/toys/robot/cover.webp)\n", "image: own.webp\n");
+  assert.equal(toyHero(own, exists).src, OWN);
+  assert.ok(toyHero(own, exists).html.includes("cover.webp"));                            // with `image`, a picture after text is body, not panel
+  const none = robot("Just text\n");
+  assert.deepEqual(toyHero(none, exists), { pictures: [{ src: COVER, alt: "Robot" }], src: COVER, html: "<p>Just text</p>\n" });
+  assert.deepEqual(toyHero(none, () => false), { pictures: [], src: "", html: "<p>Just text</p>\n" });
   const routes = buildRoutes(buildModel([body], ["zh", "en"], site.sections), {}, { langs: ["zh"], fileExists: exists });
   const page = routes.find((r) => r.path === "/zh/toys/robot/").props;
-  assert.deepEqual([page.price, page.hero, page.html], ["NT$1,250", "/media/toys/robot/cover.webp", ""]);
+  assert.deepEqual([page.price, page.pictures, page.html], ["NT$1,250", [{ src: COVER, alt: "Robot" }], ""]);
   const tech = buildRoutes(buildModel([post("2026-10-21-t.zh.md", "", "---\ntitle: T\nsummary: S\n---\n![x](/media/tech/t/a.webp)\n")], ["zh", "en"], site.sections), {}, { langs: ["zh"], fileExists: () => true });
-  assert.ok(tech.find((r) => r.path === "/zh/tech/t/").props.html.includes("a.webp"));   // other sections keep their body as is
+  const techPage = tech.find((r) => r.path === "/zh/tech/t/").props;
+  assert.ok(techPage.html.includes("a.webp") && techPage.pictures.length === 0);         // other sections keep their body as is
+});
+
+test("toys: the pictures that open the body share the panel, in order, with their alt text; the text after them stays", () => {
+  const pics = (n) => Array.from({ length: n }, (_, i) => `![Robot ${i + 1}](/media/toys/robot/p${i + 1}.webp)`).join("\n\n");
+  const one = toyHero(robot(`${pics(1)}\n`));
+  assert.deepEqual([one.pictures.length, one.src, one.html], [1, "/media/toys/robot/p1.webp", ""]);
+  const two = toyHero(robot(`${pics(2)}\n\nA *note* below.\n`));
+  assert.deepEqual(two.pictures, [{ src: "/media/toys/robot/p1.webp", alt: "Robot 1" }, { src: "/media/toys/robot/p2.webp", alt: "Robot 2" }]);
+  assert.deepEqual([two.src, two.html], ["/media/toys/robot/p1.webp", "<p>A <em>note</em> below.</p>\n"]);
+  const three = toyHero(robot(`${pics(3)}\n`));
+  assert.deepEqual(three.pictures.map((p) => p.src), ["/media/toys/robot/p1.webp", "/media/toys/robot/p2.webp", "/media/toys/robot/p3.webp"]);
+  assert.equal(three.html, "");
+  // text between pictures ends the run: what follows is body, picture included
+  const split = toyHero(robot(`${pics(2)}\n\nBetween\n\n![Robot 3](/media/toys/robot/p3.webp)\n\nAfter\n`));
+  assert.equal(split.pictures.length, 2);
+  assert.equal(split.html, '<p>Between</p>\n<p><img src="/media/toys/robot/p3.webp" alt="Robot 3"></p>\n<p>After</p>\n');
+  // an empty alt falls back to the title; the alt is plain text (entities undone, React escapes it again)
+  const alt = toyHero(robot('![](/media/toys/robot/p1.webp)\n\n![A & "B"](/media/toys/robot/p2.webp)\n'));
+  assert.deepEqual(alt.pictures.map((p) => p.alt), ["Robot", 'A & "B"']);
+  // a picture inside a paragraph with text is body, not panel
+  const inline = toyHero(robot("See ![R](/media/toys/robot/p1.webp) here\n"));
+  assert.deepEqual([inline.pictures, inline.html.includes("p1.webp")], [[], true]);
+});
+
+test("toys: the front matter image comes first, then the opening pictures (the same file is not listed twice)", () => {
+  const exists = (u) => [OWN, COVER].includes(u);
+  const withOwn = toyHero(robot("![R](/media/toys/robot/cover.webp)\n\n![S](/media/toys/robot/p2.webp)\n\nText\n", "image: own.webp\n"), exists);
+  assert.deepEqual(withOwn.pictures.map((p) => p.src), [OWN, COVER, "/media/toys/robot/p2.webp"]);
+  assert.equal(withOwn.html, "<p>Text</p>\n");
+  const same = toyHero(robot("![R](/media/toys/robot/own.webp)\n\n![S](/media/toys/robot/p2.webp)\n", "image: own.webp\n"), exists);
+  assert.deepEqual(same.pictures.map((p) => p.src), [OWN, "/media/toys/robot/p2.webp"]);
+  const gone = toyHero(robot("![R](/media/toys/robot/p1.webp)\n", "image: gone.webp\n"), exists);     // a missing `image` is skipped
+  assert.deepEqual(gone.pictures.map((p) => p.src), ["/media/toys/robot/p1.webp"]);
+});
+
+import { clampSlide, slideAt, deepLink, keyTarget } from "../src/gallery-core.mjs";
+
+test("picture strip: the slide in view, #pic-N links and the arrow keys (held at the ends)", () => {
+  assert.deepEqual([clampSlide(-1, 3), clampSlide(1, 3), clampSlide(7, 3), clampSlide(0, 0)], [0, 1, 2, 0]);
+  assert.deepEqual([slideAt(0, 500, 3), slideAt(240, 500, 3), slideAt(260, 500, 3), slideAt(1000, 500, 3), slideAt(2000, 500, 3), slideAt(300, 0, 3)], [0, 0, 1, 2, 2, 0]);
+  assert.deepEqual([deepLink("#pic-1", 2), deepLink("#pic-2", 2), deepLink("#pic-3", 2), deepLink("#pic-0", 2), deepLink("#pic-x", 2), deepLink("", 2), deepLink("#main", 2)], [0, 1, -1, -1, -1, -1, -1]);
+  assert.deepEqual([keyTarget("ArrowRight", 0, 3), keyTarget("ArrowRight", 2, 3), keyTarget("ArrowLeft", 0, 3), keyTarget("ArrowLeft", 2, 3), keyTarget("Home", 2, 3), keyTarget("End", 0, 3), keyTarget("Enter", 1, 3)], [1, 2, 0, 1, 0, 2, null]);
 });

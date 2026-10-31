@@ -58,14 +58,14 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
         const path = postPath(lang, section, p.slug);
         const has = (l) => Boolean(model.translations[`${section}/${p.slug}`]?.[l]);
         const alternates = other(lang).map((l) => ({ lang: l, path: has(l) ? postPath(l, section, p.slug) : indexPath(l, section), translated: has(l) }));
-        // A toy page shows its picture beside the facts (and not again in the body); other posts show the body as is.
-        const hero = section === TOYS_SECTION ? toyHero(p, fileExists) : { src: "", html: p.html };
+        // A toy page shows its pictures on a panel beside the facts (and not again in the body); other posts show the body as is.
+        const hero = section === TOYS_SECTION ? toyHero(p, fileExists) : { pictures: [], html: p.html };
         routes.push({ path, kind: "post", lang, alternates,
           ogImage: ogImageFor(p, { baseUrl: site.baseUrl, exists: fileExists, fallback: defaultImage ? site.ogImage : "" }),
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: hero.html, draft: p.draft, private: Boolean(p.private), words: p.words,
-            owner: p.owner || "", source: p.source || "", status: p.status || "", price: p.price || "", hero: hero.src } });
+            owner: p.owner || "", source: p.source || "", status: p.status || "", price: p.price || "", pictures: hero.pictures } });
       }
     }
 
