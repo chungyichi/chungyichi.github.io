@@ -11,12 +11,15 @@ import { TOYS_SECTION, TOY_STATUSES } from "../src/toys.mjs";
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
 // Toys (content/toys/): one post per toy. `owner: me` says whose it is (the ids are in site.config.mjs; scripts/check.mjs compares),
-// `source: https://...` where it was bought (shown as a link), `status: want` marks a wish rather than something owned.
+// `source: https://...` where it was bought (shown as a link), `status: want` marks a wish rather than something owned,
+// `price: "NT$15,525"` is shown as written (text, so any currency or "about 500" works).
 const OWNER_RE = /^[a-z][a-z0-9-]{0,20}$/;
+const TOY_KEYS = ["owner", "source", "status", "price"];
+export const MAX_PRICE = 40;
 /** A toy's shop address: http(s) only, no credentials, parseable; anything else is refused (it becomes a link on the page). */
 export function checkSourceUrl(raw, where = "post") {
   let u;
@@ -139,15 +142,16 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   if ("trusted" in data && typeof data.trusted !== "boolean") throw new ContentError(`${filename}: 'trusted' must be true or false`);
   if ("draft" in data && typeof data.draft !== "boolean") throw new ContentError(`${filename}: 'draft' must be true or false`);
   if ("updated" in data && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.updated))) throw new ContentError(`${filename}: 'updated' must be YYYY-MM-DD`);
-  for (const k of ["owner", "source", "status"]) if (k in data && section !== TOYS_SECTION) throw new ContentError(`${filename}: '${k}' is only for posts in content/${TOYS_SECTION}/`);
+  for (const k of TOY_KEYS) if (k in data && section !== TOYS_SECTION) throw new ContentError(`${filename}: '${k}' is only for posts in content/${TOYS_SECTION}/`);
   if ("owner" in data && !(typeof data.owner === "string" && OWNER_RE.test(data.owner))) throw new ContentError(`${filename}: 'owner' must be a short id such as me or son`);
   if ("status" in data && !TOY_STATUSES.includes(data.status)) throw new ContentError(`${filename}: 'status' must be one of ${TOY_STATUSES.join(", ")}`);
+  if ("price" in data && !(typeof data.price === "string" && data.price.trim() && data.price.trim().length <= MAX_PRICE)) throw new ContentError(`${filename}: 'price' must be a short text such as "NT$1,250" (quote it; at most ${MAX_PRICE} characters)`);
   return {
     section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
-    owner: data.owner || "", source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "",
+    owner: data.owner || "", source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
   };

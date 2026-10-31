@@ -321,6 +321,17 @@ test("toys: owner, source and status are read from the front matter; absent ones
   assert.ok(p.html.includes('<img src="/media/toys/robot/cover.webp" alt="Robot">'));
 });
 
+test("toys: the price is free text, shown as written; absent is empty", () => {
+  assert.equal(toy('price: "NT$15,525"\n').price, "NT$15,525");
+  assert.equal(toy("price: about 500 yen\n").price, "about 500 yen");
+  assert.equal(toy("").price, "");
+  assert.equal(toy("price: 1250\n").price, "1250");                                    // a bare number is text too
+  assert.throws(() => toy('price: ""\n'), /'price' must be a short text/);
+  assert.throws(() => toy("price: true\n"), /'price' must be a short text/);
+  assert.throws(() => toy(`price: ${"9".repeat(41)}\n`), /at most 40 characters/);
+  assert.throws(() => parsePost("2026-10-21-a.zh.md", '---\ntitle: T\nsummary: S\nprice: "NT$1"\n---\nx', undefined, "tech"), /'price' is only for posts in content\/toys\//);
+});
+
 test("toys: bad values are refused and the fields are only for the toys section", () => {
   assert.throws(() => toy("owner: My Son\n"), /'owner' must be a short id/);
   assert.throws(() => toy("owner: true\n"), /'owner' must be a short id/);

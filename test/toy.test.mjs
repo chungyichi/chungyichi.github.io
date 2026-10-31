@@ -99,13 +99,15 @@ test("fetchToy: page then picture, only JPEG/PNG/WebP; a wall, a missing og:imag
   await assert.rejects(fetchToy("https://tw.shp.ee/abc", n), /not a known shop/);
 });
 
-test("the draft is a valid toys post: draft, title, source, picture in the body; owner given or left as a comment to fill", () => {
+test("the draft is a valid toys post: draft, title, source, price in the front matter (the day seen only as a comment), picture in the body; owner given or left as a comment to fill", () => {
   const given = draftText({ title: "Robot [Kit]", source: "https://shop.example/item/1", owner: "son", tags: ["公仔", "機器人"], slug: "robot", imageName: "cover.jpg", price: "NT$1,250", date: "2026-10-21" });
   const p = parsePost("2026-10-21-robot.zh.md", given, undefined, "toys");
-  assert.deepEqual([p.draft, p.title, p.owner, p.source, p.tags], [true, "Robot [Kit]", "son", "https://shop.example/item/1", ["公仔", "機器人"]]);
-  assert.ok(p.html.includes('<img src="/media/toys/robot/cover.webp" alt="Robot Kit">') && p.html.includes("NT$1,250"));
+  assert.deepEqual([p.draft, p.title, p.owner, p.source, p.tags, p.price], [true, "Robot [Kit]", "son", "https://shop.example/item/1", ["公仔", "機器人"], "NT$1,250"]);
+  assert.ok(p.html.includes('<img src="/media/toys/robot/cover.webp" alt="Robot Kit">') && !p.html.includes("NT$1,250") && !p.html.includes("2026-10-21"));
+  assert.match(given, /^price: "NT\$1,250"\n# price as shown on 2026-10-21$/m);
   const blank = draftText({ title: "T", source: "https://shop.example/1", slug: "t", imageName: "cover.png", date: "2026-10-21", owners: ["me", "son"] });
   assert.match(blank, /^# owner: me \| son/m);
+  assert.ok(!blank.includes("price"));
   assert.equal(parseFrontMatter(blank).data.owner, undefined);
-  assert.equal(parsePost("2026-10-21-t.zh.md", blank, undefined, "toys").owner, "");
+  assert.deepEqual([parsePost("2026-10-21-t.zh.md", blank, undefined, "toys").owner, parsePost("2026-10-21-t.zh.md", blank, undefined, "toys").price], ["", ""]);
 });

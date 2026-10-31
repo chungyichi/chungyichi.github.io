@@ -118,11 +118,14 @@ export async function fetchToy(raw, deps) {
   return { title: info.title, price: formatPrice(info.price, info.currency), source: page.url, image: { name: `cover${ext}`, bytes: img.bytes, type: img.type, url: img.url } };
 }
 
-/** The draft post: title and source filled in, owner from the option or a comment to fill, summary left empty, the picture shown in the body. */
+/**
+ * The draft post: title, source and price filled in, owner from the option or a comment to fill, summary left empty, the picture in the body
+ * (the toy page shows it beside the facts). The day the price was seen goes in a comment: the page does not show it.
+ */
 export function draftText({ title, source, owner = "", tags = [], slug, imageName, price = "", date, owners = [] }) {
   const web = imageName.replace(/\.[^.]+$/, ".webp");                    // what photo.sh makes of the original
   const ownerLine = owner ? `owner: ${owner}` : `# owner: ${owners.join(" | ") || "me"}   (required before publishing)`;
-  const fm = [`title: ${JSON.stringify(title)}`, 'summary: ""', "draft: true", ownerLine, ...(tags.length ? [`tags: ${tags.join(", ")}`] : []), `source: ${source}`];
-  const body = [`![${title.replace(/[[\]]/g, "")}](/media/toys/${slug}/${web})`, ...(price ? [`定價 ${price}（${date}）`] : [])];
-  return `---\n${fm.join("\n")}\n---\n${body.join("\n\n")}\n`;
+  const fm = [`title: ${JSON.stringify(title)}`, 'summary: ""', "draft: true", ownerLine, ...(tags.length ? [`tags: ${tags.join(", ")}`] : []), `source: ${source}`,
+    ...(price ? [`price: ${JSON.stringify(price)}`, `# price as shown on ${date}`] : [])];
+  return `---\n${fm.join("\n")}\n---\n![${title.replace(/[[\]]/g, "")}](/media/toys/${slug}/${web})\n`;
 }
