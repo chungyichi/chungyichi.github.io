@@ -95,9 +95,12 @@ Review each result with `npm run dev`, add layout, then move it out of `_private
 
 ## Toys
 
-`content/toys/` is a toy library: one post per toy, listed at `/zh/toys/` as a picture grid (thumbnail, name, owner, tags) with an owner filter made of plain links
-(`/zh/toys/owner/me/`, `/zh/toys/owner/son/`; the ids and labels are `toyOwners` in `site.config.mjs`). Toys share tags, search (by name and tag; the result says 玩具庫), thumbnails and the media release with the other sections.
-Extra front matter, toys only: `owner: me` (required to publish), `source: https://...` (the shop page, shown as a link with `rel="nofollow"`), `status: want` (a wish; absent = owned).
+`content/toys/` is a toy library: one post per toy, listed at `/zh/toys/` as a grid of square cards (picture, name, up to two tags) with an owner filter made of plain links
+(`/zh/toys/owner/me/`, `/zh/toys/owner/son/`; the ids, labels and icons are `toyOwners` in `site.config.mjs`). Toys share tags, search (by name and tag; the result says 玩具庫), thumbnails and the media release with the other sections.
+Extra front matter, toys only: `owner: me` (required to publish), `source: https://...` (the shop page: a 前往購買 button with `rel="nofollow"`), `status: want` (a wish; absent = owned),
+`price: "NT$15,525"` (text, shown as written). The owner and a wish are shown as icon badges in a colour per owner (`--owner-<id>` in `tokens.css`), never as text.
+The toy page is two columns on a wide screen: the picture (the front matter `image`, else the first picture in the body, which is then not repeated below, else `cover.webp`) beside the facts; the toys pages use a wider column than the reading sections.
+The grid card uses `card.webp` (480x480, `scripts/og-image.sh ... --square`, toy-add.sh does it) and falls back to `thumb.webp` letterboxed.
 `npm run check` fails a published toy without an owner from the config or without a picture, and warns when `thumb.webp` is missing.
 
 ```sh
@@ -107,8 +110,8 @@ scripts/toy-add.sh "https://shopee.tw/..." --image ~/Pictures/robot.jpg --title 
 
 The page is fetched in the node container (https only, hosts listed in `TOY_HOSTS` in `scripts/toy.mjs`: add one on purpose; redirects are followed by hand and only across that list, never to a private address;
 an honest user agent; pictures JPEG/PNG/WebP up to 10 MB). `og:title`, `og:image` and the price are read; a login, captcha or age page, or a page without `og:image`, stops with "please supply the picture yourself" (`--image`).
-The picture goes to `../blog-originals/toys/<slug>/` (outside git), `photo.sh` and `og-image.sh` make the web version and the thumbnail in `content/toys/media/<slug>/` (git-ignored),
-and `content/toys/<date>-<slug>.zh.md` is written as a draft (title, source, owner, tags, the picture, the price as a line of text). Then: look with `npm run dev`, fill in `summary`,
+The picture goes to `../blog-originals/toys/<slug>/` (outside git), `photo.sh` and `og-image.sh --square` make the web version, the thumbnails and the square card in `content/toys/media/<slug>/` (git-ignored),
+and `content/toys/<date>-<slug>.zh.md` is written as a draft (title, source, owner, tags, price, the picture; the day the price was seen is a front matter comment). Then: look with `npm run dev`, fill in `summary`,
 drop `draft: true`, `scripts/media.sh push toys <slug>`, commit the post. A Chinese title needs `--slug`. `scripts/docker.sh npm run toy:add -- <url>` runs only the fetch and draft part (picture left in `backup/toy-tmp/`).
 
 ## Publish
