@@ -76,6 +76,8 @@ test("the product page gives title (price stripped), an https og:image, and the 
   assert.match(parseProductPage("<title>請先登入 | Shop</title>").wall, /login, captcha or age check/);
   assert.match(parseProductPage("<title>Just a moment...</title>").wall, /login, captcha or age check/);
   assert.equal(parseProductPage("<p>nothing</p>").image, "");
+  assert.equal(parseProductPage('<meta property="og:title" content="DVÄRGMÅS - 遊戲隧道 | IKEA 線上購物" />').title, "DVÄRGMÅS - 遊戲隧道");   // " | Shop name" is cut; a full-width ｜ inside a title is not
+  assert.equal(parseProductPage('<meta property="og:title" content="MAYDAY MAX｜25TH 紀念" />').title, "MAYDAY MAX｜25TH 紀念");
 });
 
 test("price formatting and slugs", () => {

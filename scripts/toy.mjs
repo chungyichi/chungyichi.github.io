@@ -81,7 +81,7 @@ export function parseProductPage(html) {
   const pageTitle = titleEl ? text(titleEl).replace(/\s+/g, " ").trim() : "";
   const images = (meta["og:image"] || []).filter((v) => /^https?:\/\//i.test(v));
   const image = images.find((v) => v.startsWith("https://")) || images[0]?.replace(/^http:/i, "https:") || "";
-  const title = (meta["og:title"]?.[0] || pageTitle).replace(/\s*NT\$\s?[\d,]+(\.\d+)?\s*$/, "").trim();   // some shops append the price
+  const title = (meta["og:title"]?.[0] || pageTitle).replace(/\s*NT\$\s?[\d,]+(\.\d+)?\s*$/, "").replace(/\s+\|\s+[^|]+$/, "").trim();   // some shops append the price, many a " | Shop name"
   const price = meta["product:price:amount"]?.[0] || meta.price?.[0] || "";
   const currency = meta["product:price:currency"]?.[0] || meta.priceCurrency?.[0] || "";
   const wall = WALL.test(pageTitle) ? `the page looks like a login, captcha or age check ("${pageTitle.slice(0, 60)}")` : "";
