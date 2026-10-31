@@ -9,8 +9,7 @@ import { TOYS_SECTION } from "../src/toys.mjs";
 
 // Known advisories we accept for a limited time, with the reason. An expired entry fails the check.
 const ACCEPTED_ADVISORIES = [
-  { id: "GHSA-vfgh-jcmw-g37q", until: "2026-10-24", why: "markdown-it 15.0.2 DoS needs hostile Markdown; we render only our own posts with raw HTML off. 15.0.3 is under the 7-day release-age rule until 2026-10-23." },
-  { id: "GHSA-gfr2-rv44-r23c", until: "2026-10-24", why: "same as above" },
+  // { id: "GHSA-xxxx-xxxx-xxxx", until: "YYYY-MM-DD", why: "..." },
 ];
 
 let failed = false;

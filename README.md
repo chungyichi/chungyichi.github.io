@@ -155,8 +155,6 @@ The site lives on `master`. Settings → Pages → Source is **GitHub Actions**;
 ## Known limits
 
 - Not yet looked at in a browser by a human; layout and typography are a neutral starting point.
-- `markdown-it` 15.0.2 has a known DoS advisory that needs hostile Markdown; accepted until 2026-10-24 in `scripts/check.mjs`
-  (the fix, 15.0.3, was under the 7-day release-age rule). Bump it on or after 2026-10-23.
 - GitHub Pages cannot set HTTP headers, so there is no Content-Security-Policy; the site has one tiny inline script (theme).
 
 ## Private vault
