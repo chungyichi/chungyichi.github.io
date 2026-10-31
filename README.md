@@ -8,7 +8,7 @@ Static HTML rendered by React at build time, bundled with Vite. No tracking, rea
 ```sh
 scripts/docker.sh npm run new -- "Post title"                  # creates content/tech/YYYY-MM-DD-slug.zh.md (a draft)
 scripts/docker.sh npm run new -- "Post title" --lang en        # an English one
-scripts/docker.sh npm run new -- "Trip" --section life       # sections: tech (default), life
+scripts/docker.sh npm run new -- "Trip" --section life       # sections: tech (default), life, toys (see "Toys")
 scripts/docker.sh npm run new -- "Trip" --section life --private   # content/_private/: never committed, never built
 scripts/docker.sh npm run new -- "中文標題" --slug zh-title     # a non-ASCII title needs --slug
 scripts/docker.sh npm run dev                                  # preview at http://localhost:5173 (drafts included)
@@ -93,6 +93,24 @@ Every import also writes `import-map.json` next to the posts (git-ignored with t
 So a generated name such as `post-d9935911` or `495c7ed1c555.jpg` can always be traced back. `--map-only` rebuilds the map for an earlier import without downloading anything.
 Review each result with `npm run dev`, add layout, then move it out of `_private/` and drop `draft: true` to publish. Nothing is overwritten. Medium's export format is assumed from its documented shape and **has not been tried on a real export yet**.
 
+## Toys
+
+`content/toys/` is a toy library: one post per toy, listed at `/zh/toys/` as a picture grid (thumbnail, name, owner, tags) with an owner filter made of plain links
+(`/zh/toys/owner/me/`, `/zh/toys/owner/son/`; the ids and labels are `toyOwners` in `site.config.mjs`). Toys share tags, search (by name and tag; the result says 玩具庫), thumbnails and the media release with the other sections.
+Extra front matter, toys only: `owner: me` (required to publish), `source: https://...` (the shop page, shown as a link with `rel="nofollow"`), `status: want` (a wish; absent = owned).
+`npm run check` fails a published toy without an owner from the config or without a picture, and warns when `thumb.webp` is missing.
+
+```sh
+scripts/toy-add.sh "https://www.shopping.bin-music.com.tw/SalePage/Index/123" --owner son --tags 公仔,機器人   # on the host
+scripts/toy-add.sh "https://shopee.tw/..." --image ~/Pictures/robot.jpg --title "遙控機器人" --owner son        # a shop that needs a login: your own picture, nothing fetched
+```
+
+The page is fetched in the node container (https only, hosts listed in `TOY_HOSTS` in `scripts/toy.mjs`: add one on purpose; redirects are followed by hand and only across that list, never to a private address;
+an honest user agent; pictures JPEG/PNG/WebP up to 10 MB). `og:title`, `og:image` and the price are read; a login, captcha or age page, or a page without `og:image`, stops with "please supply the picture yourself" (`--image`).
+The picture goes to `../blog-originals/toys/<slug>/` (outside git), `photo.sh` and `og-image.sh` make the web version and the thumbnail in `content/toys/media/<slug>/` (git-ignored),
+and `content/toys/<date>-<slug>.zh.md` is written as a draft (title, source, owner, tags, the picture, the price as a line of text). Then: look with `npm run dev`, fill in `summary`,
+drop `draft: true`, `scripts/media.sh push toys <slug>`, commit the post. A Chinese title needs `--slug`. `scripts/docker.sh npm run toy:add -- <url>` runs only the fetch and draft part (picture left in `backup/toy-tmp/`).
+
 ## Publish
 
 ```sh
@@ -115,11 +133,12 @@ All colours, fonts, widths and spacing are CSS variables in `src/styles/tokens.c
 
 | Path | What |
 |---|---|
-| `content/tech/`, `content/life/`, `content/pages/` | Posts per section (`.md`, or `.html` with its own layout) and pages such as About; `media/` and `<slug>.css` beside them |
+| `content/tech/`, `content/life/`, `content/toys/`, `content/pages/` | Posts per section (`.md`, or `.html` with its own layout) and pages such as About; `media/` and `<slug>.css` beside them |
 | `content/_private/<section>/`, `backup/` | **git-ignored**: unpublished drafts, imports, the original Medium export. Only `npm run dev` shows them; `check` fails if any gets tracked |
 | `site.config.mjs` | title, tagline, base URL, languages, sections, posts per page |
 | `scripts/content.mjs` | front matter, Markdown, publishing rules, translations, pagination, sitemap (pure, tested) |
 | `scripts/build.mjs`, `dev.mjs`, `new.mjs`, `check.mjs` | build, dev server, new post, post-build checks |
+| `scripts/toy.mjs`, `toy-add.mjs`, `toy-add.sh` | toy from a shop page: fetch rules (pure, tested), the command, the host wrapper |
 | `src/` | React components, i18n strings, styles; hydrated pieces are small: theme and season buttons, copy-link, search |
 | `test/` | `node --test` unit tests |
 
