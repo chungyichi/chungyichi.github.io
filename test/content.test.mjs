@@ -310,7 +310,7 @@ test("tags: at most three per post", () => {
 
 // ---- toys ----
 import { checkSourceUrl } from "../scripts/content.mjs";
-import { filterByOwner, ownerPath } from "../src/toys.mjs";
+import { filterByOwner, ownerPath, pickFeaturedToys } from "../src/toys.mjs";
 
 const toy = (extra, name = "2026-10-21-robot.zh.md") => parsePost(name, `---\ntitle: Robot\nsummary: S\ntags: 公仔\n${extra}---\n![Robot](/media/toys/robot/cover.webp)\n`, undefined, "toys");
 
@@ -330,6 +330,35 @@ test("toys: the price is free text, shown as written; absent is empty", () => {
   assert.throws(() => toy("price: true\n"), /'price' must be a short text/);
   assert.throws(() => toy(`price: ${"9".repeat(41)}\n`), /at most 40 characters/);
   assert.throws(() => parsePost("2026-10-21-a.zh.md", '---\ntitle: T\nsummary: S\nprice: "NT$1"\n---\nx', undefined, "tech"), /'price' is only for posts in content\/toys\//);
+});
+
+test("toys: the quantity is a whole number from 1 up; absent is 1; it reaches the card and the page", () => {
+  assert.equal(toy("quantity: 2\n").quantity, 2);
+  assert.equal(toy('quantity: "3"\n').quantity, 3);
+  assert.equal(toy("").quantity, 1);
+  for (const bad of ["0", "-1", "1.5", "two", "true", '""']) assert.throws(() => toy(`quantity: ${bad}\n`), /'quantity' must be a whole number from 1 up/, bad);
+  assert.throws(() => parsePost("2026-10-21-a.zh.md", "---\ntitle: T\nsummary: S\nquantity: 2\n---\nx", undefined, "tech"), /'quantity' is only for posts in content\/toys\//);
+  const posts = [toy("owner: me\nquantity: 2\n"), toy("owner: me\n", "2026-10-22-car.zh.md")];
+  const routes = buildRoutes(buildModel(posts, ["zh", "en"], site.sections), {}, { langs: ["zh"] });
+  assert.deepEqual(routes.find((r) => r.path === "/zh/toys/").props.items.map((p) => [p.slug, p.quantity]), [["car", 1], ["robot", 2]]);
+  assert.equal(routes.find((r) => r.path === "/zh/toys/robot/").props.quantity, 2);
+  assert.equal(routes.find((r) => r.path === "/zh/toys/car/").props.quantity, 1);
+});
+
+test("home: the featured toys come in the config's order, only those that exist in the language, with the toy page's picture; none means no carousel", () => {
+  const car = parsePost("2026-10-22-car.zh.md", "---\ntitle: Car\nsummary: S\nowner: me\n---\nNo picture in the body.\n", undefined, "toys");
+  const posts = [toy("owner: me\n"), car, toy("owner: me\n", "2026-10-23-ball.en.md"), post("2026-10-21-t.zh.md", "")];
+  const zh = posts.filter((p) => p.lang === "zh");
+  assert.deepEqual(pickFeaturedToys(zh, ["toys/car", "toys/ball", "toys/nope", "tech/t", "toys/robot"]).map((p) => p.slug), ["car", "robot"]);
+  assert.deepEqual(pickFeaturedToys(zh, []), []);
+  assert.deepEqual(pickFeaturedToys(zh, undefined), []);
+  const exists = (u) => u === "/media/toys/car/card.webp";                         // robot's picture is in its body; car has only a card
+  const routes = buildRoutes(buildModel(posts, ["zh", "en"], site.sections), {}, { featured: ["tech/t"], featuredToys: ["toys/car", "toys/ball", "toys/robot"], fileExists: exists });
+  const home = routes.find((r) => r.path === "/zh/").props;
+  assert.deepEqual(home.toys, [{ slug: "car", title: "Car", pic: "/media/toys/car/card.webp" }, { slug: "robot", title: "Robot", pic: "/media/toys/robot/cover.webp" }]);
+  assert.deepEqual(routes.find((r) => r.path === "/en/").props.toys.map((x) => x.slug), ["ball"]);
+  assert.deepEqual(buildRoutes(buildModel(posts, ["zh", "en"], site.sections), {}, { featuredToys: [] }).find((r) => r.path === "/zh/").props.toys, []);
+  assert.deepEqual(home.featured.map((p) => p.slug), ["t"]);                            // the posts list is untouched by the toys
 });
 
 test("toys: bad values are refused and the fields are only for the toys section", () => {

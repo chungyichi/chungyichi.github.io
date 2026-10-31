@@ -28,6 +28,8 @@ export const site = {
   toysPerPage: 24,       // the toy grid shows more per page than a text list
   // Posts on the home page, as "<section>/<slug>" (a post missing in a language is skipped); newest first. An empty list shows the latest few.
   featured: ["tech/site-design", "tech/technique-behind-git", "life/part-1", "life/2023-nikko-day-1-jr", "life/2019-day-1"],
+  // Toys in the home page's picture carousel (between the motto and the featured posts), "toys/<slug>" in this order; unpublished ones are skipped, none hides the carousel.
+  featuredToys: ["toys/mayday-max", "toys/mivi-king-of-destruction-3"],
   homePosts: 5,
   timezone: "Asia/Taipei", // a post dated "today" in this zone is published
 };

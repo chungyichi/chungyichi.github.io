@@ -11,14 +11,15 @@ import { TOYS_SECTION, TOY_STATUSES } from "../src/toys.mjs";
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
 // Toys (content/toys/): one post per toy. `owner: me` says whose it is (the ids are in site.config.mjs; scripts/check.mjs compares),
 // `source: https://...` where it was bought (shown as a link), `status: want` marks a wish rather than something owned,
-// `price: "NT$15,525"` is shown as written (text, so any currency or "about 500" works).
+// `price: "NT$15,525"` is shown as written (text, so any currency or "about 500" works), `quantity: 2` how many of the same toy
+// (a whole number from 1; absent is 1; the pages only mention it from 2 up).
 const OWNER_RE = /^[a-z][a-z0-9-]{0,20}$/;
-const TOY_KEYS = ["owner", "source", "status", "price"];
+const TOY_KEYS = ["owner", "source", "status", "price", "quantity"];
 export const MAX_PRICE = 40;
 /** A toy's shop address: http(s) only, no credentials, parseable; anything else is refused (it becomes a link on the page). */
 export function checkSourceUrl(raw, where = "post") {
@@ -146,12 +147,14 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   if ("owner" in data && !(typeof data.owner === "string" && OWNER_RE.test(data.owner))) throw new ContentError(`${filename}: 'owner' must be a short id such as me or son`);
   if ("status" in data && !TOY_STATUSES.includes(data.status)) throw new ContentError(`${filename}: 'status' must be one of ${TOY_STATUSES.join(", ")}`);
   if ("price" in data && !(typeof data.price === "string" && data.price.trim() && data.price.trim().length <= MAX_PRICE)) throw new ContentError(`${filename}: 'price' must be a short text such as "NT$1,250" (quote it; at most ${MAX_PRICE} characters)`);
+  if ("quantity" in data && !/^[1-9]\d{0,5}$/.test(String(data.quantity).trim())) throw new ContentError(`${filename}: 'quantity' must be a whole number from 1 up (how many of this toy), such as quantity: 2`);
   return {
     section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
     owner: data.owner || "", source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
+    quantity: "quantity" in data ? Number(String(data.quantity).trim()) : 1,
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
   };

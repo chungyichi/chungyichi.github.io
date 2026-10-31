@@ -3,14 +3,14 @@ import { site } from "../site.config.mjs";
 import { createHash } from "node:crypto";
 import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor, toyHero, collectTags } from "./content.mjs";
 import { tagPath, tagsIndexPath } from "../src/tags.mjs";
-import { TOYS_SECTION, filterByOwner, ownerPath } from "../src/toys.mjs";
+import { TOYS_SECTION, filterByOwner, ownerPath, pickFeaturedToys } from "../src/toys.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
 const briefOf = (fileExists) => (p) => {
   const dir = `/media/${p.section}/${p.slug}`;
   return {
-    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", status: p.status || "",
+    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", status: p.status || "", quantity: p.quantity || 1,
     thumb: fileExists(`${dir}/thumb.webp`) ? `${dir}/thumb.webp` : "",                                                   // 400x210, made by scripts/og-image.sh
     card: p.section === TOYS_SECTION && fileExists(`${dir}/card.webp`) ? `${dir}/card.webp` : "",                       // 480x480 for the toy grid (og-image.sh --square); the grid falls back to thumb
   };
@@ -22,9 +22,11 @@ function homeList(posts, featured, limit) {
   return pick.slice(0, Math.max(limit, 5));
 }
 
-export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, toysPerPage = site.toysPerPage ?? perPage, toyOwners = site.toyOwners ?? [], homePosts = site.homePosts, featured = site.featured ?? [], fileExists = () => false } = {}) {
+export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, toysPerPage = site.toysPerPage ?? perPage, toyOwners = site.toyOwners ?? [], homePosts = site.homePosts, featured = site.featured ?? [], featuredToys = site.featuredToys ?? [], fileExists = () => false } = {}) {
   const routes = [];
   const brief = briefOf(fileExists);
+  // A slide of the home page's toy carousel: the toy page's picture (cover), else the square card, else the list thumbnail.
+  const toySlide = (p) => { const b = brief(p); return { slug: p.slug, title: p.title, pic: toyHero(p, fileExists).src || b.card || b.thumb }; };
   const other = (lang) => langs.filter((l) => l !== lang);
   const alt = (path, lang) => other(lang).map((l) => ({ lang: l, path: path.replace(`/${lang}/`, `/${l}/`) }));
 
@@ -33,7 +35,8 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
 
   for (const lang of langs) {
     routes.push({ path: `/${lang}/`, kind: "home", lang, alternates: alt(`/${lang}/`, lang),
-      props: { featured: homeList(model.byLang[lang], featured, homePosts).map(brief), sections: sectionIds().map((id) => ({ id, total: model.bySection[id][lang].length })) } });
+      props: { featured: homeList(model.byLang[lang], featured, homePosts).map(brief), toys: pickFeaturedToys(model.byLang[lang], featuredToys).map(toySlide),
+        sections: sectionIds().map((id) => ({ id, total: model.bySection[id][lang].length })) } });
 
     for (const section of sectionIds()) {
       const posts = model.bySection[section][lang];
@@ -65,7 +68,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: hero.html, draft: p.draft, private: Boolean(p.private), words: p.words,
-            owner: p.owner || "", source: p.source || "", status: p.status || "", price: p.price || "", pictures: hero.pictures } });
+            owner: p.owner || "", source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
       }
     }
 

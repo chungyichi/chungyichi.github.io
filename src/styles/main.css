@@ -140,6 +140,9 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 .toy-card .toy-pic img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .toy-card .no-thumb { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 3rem; color: var(--muted); opacity: 0.35; }
 .toy-card .badges { position: absolute; top: 0.5rem; left: 0.5rem; z-index: 1; }
+/* How many of the same toy (quantity: 2 and up): a small chip in the picture's other corner. */
+.toy-card .qty { position: absolute; top: 0.5rem; right: 0.5rem; z-index: 1; padding: 0.05rem 0.55rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  color: var(--fg); background: color-mix(in srgb, var(--bg) 85%, transparent); border: 1px solid var(--line); }
 .toy-card h3 { font-size: 0.98rem; line-height: 1.4; margin: 0.65rem 0.8rem 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .toy-card h3 a { color: var(--fg); text-decoration: none; }
 .toy-card h3 a::after { content: ""; position: absolute; inset: 0; }          /* the whole card opens the toy */
@@ -154,30 +157,43 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 /* The toy page: picture on a soft panel beside the facts on a wide screen, stacked on a phone; the text below keeps the reading width. */
 .toy-hero { display: grid; gap: 1.2rem 2.5rem; margin: 1.6rem 0 2rem; align-items: start; }
 @media (min-width: 48rem) { .toy-hero.has-pic { grid-template-columns: minmax(0, 7fr) minmax(0, 6fr); } }
-.toy-hero-pic { position: relative; aspect-ratio: 1; background: var(--code-bg); border-radius: var(--radius-lg); overflow: hidden; }
-/* The pictures are a strip of panel-sized slides that snaps one at a time, so a swipe, the scrollbar or the arrow keys turn the pages
-   without a script. The panel keeps its square, so switching pictures never moves the text. With the script on ([data-gallery="on"])
-   the round buttons replace the scrollbar; the dots are links to #pic-N and sit on a faint pill so they read on any picture. */
-.toy-slides { display: flex; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: thin; }
-.toy-slides:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--radius-lg); }
-.toy-slide { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; }
-.toy-slide img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.toy-hero-pic .badges { position: absolute; top: 0.7rem; left: 0.7rem; z-index: 2; }
-[data-gallery="on"] .toy-slides { scrollbar-width: none; }
-[data-gallery="on"] .toy-slides::-webkit-scrollbar { display: none; }
-.toy-nav { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; padding: 0;
+/* A gallery (src/App.tsx Gallery): a soft panel whose slides are a strip that snaps one at a time, so a swipe, the scrollbar or the
+   arrow keys turn the pages without a script. The panel keeps its shape, so switching slides never moves the text around it.
+   With the script on ([data-gallery="on"]) the round buttons replace the scrollbar; the dots are links to #pic-N and sit on a faint
+   pill so they read on any picture; the "1 / N" counter (home page) only shows with the script, since only the script can update it. */
+.gallery { position: relative; aspect-ratio: 1; background: var(--code-bg); border-radius: var(--radius-lg); overflow: hidden; }
+.gallery-strip { display: flex; height: 100%; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.gallery-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--radius-lg); }
+.gallery-slide { flex: 0 0 100%; width: 100%; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; }
+.gallery-slide img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.gallery .badges { position: absolute; top: 0.7rem; left: 0.7rem; z-index: 2; }
+[data-gallery="on"] .gallery-strip { scrollbar-width: none; }
+[data-gallery="on"] .gallery-strip::-webkit-scrollbar { display: none; }
+.gallery-nav { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; padding: 0;
   border: 1px solid var(--line); border-radius: 50%; background: color-mix(in srgb, var(--bg) 85%, transparent); color: var(--fg); font-size: 1.3rem; cursor: pointer; }
-.toy-nav[hidden] { display: none; }
-.toy-prev { left: 0.6rem; }
-.toy-next { right: 0.6rem; }
-.toy-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.toy-nav:disabled { opacity: 0.3; cursor: default; }
-.toy-nav:focus-visible { border-radius: 50%; }
-.toy-dots { position: absolute; left: 50%; bottom: 0.5rem; z-index: 2; transform: translateX(-50%); display: flex; gap: 0.1rem; padding: 0 0.2rem; border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); }
-.toy-dots a { position: relative; display: block; width: 1.25rem; height: 1.25rem; border-radius: 50%; }
-.toy-dots a::before { content: ""; position: absolute; inset: 0.4rem; border-radius: 50%; background: var(--fg); opacity: 0.35; }
-.toy-dots a:hover::before, .toy-dots a[aria-current]::before { background: var(--accent); opacity: 1; }
-.toy-dots a:focus-visible { border-radius: 50%; }
+.gallery-nav[hidden] { display: none; }
+.gallery-prev { left: 0.6rem; }
+.gallery-next { right: 0.6rem; }
+.gallery-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.gallery-nav:disabled { opacity: 0.3; cursor: default; }
+.gallery-nav:focus-visible { border-radius: 50%; }
+.gallery-dots { position: absolute; left: 50%; bottom: 0.5rem; z-index: 2; transform: translateX(-50%); display: flex; gap: 0.1rem; padding: 0 0.2rem; border-radius: 999px; background: color-mix(in srgb, var(--bg) 70%, transparent); }
+.gallery-dots a { position: relative; display: block; width: 1.25rem; height: 1.25rem; border-radius: 50%; }
+.gallery-dots a::before { content: ""; position: absolute; inset: 0.4rem; border-radius: 50%; background: var(--fg); opacity: 0.35; }
+.gallery-dots a:hover::before, .gallery-dots a[aria-current]::before { background: var(--accent); opacity: 1; }
+.gallery-dots a:focus-visible { border-radius: 50%; }
+.gallery-count { position: absolute; top: 0.6rem; right: 0.7rem; z-index: 2; padding: 0.05rem 0.6rem; border-radius: 999px; font-size: 0.8rem; font-variant-numeric: tabular-nums;
+  color: var(--fg); background: color-mix(in srgb, var(--bg) 75%, transparent); border: 1px solid var(--line); }
+.gallery-count[hidden] { display: none; }
+/* The home page's toy carousel: a wider panel than the toy page's square; a slide is the picture with the name under it, and opens the toy. */
+.home-toys h2 { margin-top: 0; }
+.home-toys-pic { aspect-ratio: 4 / 3; }
+.home-toy { display: flex; flex-direction: column; height: 100%; color: var(--fg); text-decoration: none; }
+.home-toy img { flex: 1; min-height: 0; width: 100%; object-fit: contain; padding: 0.8rem 0.8rem 0; }
+.home-toy .no-thumb { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--muted); opacity: 0.35; }
+.home-toy-name { flex: none; padding: 0.5rem 3.2rem 0; margin-bottom: 0.7rem; text-align: center; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.home-toy:hover .home-toy-name { color: var(--accent); }
+.home-toys .more-sections { margin: 0.8rem 0 2rem; }
 .toy-hero-info .badges { margin-top: 0.3rem; }
 .toy-hero:not(.has-pic) .toy-hero-info { max-width: var(--measure); }
 .toy-hero-info h1 { margin: 0.3rem 0 0.6rem; font-size: 1.55rem; }

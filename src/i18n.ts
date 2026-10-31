@@ -17,6 +17,7 @@ export const t = {
     owner: "擁有者", ownerAll: "全部", scope: "範圍", scopePosts: "文章", scopeToys: "玩具", statusWant: "想要", noToys: "還沒有玩具。",
     price: "價格", added: "加入", shop: "購買來源", viewShop: "前往購買",
     pictures: "圖片", prevPicture: "上一張", nextPicture: "下一張", pictureN: (n: number) => `第 ${n} 張`,
+    quantity: "數量", featuredToys: "精選玩具", allToys: "看全部玩具 →",
   },
   en: {
     home: "Home", about: "About", github: "GitHub", latest: "Latest posts", featured: "Featured", all: "All posts", allInSection: "More",
@@ -32,6 +33,7 @@ export const t = {
     owner: "Owner", ownerAll: "All", scope: "Scope", scopePosts: "Posts", scopeToys: "Toys", statusWant: "Wish list", noToys: "No toys yet.",
     price: "Price", added: "Added", shop: "Shop", viewShop: "Shop",
     pictures: "Pictures", prevPicture: "Previous picture", nextPicture: "Next picture", pictureN: (n: number) => `Picture ${n}`,
+    quantity: "Quantity", featuredToys: "Featured toys", allToys: "All toys →",
   },
 } as const;
 

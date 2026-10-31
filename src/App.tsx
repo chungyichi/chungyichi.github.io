@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { site } from "../site.config.mjs";
 import { t, title, tagline, sectionTitle, ownerTitle, type Lang } from "./i18n";
-import type { Brief, Picture, Route } from "./types";
+import type { Brief, Route, ToySlide } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
 import { SEASON_ISLAND_ID } from "./SeasonToggle";
 import { tagPath, tagsIndexPath } from "./tags.mjs";
@@ -66,11 +66,57 @@ function PostItem({ lang, p }: { lang: Lang; p: Brief }) {
   );
 }
 
+/**
+ * A panel whose slides share one place: a horizontal strip that snaps one slide at a time, so it works with a swipe, the scrollbar
+ * or the arrow keys and no script. /src/gallery-client.ts adds the round buttons, keeps the current dot (or the "1 / N" counter)
+ * in step and stops the arrow keys from scrolling the page. The dots are links to #pic-N, so a slide can be deep-linked.
+ * `badges` sits in the panel's corner above the slides. One slide: the plain panel, no buttons, no dots.
+ */
+function Gallery({ lang, slides, keys, badges, counter, className }: { lang: Lang; slides: ReactNode[]; keys: string[]; badges?: ReactNode; counter?: boolean; className?: string }) {
+  const s = t[lang], many = slides.length > 1;
+  return (
+    <div className={className ? `gallery ${className}` : "gallery"} data-gallery={many ? "" : undefined}>
+      <div className="gallery-strip" tabIndex={many ? 0 : undefined} role={many ? "group" : undefined} aria-label={many ? s.pictures : undefined}>
+        {slides.map((slide, i) => <div key={keys[i]} className="gallery-slide" id={many ? `pic-${i + 1}` : undefined}>{slide}</div>)}
+      </div>
+      {badges}
+      {many && (
+        <>
+          <button type="button" className="gallery-nav gallery-prev" data-prev aria-label={s.prevPicture} hidden><Icon name="chevronLeft" /></button>
+          <button type="button" className="gallery-nav gallery-next" data-next aria-label={s.nextPicture} hidden><Icon name="chevronRight" /></button>
+          {counter
+            ? <span className="gallery-count" hidden><span data-count>1</span> / {slides.length}</span>
+            : <span className="gallery-dots">{slides.map((_, i) => <a key={keys[i]} href={`#pic-${i + 1}`} data-dot aria-label={s.pictureN(i + 1)} />)}</span>}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** The home page's toy carousel: one toy per slide (picture and name, the whole slide opens the toy), a "1 / N" counter, a link to the library. */
+function HomeToys({ lang, toys }: { lang: Lang; toys: ToySlide[] }) {
+  const s = t[lang];
+  if (toys.length === 0) return null;
+  return (
+    <section className="home-toys">
+      <h2>{s.featuredToys}</h2>
+      <Gallery lang={lang} className="home-toys-pic" counter keys={toys.map((x) => x.slug)} slides={toys.map((x) => (
+        <a className="home-toy" href={postHref(lang, TOYS_SECTION, x.slug)}>
+          {x.pic ? <img src={x.pic} alt="" decoding="async" /> : <span className="no-thumb"><Icon name="tag" /></span>}
+          <span className="home-toy-name">{x.title}</span>
+        </a>
+      ))} />
+      <p className="more-sections"><a href={`/${lang}/${TOYS_SECTION}/`}>{s.allToys}</a></p>
+    </section>
+  );
+}
+
 function Home({ route }: { route: Extract<Route, { kind: "home" }> }) {
   const { lang } = route, s = t[lang];
   return (
     <>
       <h1 className="motto">{tagline(lang)}</h1>
+      <HomeToys lang={lang} toys={route.props.toys} />
       <section>
         <h2>{s.featured}</h2>
         {route.props.featured.length === 0 ? <p>{s.noPosts}</p> : route.props.featured.map((p) => <PostItem key={`${p.section}/${p.slug}`} lang={lang} p={p} />)}
@@ -129,6 +175,7 @@ function ToyCard({ lang, p }: { lang: Lang; p: Brief }) {
         {pic ? <img src={pic} alt="" width={p.card ? 480 : 400} height={p.card ? 480 : 210} loading="lazy" decoding="async" /> : <span className="no-thumb"><Icon name="tag" /></span>}
       </a>
       <span className="badges"><OwnerBadge lang={lang} id={p.owner} />{p.status === "want" && <WantBadge label={t[lang].statusWant} />}</span>
+      {p.quantity >= 2 && <span className="qty" title={`${t[lang].quantity} ${p.quantity}`} aria-label={`${t[lang].quantity} ${p.quantity}`}>×{p.quantity}</span>}
       <h3><a href={href}>{p.title}</a></h3>
       <TagList lang={lang} tags={p.tags.slice(0, 2)} />
     </li>
@@ -171,6 +218,8 @@ function TagsIndex({ route }: { route: Extract<Route, { kind: "tags" }> }) {
   );
 }
 
+type Post = Extract<Route, { kind: "post" }>["props"];
+
 /** Copy-link (and native share) buttons. Shown by /src/share-client.ts when JavaScript runs; without it there is nothing to click, so it stays hidden. */
 function Share({ lang, title }: { lang: Lang; title: string }) {
   const s = t[lang];
@@ -182,48 +231,23 @@ function Share({ lang, title }: { lang: Lang; title: string }) {
   );
 }
 
-type Post = Extract<Route, { kind: "post" }>["props"];
-
 /**
- * The pictures of a toy page on one soft panel. Several pictures are a horizontal strip that snaps one picture at a time, so it works
- * with a swipe, the scrollbar or the arrow keys and no script; /src/gallery-client.ts adds the round buttons, marks the current dot and
- * disables the arrow keys' page scrolling. The dots are links to #pic-N, so a picture can be deep-linked. One picture: the plain panel.
- */
-function ToyPictures({ lang, pictures, badges }: { lang: Lang; pictures: Picture[]; badges: ReactNode }) {
-  const s = t[lang], many = pictures.length > 1;
-  return (
-    <div className="toy-hero-pic" data-gallery={many ? "" : undefined}>
-      <div className="toy-slides" tabIndex={many ? 0 : undefined} role={many ? "group" : undefined} aria-label={many ? s.pictures : undefined}>
-        {pictures.map((pic, i) => <div key={pic.src} className="toy-slide" id={many ? `pic-${i + 1}` : undefined}><img src={pic.src} alt={pic.alt} decoding="async" /></div>)}
-      </div>
-      {badges}
-      {many && (
-        <>
-          <button type="button" className="toy-nav toy-prev" data-prev aria-label={s.prevPicture} hidden><Icon name="chevronLeft" /></button>
-          <button type="button" className="toy-nav toy-next" data-next aria-label={s.nextPicture} hidden><Icon name="chevronRight" /></button>
-          <span className="toy-dots">{pictures.map((pic, i) => <a key={pic.src} href={`#pic-${i + 1}`} data-dot aria-label={s.pictureN(i + 1)} />)}</span>
-        </>
-      )}
-    </div>
-  );
-}
-
-/**
- * The head of a toy page: the picture panel beside the facts (price, date, tags), the shop button and copy-link.
- * The owner and a wish are icon badges in the panel's corner, as on the cards (in the text column when there is no picture).
+ * The head of a toy page: the picture panel (a Gallery of the toy's pictures) beside the facts (price, quantity from 2 up, date, tags),
+ * the shop button and copy-link. The owner and a wish are icon badges in the panel's corner, as on the cards (in the text column when there is no picture).
  */
 function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
   const s = t[lang], hasPic = p.pictures.length > 0;
   const badges = <span className="badges"><OwnerBadge lang={lang} id={p.owner} />{p.status === "want" && <WantBadge label={s.statusWant} />}</span>;
   return (
     <header className={hasPic ? "toy-hero has-pic" : "toy-hero"}>
-      {hasPic && <ToyPictures lang={lang} pictures={p.pictures} badges={badges} />}
+      {hasPic && <Gallery lang={lang} className="toy-hero-pic" badges={badges} keys={p.pictures.map((pic) => pic.src)} slides={p.pictures.map((pic) => <img src={pic.src} alt={pic.alt} decoding="async" />)} />}
       <div className="toy-hero-info">
         {!hasPic && badges}
         <h1>{p.title}</h1>
         {(p.draft || p.private) && <p className="meta"><strong>{p.draft ? s.draft : s.privateNote}</strong></p>}
         <dl className="toy-facts">
           {p.price && <><dt>{s.price}</dt><dd className="price">{p.price}</dd></>}
+          {p.quantity >= 2 && <><dt>{s.quantity}</dt><dd>{p.quantity}</dd></>}
           <dt>{s.added}</dt><dd><time dateTime={p.date}>{p.date}</time>{p.updated && <> · {s.updated} <time dateTime={p.updated}>{p.updated}</time></>}</dd>
           {p.tags.length > 0 && <><dt>{s.tags}</dt><dd><TagList lang={lang} tags={p.tags} /></dd></>}
         </dl>

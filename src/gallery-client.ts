@@ -1,16 +1,17 @@
-// The picture strip of a toy page with several pictures. Runs only on pages that have [data-gallery].
-// The strip is a scroll-snap box, so it already scrolls by swipe, scrollbar and arrow keys; this script shows the round
-// buttons, keeps the current dot and the buttons' disabled state in step with the scroll, and opens #pic-N from the address.
+// The slide strips (the Gallery component in App.tsx: a toy page's pictures, the home page's toy carousel). Runs only on pages that have [data-gallery].
+// A strip is a scroll-snap box, so it already scrolls by swipe, scrollbar and arrow keys; this script shows the round buttons, keeps the
+// current dot or the "1 / N" counter and the buttons' disabled state in step with the scroll, and opens #pic-N from the address.
 import { clampSlide, slideAt, deepLink, keyTarget } from "./gallery-core.mjs";
 
-const panel = document.querySelector<HTMLElement>("[data-gallery]");
-if (panel) {
-  const strip = panel.querySelector<HTMLElement>(".toy-slides")!;
+const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+
+function setUp(panel: HTMLElement) {
+  const strip = panel.querySelector<HTMLElement>(".gallery-strip")!;
   const count = strip.children.length;
   const prev = panel.querySelector<HTMLButtonElement>("[data-prev]")!;
   const next = panel.querySelector<HTMLButtonElement>("[data-next]")!;
   const dots = [...panel.querySelectorAll<HTMLAnchorElement>("[data-dot]")];
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const counter = panel.querySelector<HTMLElement>("[data-count]");
   let current = 0;
   let pending = -1, timer = 0;                             // the slide a smooth scroll is on its way to: ignore the slides it passes
 
@@ -19,6 +20,7 @@ if (panel) {
     prev.disabled = i === 0;
     next.disabled = i === count - 1;
     dots.forEach((d, k) => { if (k === i) d.setAttribute("aria-current", "true"); else d.removeAttribute("aria-current"); });
+    if (counter) counter.textContent = String(i + 1);
   }
 
   function go(i: number, instant = false) {
@@ -48,9 +50,12 @@ if (panel) {
   });
 
   const asked = deepLink(location.hash, count);
-  if (asked >= 0) go(asked, true);
+  if (asked >= 0 && strip.querySelector(location.hash)) go(asked, true);
   else mark(slideAt(strip.scrollLeft, strip.clientWidth, count));   // a reload may keep the strip's scroll position
   prev.hidden = next.hidden = false;
+  if (counter) counter.parentElement!.hidden = false;
   panel.dataset.gallery = "on";
 }
+
+for (const panel of document.querySelectorAll<HTMLElement>("[data-gallery]")) setUp(panel);
 export {};
