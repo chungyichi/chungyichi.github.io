@@ -9,6 +9,7 @@
     "build": "node scripts/build.mjs",
     "new": "node scripts/new.mjs",
     "import:medium": "node scripts/medium-import.mjs",
+    "toy:add": "node scripts/toy-add.mjs",
     "test": "node --test \"test/*.test.mjs\"",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test && npm run build && node scripts/check.mjs"
