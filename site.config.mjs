@@ -19,7 +19,7 @@ export const site = {
   // Pages show the owner as an icon (person | block | tag, drawn in src/icons.tsx) in a colour (--owner-<id> in src/styles/tokens.css), never as text.
   toyOwners: [
     { id: "me", title: { zh: "我", en: "Me" }, icon: "person" },
-    { id: "son", title: { zh: "兒子", en: "Son" }, icon: "block" },
+    { id: "son", title: { zh: "兒子(紀大哥)", en: "Son" }, icon: "block" },
   ],
   // Picture for sharing pages that have none of their own (a 1200x630 JPEG in public/); absent file = no default picture.
   ogImage: "/og-default.jpg",
