@@ -4,7 +4,8 @@
 # (photo.sh: web version; og-image.sh --square: share picture, list thumbnail and the square card of the grid). The post is written as a draft;
 # nothing is committed or uploaded.
 #   scripts/toy-add.sh <product-url> [--owner me|son] [--tags a,b] [--slug my-toy] [--title "..."] [--image <file>] [--date YYYY-MM-DD]
-#   scripts/toy-add.sh --image <file> --title "..." [--owner ..] [--slug ..]    (no link: a toy that is no longer sold)
+#   scripts/toy-add.sh --image <file> [--image <file2> ...] --title "..." [--price "約 NT$7,000"] [--owner ..] [--slug ..]
+#       (no link: a toy that is no longer sold; the first picture is the cover, more are shown below it)
 # --image <file> --title "...": use your own picture and fetch nothing (shops behind a login or captcha, such as shopee.tw).
 # Originals: ../blog-originals/toys/<slug>/ (or BLOG_ORIGINALS=/path).
 set -euo pipefail
@@ -15,13 +16,13 @@ tmp=backup/toy-tmp
 [ ! -e "$tmp" ] || [ -z "$(ls -A "$tmp")" ] || { echo "$tmp is not empty (a previous run?); move or remove it first" >&2; exit 1; }
 mkdir -p "$tmp"
 # --image points at a file on the host; the container sees only this directory, so copy it in first
-args=(); while [ $# -gt 0 ]; do
+args=(); n=0; while [ $# -gt 0 ]; do
   if [ "$1" = "--image" ]; then [ -f "${2:-}" ] || { echo "no such file: ${2:-}" >&2; exit 1; }
-    ext=$(echo "${2##*.}" | tr '[:upper:]' '[:lower:]'); cp "$2" "$tmp/own.$ext"; args+=(--image "$tmp/own.$ext"); shift 2
+    n=$((n+1)); ext=$(echo "${2##*.}" | tr '[:upper:]' '[:lower:]'); cp "$2" "$tmp/own$n.$ext"; args+=(--image "$tmp/own$n.$ext"); shift 2
   else args+=("$1"); shift; fi
 done
 scripts/docker.sh node scripts/toy-add.mjs "${args[@]}" --out "$tmp"
-rm -f "$tmp"/own.*
+rm -f "$tmp"/own*.*
 slug=$(ls "$tmp"); [ -n "$slug" ] && [ -d "$tmp/$slug" ] || { echo "no picture folder in $tmp" >&2; exit 1; }
 mkdir -p "$ORIG/toys"
 [ ! -e "$ORIG/toys/$slug" ] || { echo "$ORIG/toys/$slug already exists; refusing to overwrite your originals" >&2; exit 1; }

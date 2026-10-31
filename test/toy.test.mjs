@@ -135,3 +135,9 @@ test("a toy without a shop link (no longer sold) gets a draft with no source lin
   const { data } = parseFrontMatter(t);
   assert.equal(data.owner, "me");
 });
+
+test("more than one picture: the first is the cover, the others follow it in the body", () => {
+  const t = draftText({ title: "學習機", source: "", owner: "son", slug: "talk", imageName: "cover.jpg", extraNames: ["extra-1.png", "extra-2.webp"], price: "約 NT$7,000", date: "2026-10-31", owners: ["me", "son"] });
+  const body = t.split("---\n")[2];
+  assert.equal(body, "![學習機](/media/toys/talk/cover.webp)\n\n![學習機 (2)](/media/toys/talk/extra-1.webp)\n\n![學習機 (3)](/media/toys/talk/extra-2.webp)\n");
+});

@@ -134,10 +134,12 @@ export async function fetchToy(raw, deps) {
  * The draft post: title, source and price filled in, owner from the option or a comment to fill, summary left empty, the picture in the body
  * (the toy page shows it beside the facts). The day the price was seen goes in a comment: the page does not show it.
  */
-export function draftText({ title, source, owner = "", tags = [], slug, imageName, price = "", date, owners = [] }) {
+export function draftText({ title, source, owner = "", tags = [], slug, imageName, extraNames = [], price = "", date, owners = [] }) {
   const web = imageName.replace(/\.[^.]+$/, ".webp");                    // what photo.sh makes of the original
   const ownerLine = owner ? `owner: ${owner}` : `# owner: ${owners.join(" | ") || "me"}   (required before publishing)`;
   const fm = [`title: ${JSON.stringify(title)}`, 'summary: ""', "draft: true", ownerLine, ...(tags.length ? [`tags: ${tags.join(", ")}`] : []), ...(source ? [`source: ${source}`] : []),
     ...(price ? [`price: ${JSON.stringify(price)}`, `# price as shown on ${date}`] : [])];
-  return `---\n${fm.join("\n")}\n---\n![${title.replace(/[[\]]/g, "")}](/media/toys/${slug}/${web})\n`;
+  const alt = title.replace(/[[\]]/g, "");
+  const pics = [`![${alt}](/media/toys/${slug}/${web})`, ...extraNames.map((n, i) => `![${alt} (${i + 2})](/media/toys/${slug}/${n.replace(/\.[^.]+$/, ".webp")})`)];
+  return `---\n${fm.join("\n")}\n---\n${pics.join("\n\n")}\n`;
 }
