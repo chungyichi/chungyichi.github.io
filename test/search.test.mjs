@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { prepare, search, normalize } from "../src/search-core.mjs";
+import { prepare, search, normalize, inScope } from "../src/search-core.mjs";
 import { buildSearchIndex, headingsOf, parsePost } from "../scripts/content.mjs";
 
 const E = (t, s = "", h = [], d = "2026-01-01") => ({ t, s, h, d, c: "Tech", u: "/x/" });
@@ -78,4 +78,13 @@ test("a toy is found by its name and by its tag, and the result names the toy se
 test("a quoted #tag with a space matches that tag only", async () => {
   const p = prepare([{ ...E("A"), g: ["road trip"] }, { ...E("B"), g: ["road", "trip"] }]);
   assert.deepEqual(search(p, '#"road trip"').map((e) => e.t), ["A"]);
+});
+
+test("the search scope: everything, the posts only, or the toys only; the limit counts what is in scope", () => {
+  const entries = [{ ...E("T1"), u: "/zh/toys/a/" }, { ...E("P1"), u: "/zh/tech/b/" }];
+  const p = prepare(entries);
+  assert.deepEqual(search(p, "1", 50, (e) => inScope(e, "toys", "zh")).map((e) => e.t), ["T1"]);
+  assert.deepEqual(search(p, "1", 50, (e) => inScope(e, "posts", "zh")).map((e) => e.t), ["P1"]);
+  assert.equal(search(p, "1", 50, (e) => inScope(e, "all", "zh")).length, 2);
+  assert.equal(inScope({ u: "/en/toys/a/" }, "toys", "zh"), false);   // another language's address is not this language's toys
 });

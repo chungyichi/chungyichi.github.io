@@ -1,7 +1,7 @@
 // Search page behaviour. Loaded only on the search page. Results are built with textContent, never innerHTML,
 // so nothing in the index can inject markup.
 // Typing #tag and a space (or Enter) turns the word into a tag chip; chips and free text combine into one query.
-import { prepare, search, normalize, parseQuery, buildQuery } from "./search-core.mjs";
+import { prepare, search, normalize, parseQuery, buildQuery, inScope, SCOPES } from "./search-core.mjs";
 import { tagSlug, tagPath } from "./tags.mjs";
 
 type Entry = { t: string; s: string; h: string[]; g?: string[]; d: string; c: string; u: string };
@@ -21,6 +21,8 @@ if (root) {
   let prepared: ReturnType<typeof prepare> | null = null;
   let loading: Promise<void> | null = null;
   let chips: string[] = [];
+  const scopeButtons = [...root.querySelectorAll<HTMLButtonElement>("#scope button[data-scope]")];
+  let scope = "all";                                       // all | posts | toys: which part of the site the results come from
   let composing = false;                                   // an IME (Chinese input) is mid-word: do not touch the text
 
   const load = () => (loading ??= fetch(root.dataset.index!)
@@ -80,7 +82,7 @@ if (root) {
     list.replaceChildren();
     if (!q.trim()) { status.textContent = ""; return; }
     if (!prepared) { status.textContent = msg("loading"); return; }
-    const hits = search(prepared, q) as Entry[];
+    const hits = search(prepared, q, 50, (e: Entry) => inScope(e, scope, lang)) as Entry[];
     status.textContent = hits.length ? msg("count").replace("{n}", String(hits.length)) : msg("none");
     for (const e of hits) {
       const li = document.createElement("li");
@@ -114,7 +116,10 @@ if (root) {
 
   async function run() {
     const q = buildQuery(chips, input.value);
-    history.replaceState(null, "", q.trim() ? `?q=${encodeURIComponent(q)}` : location.pathname);
+    const params = new URLSearchParams();
+    if (q.trim()) params.set("q", q);
+    if (scope !== "all") params.set("scope", scope);
+    history.replaceState(null, "", params.size ? `?${params}` : location.pathname);
     show(q);
     if (!prepared && q.trim()) { await load(); show(buildQuery(chips, input.value)); }
   }
@@ -138,6 +143,14 @@ if (root) {
     addChip(a.dataset.tag!); updateSuggest(); input.focus(); void run();
   });
   root.querySelector("form")!.addEventListener("submit", (e) => { e.preventDefault(); absorb(true); updateSuggest(); void run(); });
+
+  function setScope(next: string) {
+    scope = next;
+    for (const b of scopeButtons) b.setAttribute("aria-pressed", String(b.dataset.scope === scope));
+  }
+  for (const b of scopeButtons) b.addEventListener("click", () => { setScope(b.dataset.scope!); void run(); });
+  const wanted = new URLSearchParams(location.search).get("scope");
+  if (wanted && SCOPES.includes(wanted)) setScope(wanted);
 
   const initial = new URLSearchParams(location.search).get("q");
   if (initial) {

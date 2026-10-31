@@ -253,6 +253,11 @@ function Search({ route }: { route: Extract<Route, { kind: "search" }> }) {
           <input id="q" name="q" type="search" autoComplete="off" placeholder={s.searchPlaceholder} />
         </div>
       </form>
+      <nav className="owner-filter scope-filter" id="scope" aria-label={s.scope}>
+        {([["all", s.ownerAll], ["posts", s.scopePosts], ["toys", s.scopeToys]] as const).map(([id, label]) => (
+          <button key={id} type="button" data-scope={id} aria-pressed={id === "all"}>{label}</button>
+        ))}
+      </nav>
       {route.props.tags.length > 0 && (
         <div id="tag-suggest">
           <p className="meta">{s.tags}</p>

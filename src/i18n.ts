@@ -14,7 +14,7 @@ export const t = {
     copyLink: "複製連結", copied: "已複製 ✓", copyFailed: "複製失敗，請手動複製網址", share: "分享",
     search: "搜尋", searchHint: "搜尋標題、摘要、小標題與標籤。輸入 #標籤 再按空白鍵，會變成標籤晶片，可以組合篩選", searchPlaceholder: "搜尋，或輸入 #標籤", removeTag: "移除標籤 {tag}", tagSearch: "在搜尋中組合標籤 →", tagsMoved: "標籤已整合到搜尋頁。", searchNoJs: "搜尋需要 JavaScript。沒有的話，請從上方的分類瀏覽。",
     searchLoading: "載入中…", searchNone: "沒有符合的文章。", searchCount: "找到 {n} 篇", searchError: "搜尋索引載入失敗，請重新整理。",
-    owner: "擁有者", ownerAll: "全部", statusWant: "想要", noToys: "還沒有玩具。",
+    owner: "擁有者", ownerAll: "全部", scope: "範圍", scopePosts: "文章", scopeToys: "玩具", statusWant: "想要", noToys: "還沒有玩具。",
     price: "價格", added: "加入", shop: "購買來源", viewShop: "前往購買",
   },
   en: {
@@ -28,7 +28,7 @@ export const t = {
     copyLink: "Copy link", copied: "Copied ✓", copyFailed: "Could not copy; copy the address by hand", share: "Share",
     search: "Search", searchHint: "Search titles, summaries, headings and tags. Type #tag and a space to turn it into a tag chip; chips combine", searchPlaceholder: "Search, or type #tag", removeTag: "Remove tag {tag}", tagSearch: "Combine tags in search →", tagsMoved: "Tags now live on the search page.", searchNoJs: "Search needs JavaScript. Without it, browse by section above.",
     searchLoading: "Loading…", searchNone: "No matching posts.", searchCount: "{n} found", searchError: "The search index failed to load; reload the page.",
-    owner: "Owner", ownerAll: "All", statusWant: "Wish list", noToys: "No toys yet.",
+    owner: "Owner", ownerAll: "All", scope: "Scope", scopePosts: "Posts", scopeToys: "Toys", statusWant: "Wish list", noToys: "No toys yet.",
     price: "Price", added: "Added", shop: "Shop", viewShop: "Shop",
   },
 } as const;

@@ -123,10 +123,12 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 .owner-son { --owner: var(--owner-son); }
 .badge-want { --owner: var(--accent); }
 .owner-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 1.4rem; }
-.owner-filter a { --owner: var(--accent); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.85rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); text-decoration: none; }
+.scope-filter { margin: 0.8rem 0; }
+.owner-filter a, .owner-filter button { --owner: var(--accent); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.85rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); text-decoration: none; }
+.owner-filter button { font: inherit; background: none; cursor: pointer; }
 .owner-filter a svg { color: var(--owner); }
-.owner-filter a:hover { border-color: var(--owner); color: var(--owner); }
-.owner-filter a[aria-current] { border-color: var(--owner); background: color-mix(in srgb, var(--owner) 14%, var(--bg)); color: var(--fg); font-weight: 600; }
+.owner-filter a:hover, .owner-filter button:hover { border-color: var(--owner); color: var(--owner); }
+.owner-filter a[aria-current], .owner-filter button[aria-pressed="true"] { border-color: var(--owner); background: color-mix(in srgb, var(--owner) 14%, var(--bg)); color: var(--fg); font-weight: 600; }
 .owner-filter .count { opacity: 0.7; font-size: 0.85rem; font-weight: 400; }
 /* The grid: 2 columns on a phone, 3 on a tablet, 4 on a desktop. A card is a square picture panel, the name (two lines at most), up to two tags. */
 .toy-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem 0.8rem; }

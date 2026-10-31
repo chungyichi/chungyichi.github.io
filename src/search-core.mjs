@@ -2,6 +2,8 @@
 // No word segmentation: a term matches if it is a substring, which works for Chinese (no spaces) and English alike.
 
 /** NFKC folds full-width letters and compatibility forms (Ｔech -> tech); lowercase makes it case-insensitive. */
+import { TOYS_SECTION } from "./toys.mjs";
+
 export const normalize = (s) => String(s).normalize("NFKC").toLowerCase();
 
 /** A term is a run of non-space characters; a tag that contains a space is written #"two words". */
@@ -35,8 +37,10 @@ export function prepare(entries) {
  * Every whitespace-separated term must match somewhere (AND). A term scores by where it matches best:
  * title 3, tag 3, heading 2, summary 1; the post's score is the sum. Highest score first, then newest.
  * A term that starts with # matches tags only (#bpf finds posts tagged bpf, also partly: #lin finds linux).
+ * `accept` (optional) keeps only the entries it says yes to; the limit counts those.
+ * @param {any} prepared @param {string} query @param {number} [limit] @param {((entry: any) => boolean) | null} [accept]
  */
-export function search(prepared, query, limit = 50) {
+export function search(prepared, query, limit = 50, accept = null) {
   const terms = queryTerms(query);
   if (!terms.length) return [];
   const hits = [];
@@ -51,8 +55,12 @@ export function search(prepared, query, limit = 50) {
       if (!best) { score = 0; break; }
       score += best;
     }
-    if (score) hits.push({ score, entry: p.entry });
+    if (score && (!accept || accept(p.entry))) hits.push({ score, entry: p.entry });
   }
   hits.sort((a, b) => b.score - a.score || (a.entry.d < b.entry.d ? 1 : a.entry.d > b.entry.d ? -1 : 0));
   return hits.slice(0, limit).map((h) => h.entry);
 }
+
+/** The search page can look at everything, at the posts only, or at the toys only. A toy's address is /<lang>/toys/<slug>/. */
+export const SCOPES = ["all", "posts", "toys"];
+export const inScope = (entry, scope, lang) => scope === "all" || entry.u.startsWith(`/${lang}/${TOYS_SECTION}/`) === (scope === "toys");
