@@ -114,18 +114,60 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 .post-item .thumb img { width: 100%; height: auto; aspect-ratio: 400 / 210; object-fit: cover; border-radius: var(--radius); display: block; }
 .post-item-text > :first-child { margin-top: 0; }
 @media (max-width: 36rem) { .post-item.has-thumb { grid-template-columns: 5.5rem 1fr; gap: 0.1rem 0.7rem; } .post-item.has-thumb .more { display: none; } }
-/* Toy library: owner filter (plain links) and the picture grid */
-.owner-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 1.2rem; }
-.owner-filter a { padding: 0.2rem 0.8rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); text-decoration: none; }
-.owner-filter a:hover { border-color: var(--accent); color: var(--accent); }
-.owner-filter a[aria-current] { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }
-.owner-filter .count { margin-left: 0.4rem; opacity: 0.8; font-size: 0.85rem; }
-.toy-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr)); gap: 1.2rem 1rem; }
-.toy-card h3 { font-size: 1rem; margin: 0.4rem 0 0.1em; }
-.toy-card .thumb { display: block; }
-.toy-card .thumb img, .toy-card .no-thumb { display: block; width: 100%; height: auto; aspect-ratio: 400 / 210; object-fit: cover; border-radius: var(--radius); background: var(--code-bg); }
-.toy-card .meta { font-size: 0.9rem; }
-.toy-facts { color: var(--muted); font-size: 0.95rem; margin: 0.4rem 0; }
+/* Toy library. The pages use the wide column; the owner and a wish are icon badges (src/icons.tsx) coloured per owner (--owner-<id>). */
+.wrap-wide { max-width: var(--measure-wide); }
+.badges { display: flex; gap: 0.35rem; margin: 0; }
+.badge { --owner: var(--muted); display: inline-flex; align-items: center; justify-content: center; width: 1.75rem; height: 1.75rem; border-radius: 50%; font-size: 1rem;
+  color: var(--owner); background: color-mix(in srgb, var(--owner) 14%, var(--bg)); border: 1px solid color-mix(in srgb, var(--owner) 45%, transparent); }
+.owner-me { --owner: var(--owner-me); }
+.owner-son { --owner: var(--owner-son); }
+.badge-want { --owner: var(--accent); }
+.owner-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 1.4rem; }
+.owner-filter a { --owner: var(--accent); display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.85rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); text-decoration: none; }
+.owner-filter a svg { color: var(--owner); }
+.owner-filter a:hover { border-color: var(--owner); color: var(--owner); }
+.owner-filter a[aria-current] { border-color: var(--owner); background: color-mix(in srgb, var(--owner) 14%, var(--bg)); color: var(--fg); font-weight: 600; }
+.owner-filter .count { opacity: 0.7; font-size: 0.85rem; font-weight: 400; }
+/* The grid: 2 columns on a phone, 3 on a tablet, 4 on a desktop. A card is a square picture panel, the name (two lines at most), up to two tags. */
+.toy-grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem 0.8rem; }
+@media (min-width: 40rem) { .toy-grid { grid-template-columns: repeat(3, 1fr); gap: 1.4rem 1.2rem; } }
+@media (min-width: 58rem) { .toy-grid { grid-template-columns: repeat(4, 1fr); } }
+.toy-card { position: relative; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); overflow: hidden; }
+.toy-card .toy-pic { display: block; aspect-ratio: 1; background: var(--code-bg); }
+.toy-card .toy-pic img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.toy-card .no-thumb { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 3rem; color: var(--muted); opacity: 0.35; }
+.toy-card .badges { position: absolute; top: 0.5rem; left: 0.5rem; z-index: 1; }
+.toy-card h3 { font-size: 0.98rem; line-height: 1.4; margin: 0.65rem 0.8rem 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.toy-card h3 a { color: var(--fg); text-decoration: none; }
+.toy-card h3 a::after { content: ""; position: absolute; inset: 0; }          /* the whole card opens the toy */
+.toy-card h3 a:hover { color: var(--accent); }
+.toy-card .tags { margin: 0.45rem 0.8rem 0.75rem; }
+.toy-card .tags a { position: relative; z-index: 1; font-size: 0.78rem; padding: 0 0.5rem; }
+.toy-card:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); box-shadow: 0 6px 18px -8px color-mix(in srgb, var(--fg) 30%, transparent); }
+@media (prefers-reduced-motion: no-preference) {
+  .toy-card { transition: border-color .15s, box-shadow .2s, transform .2s; }
+  .toy-card:hover { transform: translateY(-2px); }
+}
+/* The toy page: picture on a soft panel beside the facts on a wide screen, stacked on a phone; the text below keeps the reading width. */
+.toy-hero { display: grid; gap: 1.2rem 2.5rem; margin: 1.6rem 0 2rem; align-items: start; }
+@media (min-width: 48rem) { .toy-hero.has-pic { grid-template-columns: minmax(0, 7fr) minmax(0, 6fr); } }
+.toy-hero-pic { position: relative; aspect-ratio: 1; background: var(--code-bg); border-radius: var(--radius-lg); overflow: hidden; }
+.toy-hero-pic img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.toy-hero-pic .badges { position: absolute; top: 0.7rem; left: 0.7rem; }
+.toy-hero-info .badges { margin-top: 0.3rem; }
+.toy-hero:not(.has-pic) .toy-hero-info { max-width: var(--measure); }
+.toy-hero-info h1 { margin: 0.3rem 0 0.6rem; font-size: 1.55rem; }
+.toy-hero-info .meta { margin: 0 0 0.6rem; }
+.toy-facts { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1.2rem; align-items: baseline; margin: 1rem 0; padding: 0.9rem 1rem; border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.toy-facts dt { color: var(--muted); font-size: 0.9rem; }
+.toy-facts dd { margin: 0; }
+.toy-facts .price { font-weight: 700; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.toy-facts .tags { margin: 0; }
+.toy-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 1.1rem 0 0.4rem; }
+.toy-actions .share { margin: 0; }
+.button { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 1.2rem; border-radius: 999px; background: var(--accent); color: var(--accent-fg); font-weight: 600; text-decoration: none; }
+.button:hover { text-decoration: none; filter: brightness(1.1); }
+.toy-page .prose { max-width: var(--measure); }
 .share { display: flex; gap: 0.5rem; margin: 0.6rem 0; }
 .share[hidden], .share [hidden] { display: none; }
 .share button { font: inherit; font-size: 0.9rem; padding: 0.25rem 0.8rem; color: var(--fg); background: none; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }

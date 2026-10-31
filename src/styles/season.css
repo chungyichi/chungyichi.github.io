@@ -9,6 +9,7 @@
   --code-bg: #f6e9d6; --notice-bg: #fde9c4;
   --hl-comment: #5f5548; --hl-keyword: #a8231b; --hl-string: #0b6247; --hl-number: #8a4300; --hl-title: #5b2f9e;
   --season-glow: #e8751a;
+  --owner-me: #3f5fa8; --owner-son: #b85a12;
 }
 @media (prefers-color-scheme: dark) {
   :root[data-season="halloween"]:not([data-theme="light"]) {
@@ -16,6 +17,7 @@
     --code-bg: #20162c; --notice-bg: #3b2a1c;
     --hl-comment: #aa9fb8; --hl-keyword: #ff9a8f; --hl-string: #86e6bf; --hl-number: #ffc27a; --hl-title: #c4adff;
     --season-glow: #ff8a2a;
+    --owner-me: #9fb6f0; --owner-son: #f0a968;
   }
 }
 :root[data-season="halloween"][data-theme="dark"] {
@@ -23,6 +25,7 @@
   --code-bg: #20162c; --notice-bg: #3b2a1c;
   --hl-comment: #aa9fb8; --hl-keyword: #ff9a8f; --hl-string: #86e6bf; --hl-number: #ffc27a; --hl-title: #c4adff;
   --season-glow: #ff8a2a;
+  --owner-me: #9fb6f0; --owner-son: #f0a968;
 }
 
 /* A small pumpkin before the site title. */

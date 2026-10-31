@@ -6,12 +6,14 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SEASON_ISLAND_ID } from "./SeasonToggle";
 import { tagPath, tagsIndexPath } from "./tags.mjs";
 import { TOYS_SECTION, ownerPath } from "./toys.mjs";
+import { Icon, OwnerBadge, WantBadge, ownerIcon } from "./icons";
 
 import { tagSlug as tagSlugOf } from "./tags.mjs";
 const postHref = (lang: Lang, section: string, slug: string) => `/${lang}/${section}/${slug}/`;
 const pageHref = (lang: Lang, section: string, n: number) => (n === 1 ? `/${lang}/${section}/` : `/${lang}/${section}/page/${n}/`);
 
-function Layout({ route, children }: { route: Route; children: ReactNode }) {
+/** The page frame. `wide` widens the content column (the toy library: a picture grid and a two-column toy page); text keeps the reading width. */
+function Layout({ route, wide, children }: { route: Route; wide?: boolean; children: ReactNode }) {
   const lang = route.lang;
   const s = t[lang];
   const other = route.alternates[0];
@@ -35,7 +37,7 @@ function Layout({ route, children }: { route: Route; children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main id="main" className="wrap">{children}</main>
+      <main id="main" className={wide ? "wrap wrap-wide" : "wrap"}>{children}</main>
       <footer className="site-footer">
         <div className="wrap">
           <p>© {new Date().getUTCFullYear()} {site.author}</p>
@@ -114,17 +116,21 @@ function Index({ route }: { route: Extract<Route, { kind: "index" }> }) {
   return <PostList lang={lang} heading={sectionTitle(lang, section)} groups={groups} page={page} pages={pages} hrefFor={(n) => pageHref(lang, section, n)} />;
 }
 
-/* The toy library: a picture grid (thumbnail, name, owner, tags) with an owner filter made of plain links, so it works without JavaScript. */
+/*
+ * The toy library: a picture grid with an owner filter made of plain links, so it works without JavaScript.
+ * A card is a square picture (card.webp, else the list thumbnail letterboxed), the name, and at most two tags; the owner and a wish
+ * are icon badges in the picture's corners (their names are tooltips), so the grid stays quiet.
+ */
 function ToyCard({ lang, p }: { lang: Lang; p: Brief }) {
-  const href = postHref(lang, p.section, p.slug);
+  const href = postHref(lang, p.section, p.slug), pic = p.card || p.thumb;
   return (
     <li className="toy-card">
-      <a className="thumb" href={href} tabIndex={-1} aria-hidden="true">
-        {p.thumb ? <img src={p.thumb} alt="" width={400} height={210} loading="lazy" decoding="async" /> : <span className="no-thumb" />}
+      <a className="toy-pic" href={href} tabIndex={-1} aria-hidden="true">
+        {pic ? <img src={pic} alt="" width={p.card ? 480 : 400} height={p.card ? 480 : 210} loading="lazy" decoding="async" /> : <span className="no-thumb"><Icon name="tag" /></span>}
       </a>
+      <span className="badges"><OwnerBadge lang={lang} id={p.owner} />{p.status === "want" && <WantBadge label={t[lang].statusWant} />}</span>
       <h3><a href={href}>{p.title}</a></h3>
-      <p className="meta">{ownerTitle(lang, p.owner)}{p.status === "want" && <> · {t[lang].statusWant}</>}</p>
-      <TagList lang={lang} tags={p.tags} />
+      <TagList lang={lang} tags={p.tags.slice(0, 2)} />
     </li>
   );
 }
@@ -137,8 +143,8 @@ function ToyGrid({ route }: { route: Extract<Route, { kind: "toys" }> }) {
       <h1>{sectionTitle(lang, section)}</h1>
       <nav className="owner-filter" aria-label={s.owner}>
         {filter.map((o) => (
-          <a key={o.id} href={o.id ? ownerPath(lang, section, o.id) : pageHref(lang, section, 1)} aria-current={o.id === owner ? "page" : undefined}>
-            {o.label}<span className="count">{o.total}</span>
+          <a key={o.id} className={o.id ? `owner-${o.id}` : undefined} href={o.id ? ownerPath(lang, section, o.id) : pageHref(lang, section, 1)} aria-current={o.id === owner ? "page" : undefined}>
+            {o.id && <Icon name={ownerIcon(o.id)} />}{o.label}<span className="count">{o.total}</span>
           </a>
         ))}
       </nav>
@@ -165,38 +171,71 @@ function TagsIndex({ route }: { route: Extract<Route, { kind: "tags" }> }) {
   );
 }
 
+/** Copy-link (and native share) buttons. Shown by /src/share-client.ts when JavaScript runs; without it there is nothing to click, so it stays hidden. */
+function Share({ lang, title }: { lang: Lang; title: string }) {
+  const s = t[lang];
+  return (
+    <p className="share" data-share data-title={title} data-copied={s.copied} data-failed={s.copyFailed} hidden>
+      <button type="button" data-copy>{s.copyLink}</button>
+      <button type="button" data-native hidden>{s.share}</button>
+    </p>
+  );
+}
+
+type Post = Extract<Route, { kind: "post" }>["props"];
+
+/**
+ * The head of a toy page: the picture on a soft panel beside the facts (price, date, tags), the shop button and copy-link.
+ * The owner and a wish are icon badges in the picture's corner, as on the cards (in the text column when there is no picture).
+ */
+function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
+  const s = t[lang];
+  const badges = <span className="badges"><OwnerBadge lang={lang} id={p.owner} />{p.status === "want" && <WantBadge label={s.statusWant} />}</span>;
+  return (
+    <header className={p.hero ? "toy-hero has-pic" : "toy-hero"}>
+      {p.hero && <div className="toy-hero-pic"><img src={p.hero} alt={p.title} decoding="async" />{badges}</div>}
+      <div className="toy-hero-info">
+        {!p.hero && badges}
+        <h1>{p.title}</h1>
+        {(p.draft || p.private) && <p className="meta"><strong>{p.draft ? s.draft : s.privateNote}</strong></p>}
+        <dl className="toy-facts">
+          {p.price && <><dt>{s.price}</dt><dd className="price">{p.price}</dd></>}
+          <dt>{s.added}</dt><dd><time dateTime={p.date}>{p.date}</time>{p.updated && <> · {s.updated} <time dateTime={p.updated}>{p.updated}</time></>}</dd>
+          {p.tags.length > 0 && <><dt>{s.tags}</dt><dd><TagList lang={lang} tags={p.tags} /></dd></>}
+        </dl>
+        <div className="toy-actions">
+          {/* The shop's page: an outside site, so no referrer and no endorsement for search engines. Only this button carries the address. */}
+          {p.source && <a className="button" href={p.source} rel="noopener noreferrer nofollow">{s.viewShop}<Icon name="arrow" /></a>}
+          <Share lang={lang} title={p.title} />
+        </div>
+      </div>
+    </header>
+  );
+}
+
 function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
   const { lang } = route, s = t[lang], p = route.props;
   const missing = route.alternates.find((a) => a.translated === false);
+  const toy = p.section === TOYS_SECTION;
   return (
-    <article className={`post post-${p.slug}`}>
-      <header>
-        <h1>{p.title}</h1>
-        <p className="meta">
-          <time dateTime={p.date}>{p.date}</time>
-          {p.updated && <> · {s.updated} <time dateTime={p.updated}>{p.updated}</time></>}
-          {" · "}{s.words(p.words)}
-          {p.draft && <> · <strong>{s.draft}</strong></>}
-          {p.private && <> · <strong>{s.privateNote}</strong></>}
-        </p>
-        <TagList lang={lang} tags={p.tags} />
-        {p.section === TOYS_SECTION && (
-          <p className="toy-facts">
-            {s.ownerIs(ownerTitle(lang, p.owner))}
-            {p.status === "want" && <> · {s.statusWant}</>}
-            {/* The shop's page: an outside site, so no referrer and no endorsement for search engines. */}
-            {p.source && <> · <a href={p.source} rel="noopener noreferrer nofollow">{s.boughtAt(new URL(p.source).hostname)}</a></>}
+    <article className={`post post-${p.slug}${toy ? " toy-page" : ""}`}>
+      {toy ? <ToyHero lang={lang} p={p} /> : (
+        <header>
+          <h1>{p.title}</h1>
+          <p className="meta">
+            <time dateTime={p.date}>{p.date}</time>
+            {p.updated && <> · {s.updated} <time dateTime={p.updated}>{p.updated}</time></>}
+            {" · "}{s.words(p.words)}
+            {p.draft && <> · <strong>{s.draft}</strong></>}
+            {p.private && <> · <strong>{s.privateNote}</strong></>}
           </p>
-        )}
-        {/* Shown by /src/share-client.ts when JavaScript runs; without it there is nothing to click, so it stays hidden. */}
-        <p className="share" data-share data-title={p.title} data-copied={s.copied} data-failed={s.copyFailed} hidden>
-          <button type="button" data-copy>{s.copyLink}</button>
-          <button type="button" data-native hidden>{s.share}</button>
-        </p>
-        {missing && site.languageSwitcher !== false && <p className="notice">{t[missing.lang].noTranslation}</p>}
-      </header>
+          <TagList lang={lang} tags={p.tags} />
+          <Share lang={lang} title={p.title} />
+        </header>
+      )}
+      {missing && site.languageSwitcher !== false && <p className="notice">{t[missing.lang].noTranslation}</p>}
       {/* Markdown is rendered with raw HTML off; .html posts pass an allowlist sanitizer (scripts/sanitize.mjs). A post's own CSS targets .post-<slug>. */}
-      <div className="prose" dangerouslySetInnerHTML={{ __html: p.html }} />
+      {p.html.trim() && <div className="prose" dangerouslySetInnerHTML={{ __html: p.html }} />}
       <p><a href={`/${lang}/${p.section}/`}>← {sectionTitle(lang, p.section)}</a></p>
     </article>
   );
@@ -265,8 +304,8 @@ export function App({ route }: { route: Route }) {
     case "notfound": return <NotFound route={route} />;
     case "home": return <Layout route={route}><Home route={route} /></Layout>;
     case "index": return <Layout route={route}><Index route={route} /></Layout>;
-    case "toys": return <Layout route={route}><ToyGrid route={route} /></Layout>;
-    case "post": return <Layout route={route}><PostPage route={route} /></Layout>;
+    case "toys": return <Layout route={route} wide><ToyGrid route={route} /></Layout>;
+    case "post": return <Layout route={route} wide={route.props.section === TOYS_SECTION}><PostPage route={route} /></Layout>;
     case "page": return <Layout route={route}><Page route={route} /></Layout>;
     case "search": return <Layout route={route}><Search route={route} /></Layout>;
     case "tags": return <Layout route={route}><TagsIndex route={route} /></Layout>;
