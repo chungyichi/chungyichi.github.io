@@ -12,7 +12,17 @@ const THEME_INIT = `try{var t=localStorage.getItem("theme");if(t==="light"||t===
 // then a saved "off" choice, then the date. data-season-window="1" tells the toggle button it may show itself.
 const SEASON_INIT = `try{var d=document.documentElement,m=/[?&]season=(halloween|off)\\b/.exec(location.search),o=m&&m[1],x=new Date(Date.now()+288e5),mo=x.getUTCMonth(),dy=x.getUTCDate(),w=(mo===9&&dy>=15)||(mo===10&&dy<=2),s="";try{s=localStorage.getItem("season")}catch(e){}if(o==="halloween"||(!o&&w&&s!=="off")){d.dataset.season="halloween"}if(o==="halloween"||w)d.dataset.seasonWindow="1"}catch(e){}`;
 
-export function document_({ route, rendered, assets }) {
+// Google Analytics 4, only when site.analytics.gaId is set. Skipped for readers who send Do Not Track, and never in the dev server.
+// Google signals and ad personalisation are off; the page view is the only thing counted.
+const GA_ID = /^G-[A-Z0-9]{6,12}$/;
+export function analyticsTags(id) {
+  if (!id) return "";
+  if (!GA_ID.test(id)) throw new Error(`site.analytics.gaId must look like G-XXXXXXXXXX, got ${JSON.stringify(id)}`);
+  const init = `if(navigator.doNotTrack!=="1"){var s=document.createElement("script");s.async=true;s.src="https://www.googletagmanager.com/gtag/js?id=${id}";document.head.appendChild(s);window.dataLayer=window.dataLayer||[];window.gtag=function(){dataLayer.push(arguments)};gtag("js",new Date());gtag("config","${id}",{allow_google_signals:false,allow_ad_personalization_signals:false})}`;
+  return `<script>${init}</script>`;
+}
+
+export function document_({ route, rendered, assets, analytics = true }) {
   const lang = route.lang;
   const canonical = site.baseUrl + route.path;
   const alts = (route.alternates || []).filter((a) => a.translated !== false)
@@ -42,6 +52,7 @@ export function document_({ route, rendered, assets }) {
     ${postCss}
     <script>${THEME_INIT}</script>
     <script>${SEASON_INIT}</script>
+    ${analytics ? analyticsTags(site.analytics?.gaId) : ""}
   </head>
   <body>
     <div id="root">${rendered.html}</div>

@@ -64,7 +64,7 @@ const server = http.createServer((req, res) => {
       if (idx) { res.writeHead(200, { "content-type": "application/json; charset=utf-8" }).end(idx.searchIndex.text); return; }
       const route = routes.find((r) => r.path === path) ?? { ...routes.find((r) => r.kind === "notfound"), path };
       const { render } = await vite.ssrLoadModule("/src/entry-server.tsx");
-      const html = (await vite.transformIndexHtml(url, document_({ route, rendered: render(route), assets: { js: "/src/entry-client.tsx", css: [] } })))
+      const html = (await vite.transformIndexHtml(url, document_({ route, rendered: render(route), assets: { js: "/src/entry-client.tsx", css: [] }, analytics: false })))
         .replace("</body>", `${modeBadge(mode)}</body>`);
       const headers = { "content-type": "text/html; charset=utf-8" };
       if (asked === "original" || asked === "web") headers["set-cookie"] = `img=${asked}; Path=/; SameSite=Lax`;

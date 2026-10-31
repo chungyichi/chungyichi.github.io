@@ -1,7 +1,7 @@
 # chungyichi.github.io
 
 A personal, bilingual (中文 / English) blog. Write Markdown, commit, push: that publishes.
-Static HTML rendered by React at build time, bundled with Vite. No tracking, readable without JavaScript.
+Static HTML rendered by React at build time, bundled with Vite. Readable without JavaScript. The only third-party script is optional Google Analytics (`analytics.gaId` in `site.config.mjs`, off when empty).
 
 ## Write a post
 

@@ -476,3 +476,12 @@ test("picture strip: the slide in view, #pic-N links and the arrow keys (held at
   assert.deepEqual([deepLink("#pic-1", 2), deepLink("#pic-2", 2), deepLink("#pic-3", 2), deepLink("#pic-0", 2), deepLink("#pic-x", 2), deepLink("", 2), deepLink("#main", 2)], [0, 1, -1, -1, -1, -1, -1]);
   assert.deepEqual([keyTarget("ArrowRight", 0, 3), keyTarget("ArrowRight", 2, 3), keyTarget("ArrowLeft", 0, 3), keyTarget("ArrowLeft", 2, 3), keyTarget("Home", 2, 3), keyTarget("End", 0, 3), keyTarget("Enter", 1, 3)], [1, 2, 0, 1, 0, 2, null]);
 });
+
+import { analyticsTags } from "../scripts/template.mjs";
+test("analytics: nothing without an id, a checked id gives the one gtag loader, a bad id throws", () => {
+  assert.equal(analyticsTags(""), "");
+  const t = analyticsTags("G-ABC1234567");
+  assert.match(t, /googletagmanager\.com\/gtag\/js\?id=G-ABC1234567/);
+  assert.match(t, /doNotTrack/);
+  assert.throws(() => analyticsTags('G-1");alert(1)//'));
+});

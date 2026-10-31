@@ -31,5 +31,7 @@ export const site = {
   // Toys in the home page's picture carousel (between the motto and the featured posts), "toys/<slug>" in this order; unpublished ones are skipped, none hides the carousel.
   featuredToys: ["toys/mayday-max", "toys/mivi-king-of-destruction-3"],
   homePosts: 5,
+  // Google Analytics 4 Measurement ID ("G-XXXXXXXXXX", not a secret). Empty = no analytics script at all. See template.mjs.
+  analytics: { gaId: "G-YP5V272CSS" },
   timezone: "Asia/Taipei", // a post dated "today" in this zone is published
 };
