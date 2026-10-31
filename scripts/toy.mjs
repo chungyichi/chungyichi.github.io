@@ -4,7 +4,7 @@ import { parse } from "parse5";
 import { ContentError } from "./errors.mjs";
 
 // Shops the script may talk to. Anything else is refused with a message, never fetched: add a host here on purpose.
-export const TOY_HOSTS = ["www.shopping.bin-music.com.tw", "img.91app.com", "www.beast-kingdom.com.tw", "www.ikea.com.tw", "www.momoshop.com.tw", "i1.momoshop.com.tw"];
+export const TOY_HOSTS = ["www.shopping.bin-music.com.tw", "img.91app.com", "www.beast-kingdom.com.tw", "www.ikea.com.tw", "www.momoshop.com.tw", "i1.momoshop.com.tw", "i2.momoshop.com.tw", "i3.momoshop.com.tw", "i4.momoshop.com.tw"];
 export const USER_AGENT = "chungyichi.github.io-toy-add/1.0 (+https://chungyichi.github.io)";   // says what it is; not a browser
 export const IMAGE_TYPES = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" };
 export const MAX_PAGE = 2 * 1024 * 1024, MAX_IMAGE = 10 * 1024 * 1024, MAX_REDIRECTS = 5, TIMEOUT = 20_000;
