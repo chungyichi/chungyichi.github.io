@@ -20,19 +20,19 @@
 
   --hl-comment: #6a737d; --hl-keyword: #b3261e; --hl-string: #0b6e4f; --hl-number: #8a4b00; --hl-title: #5b3fb5;
   /* One calm colour per toy owner (site.config.mjs toyOwners ids): the icon badge and the filter chip. */
-  --owner-me: #3b6ea8; --owner-son: #b4651c;
+  --owner-me: #3b6ea8; --owner-son: #b4651c; --owner-brother: #2f7f6a;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #14161a; --fg: #e6e8eb; --muted: #9aa1ab; --line: #2a2e35; --accent: #8fd1ae; --accent-fg: #101216;
     --code-bg: #1d2026; --notice-bg: #3a3320;
     --hl-comment: #8b949e; --hl-keyword: #ff8a80; --hl-string: #7ee2b8; --hl-number: #f2b66b; --hl-title: #b9a3ff;
-    --owner-me: #8db8ee; --owner-son: #ecb068;
+    --owner-me: #8db8ee; --owner-son: #ecb068; --owner-brother: #7fd0b4;
   }
 }
 :root[data-theme="dark"] {
   --bg: #14161a; --fg: #e6e8eb; --muted: #9aa1ab; --line: #2a2e35; --accent: #8fd1ae; --accent-fg: #101216;
   --code-bg: #1d2026; --notice-bg: #3a3320;
   --hl-comment: #8b949e; --hl-keyword: #ff8a80; --hl-string: #7ee2b8; --hl-number: #f2b66b; --hl-title: #b9a3ff;
-  --owner-me: #8db8ee; --owner-son: #ecb068;
+  --owner-me: #8db8ee; --owner-son: #ecb068; --owner-brother: #7fd0b4;
 }

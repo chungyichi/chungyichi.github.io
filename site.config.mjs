@@ -16,10 +16,11 @@ export const site = {
     { id: "toys", title: { zh: "玩具庫", en: "Toys" } },   // one post per toy, shown as a picture grid (see README "Toys")
   ],
   // Who a toy belongs to: `owner: me` in a toys post. Each one gets a filter page, /zh/toys/owner/<id>/.
-  // Pages show the owner as an icon (person | block | tag, drawn in src/icons.tsx) in a colour (--owner-<id> in src/styles/tokens.css), never as text.
+  // Pages show the owner as an icon (person | block | star | tag, drawn in src/icons.tsx) in a colour (--owner-<id> in src/styles/tokens.css), never as text.
   toyOwners: [
     { id: "me", title: { zh: "我", en: "Me" }, icon: "person" },
     { id: "son", title: { zh: "兒子(紀大哥)", en: "Son" }, icon: "block" },
+    { id: "brother", title: { zh: "弟弟", en: "Brother" }, icon: "star" },
   ],
   // Picture for sharing pages that have none of their own (a 1200x630 JPEG in public/); absent file = no default picture.
   ogImage: "/og-default.jpg",

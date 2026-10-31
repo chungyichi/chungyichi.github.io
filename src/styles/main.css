@@ -121,6 +121,7 @@ main { padding-bottom: 3rem; min-height: 60vh; }
   color: var(--owner); background: color-mix(in srgb, var(--owner) 14%, var(--bg)); border: 1px solid color-mix(in srgb, var(--owner) 45%, transparent); }
 .owner-me { --owner: var(--owner-me); }
 .owner-son { --owner: var(--owner-son); }
+.owner-brother { --owner: var(--owner-brother); }
 .badge-want { --owner: var(--accent); }
 .owner-filter { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 1.4rem; }
 .scope-filter { margin: 0.8rem 0; }
