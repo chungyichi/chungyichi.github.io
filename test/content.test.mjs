@@ -307,3 +307,36 @@ test("tags: at most three per post", () => {
   assert.equal(normalizeTags(["a", "b", "c"]).length, 3);
   assert.throws(() => normalizeTags(["a", "b", "c", "d"], "x.md"), /more than 3 tags/);
 });
+
+// ---- toys ----
+import { checkSourceUrl } from "../scripts/content.mjs";
+import { filterByOwner, ownerPath } from "../src/toys.mjs";
+
+const toy = (extra, name = "2026-10-21-robot.zh.md") => parsePost(name, `---\ntitle: Robot\nsummary: S\ntags: 公仔\n${extra}---\n![Robot](/media/toys/robot/cover.webp)\n`, undefined, "toys");
+
+test("toys: owner, source and status are read from the front matter; absent ones are empty", () => {
+  const p = toy("owner: son\nsource: https://shop.example/item/1?x=1\nstatus: want\n");
+  assert.deepEqual([p.owner, p.source, p.status], ["son", "https://shop.example/item/1?x=1", "want"]);
+  assert.deepEqual([toy("").owner, toy("").source, toy("").status], ["", "", ""]);
+  assert.ok(p.html.includes('<img src="/media/toys/robot/cover.webp" alt="Robot">'));
+});
+
+test("toys: bad values are refused and the fields are only for the toys section", () => {
+  assert.throws(() => toy("owner: My Son\n"), /'owner' must be a short id/);
+  assert.throws(() => toy("owner: true\n"), /'owner' must be a short id/);
+  assert.throws(() => toy("status: lost\n"), /'status' must be one of own, want/);
+  assert.throws(() => toy("source: shop.example/item\n"), /'source' must be a full http\(s\) address/);
+  assert.throws(() => toy("source: javascript:alert(1)\n"), /'source' must be a plain http\(s\) address/);
+  assert.throws(() => toy("source: https://user:pw@shop.example/\n"), /plain http\(s\)/);
+  assert.throws(() => parsePost("2026-10-21-a.zh.md", "---\ntitle: T\nsummary: S\nowner: me\n---\nx", undefined, "tech"), /'owner' is only for posts in content\/toys\//);
+  assert.equal(checkSourceUrl("http://shop.example/a b"), "http://shop.example/a%20b");
+});
+
+test("toys: the owner filter keeps everything for the empty owner, and owner pages are paged like an index", () => {
+  const posts = [toy("owner: me\n"), toy("owner: son\n", "2026-10-22-car.zh.md"), toy("owner: son\n", "2026-10-23-ball.zh.md")];
+  assert.deepEqual(filterByOwner(posts, "son").map((p) => p.slug), ["car", "ball"]);
+  assert.equal(filterByOwner(posts, "").length, 3);
+  assert.equal(filterByOwner(posts, "nobody").length, 0);
+  assert.equal(ownerPath("zh", "toys", "son"), "/zh/toys/owner/son/");
+  assert.equal(ownerPath("en", "toys", "me", 2), "/en/toys/owner/me/page/2/");
+});

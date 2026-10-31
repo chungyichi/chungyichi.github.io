@@ -13,6 +13,12 @@ export const site = {
   sections: [
     { id: "tech", title: { zh: "技術", en: "Tech" } },
     { id: "life", title: { zh: "生活", en: "Life" } },
+    { id: "toys", title: { zh: "玩具庫", en: "Toys" } },   // one post per toy, shown as a picture grid (see README "Toys")
+  ],
+  // Who a toy belongs to: `owner: me` in a toys post. Each one gets a filter page, /zh/toys/owner/<id>/.
+  toyOwners: [
+    { id: "me", title: { zh: "我", en: "Me" } },
+    { id: "son", title: { zh: "兒子", en: "Son" } },
   ],
   // Picture for sharing pages that have none of their own (a 1200x630 JPEG in public/); absent file = no default picture.
   ogImage: "/og-default.jpg",

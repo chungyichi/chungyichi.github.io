@@ -6,12 +6,24 @@ import hljs from "highlight.js/lib/common";
 import { ContentError } from "./errors.mjs";
 import { sanitizeHtml } from "./sanitize.mjs";
 import { tagSlug } from "../src/tags.mjs";
+import { TOYS_SECTION, TOY_STATUSES } from "../src/toys.mjs";
 
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
+
+// Toys (content/toys/): one post per toy. `owner: me` says whose it is (the ids are in site.config.mjs; scripts/check.mjs compares),
+// `source: https://...` where it was bought (shown as a link), `status: want` marks a wish rather than something owned.
+const OWNER_RE = /^[a-z][a-z0-9-]{0,20}$/;
+/** A toy's shop address: http(s) only, no credentials, parseable; anything else is refused (it becomes a link on the page). */
+export function checkSourceUrl(raw, where = "post") {
+  let u;
+  try { u = new URL(String(raw)); } catch { throw new ContentError(`${where}: 'source' must be a full http(s) address`); }
+  if (!/^https?:$/.test(u.protocol) || u.username || u.password) throw new ContentError(`${where}: 'source' must be a plain http(s) address`);
+  return u.href;
+}
 
 /** Parse the `---` front matter block. A strict YAML subset: `key: value`, quoted or bare strings, true/false. */
 export function parseFrontMatter(text, where = "post") {
@@ -127,11 +139,15 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   if ("trusted" in data && typeof data.trusted !== "boolean") throw new ContentError(`${filename}: 'trusted' must be true or false`);
   if ("draft" in data && typeof data.draft !== "boolean") throw new ContentError(`${filename}: 'draft' must be true or false`);
   if ("updated" in data && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.updated))) throw new ContentError(`${filename}: 'updated' must be YYYY-MM-DD`);
+  for (const k of ["owner", "source", "status"]) if (k in data && section !== TOYS_SECTION) throw new ContentError(`${filename}: '${k}' is only for posts in content/${TOYS_SECTION}/`);
+  if ("owner" in data && !(typeof data.owner === "string" && OWNER_RE.test(data.owner))) throw new ContentError(`${filename}: 'owner' must be a short id such as me or son`);
+  if ("status" in data && !TOY_STATUSES.includes(data.status)) throw new ContentError(`${filename}: 'status' must be one of ${TOY_STATUSES.join(", ")}`);
   return {
     section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
+    owner: data.owner || "", source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "",
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
   };
