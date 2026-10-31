@@ -247,6 +247,18 @@ export function ogImageFor(post, { baseUrl, exists = () => false, fallback = "" 
   return fallback ? { url: abs(fallback), alt: post.title } : null;
 }
 
+/**
+ * The picture a toy page shows beside its facts: the front matter `image`, else the first picture in the body, else cover.webp
+ * in the media folder (what toy-add.sh makes). When the body's first paragraph is that same picture it is dropped from the body,
+ * so the toy is not shown twice. Returns { src, html }; src is "" when there is no picture.
+ */
+export function toyHero(post, exists = () => false) {
+  const dir = `/media/${post.section}/${post.slug}`;
+  const first = /<p><img\b[^>]*?\ssrc="(\/media\/[^"]+)"[^>]*><\/p>\n?/.exec(post.html);
+  const src = post.image && exists(`${dir}/${post.image}`) ? `${dir}/${post.image}` : first ? first[1] : exists(`${dir}/cover.webp`) ? `${dir}/cover.webp` : "";
+  return { src, html: first && first[1] === src ? post.html.replace(first[0], "") : post.html };
+}
+
 export const searchPath = (lang) => `/${lang}/search/`;
 export const postPath = (lang, section, slug) => `/${lang}/${section}/${slug}/`;
 export const indexPath = (lang, section, page = 1) => (page === 1 ? `/${lang}/${section}/` : `/${lang}/${section}/page/${page}/`);

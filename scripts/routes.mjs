@@ -1,16 +1,20 @@
 // Content model -> list of pages. Plain data only (it is serialised into nothing; pages are rendered at build time).
 import { site } from "../site.config.mjs";
 import { createHash } from "node:crypto";
-import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor, collectTags } from "./content.mjs";
+import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor, toyHero, collectTags } from "./content.mjs";
 import { tagPath, tagsIndexPath } from "../src/tags.mjs";
 import { TOYS_SECTION, filterByOwner, ownerPath } from "../src/toys.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
-const briefOf = (fileExists) => (p) => ({
-  section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", status: p.status || "",
-  thumb: fileExists(`/media/${p.section}/${p.slug}/thumb.webp`) ? `/media/${p.section}/${p.slug}/thumb.webp` : "",   // 400x210, made by scripts/og-image.sh
-});
+const briefOf = (fileExists) => (p) => {
+  const dir = `/media/${p.section}/${p.slug}`;
+  return {
+    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", status: p.status || "",
+    thumb: fileExists(`${dir}/thumb.webp`) ? `${dir}/thumb.webp` : "",                                                   // 400x210, made by scripts/og-image.sh
+    card: p.section === TOYS_SECTION && fileExists(`${dir}/card.webp`) ? `${dir}/card.webp` : "",                       // 480x480 for the toy grid (og-image.sh --square); the grid falls back to thumb
+  };
+};
 
 /** The posts shown on the home page: the featured ones that exist in this language, else the latest few; newest first. */
 function homeList(posts, featured, limit) {
@@ -54,12 +58,14 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
         const path = postPath(lang, section, p.slug);
         const has = (l) => Boolean(model.translations[`${section}/${p.slug}`]?.[l]);
         const alternates = other(lang).map((l) => ({ lang: l, path: has(l) ? postPath(l, section, p.slug) : indexPath(l, section), translated: has(l) }));
+        // A toy page shows its picture beside the facts (and not again in the body); other posts show the body as is.
+        const hero = section === TOYS_SECTION ? toyHero(p, fileExists) : { src: "", html: p.html };
         routes.push({ path, kind: "post", lang, alternates,
           ogImage: ogImageFor(p, { baseUrl: site.baseUrl, exists: fileExists, fallback: defaultImage ? site.ogImage : "" }),
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
-          props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: p.html, draft: p.draft, private: Boolean(p.private), words: p.words,
-            owner: p.owner || "", source: p.source || "", status: p.status || "" } });
+          props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: hero.html, draft: p.draft, private: Boolean(p.private), words: p.words,
+            owner: p.owner || "", source: p.source || "", status: p.status || "", price: p.price || "", hero: hero.src } });
       }
     }
 

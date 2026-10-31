@@ -368,5 +368,36 @@ test("toys: the section index is a grid route, one per owner too, each paged; to
   assert.deepEqual(grids[3].props.items.map((p) => p.slug), ["ball", "car"]);
   assert.equal(routes.find((r) => r.path === "/zh/tech/")?.kind, "index");                 // other sections are unchanged
   const page = routes.find((r) => r.path === "/zh/toys/car/");
-  assert.deepEqual([page.kind, page.props.owner, page.props.status, page.props.source], ["post", "son", "want", ""]);
+  assert.deepEqual([page.kind, page.props.owner, page.props.status, page.props.source, page.props.price], ["post", "son", "want", "", ""]);
+});
+
+import { toyHero } from "../scripts/content.mjs";
+
+test("toys: the square card picture is used when it exists, the list thumbnail otherwise; other sections never get one", () => {
+  const posts = [toy("owner: me\n"), toy("owner: me\n", "2026-10-22-car.zh.md"), post("2026-10-21-t.zh.md", "")];
+  const files = ["/media/toys/robot/card.webp", "/media/toys/robot/thumb.webp", "/media/toys/car/thumb.webp", "/media/tech/t/card.webp", "/media/tech/t/thumb.webp"];
+  const routes = buildRoutes(buildModel(posts, ["zh", "en"], site.sections), {}, { langs: ["zh"], fileExists: (u) => files.includes(u) });
+  const grid = routes.find((r) => r.path === "/zh/toys/").props.items;
+  assert.deepEqual(grid.map((p) => [p.slug, p.card, p.thumb]), [["car", "", "/media/toys/car/thumb.webp"], ["robot", "/media/toys/robot/card.webp", "/media/toys/robot/thumb.webp"]]);
+  const tech = routes.find((r) => r.path === "/zh/tech/").props.groups[0].items[0];
+  assert.deepEqual([tech.card, tech.thumb], ["", "/media/tech/t/thumb.webp"]);
+});
+
+test("toys: the page picture is the front matter image, else the body's first picture (then dropped from the body), else cover.webp; the price reaches the page", () => {
+  const exists = (u) => ["/media/toys/robot/own.webp", "/media/toys/robot/cover.webp"].includes(u);
+  const body = toy('price: "NT$1,250"\n');                                               // ![Robot](/media/toys/robot/cover.webp) as the body
+  assert.deepEqual(toyHero(body, exists), { src: "/media/toys/robot/cover.webp", html: "" });
+  const text = parsePost("2026-10-21-robot.zh.md", "---\ntitle: Robot\nsummary: S\n---\nHello\n\n![R](/media/toys/robot/cover.webp)\n\nMore\n", undefined, "toys");
+  assert.deepEqual(toyHero(text, exists), { src: "/media/toys/robot/cover.webp", html: "<p>Hello</p>\n<p>More</p>\n" });
+  const own = parsePost("2026-10-21-robot.zh.md", "---\ntitle: Robot\nsummary: S\nimage: own.webp\n---\n![R](/media/toys/robot/cover.webp)\n", undefined, "toys");
+  assert.equal(toyHero(own, exists).src, "/media/toys/robot/own.webp");
+  assert.ok(toyHero(own, exists).html.includes("cover.webp"));                            // a different picture in the body stays there
+  const none = parsePost("2026-10-21-robot.zh.md", "---\ntitle: Robot\nsummary: S\n---\nJust text\n", undefined, "toys");
+  assert.deepEqual(toyHero(none, exists), { src: "/media/toys/robot/cover.webp", html: "<p>Just text</p>\n" });
+  assert.equal(toyHero(none, () => false).src, "");
+  const routes = buildRoutes(buildModel([body], ["zh", "en"], site.sections), {}, { langs: ["zh"], fileExists: exists });
+  const page = routes.find((r) => r.path === "/zh/toys/robot/").props;
+  assert.deepEqual([page.price, page.hero, page.html], ["NT$1,250", "/media/toys/robot/cover.webp", ""]);
+  const tech = buildRoutes(buildModel([post("2026-10-21-t.zh.md", "", "---\ntitle: T\nsummary: S\n---\n![x](/media/tech/t/a.webp)\n")], ["zh", "en"], site.sections), {}, { langs: ["zh"], fileExists: () => true });
+  assert.ok(tech.find((r) => r.path === "/zh/tech/t/").props.html.includes("a.webp"));   // other sections keep their body as is
 });

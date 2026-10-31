@@ -57,7 +57,7 @@ async function main() {
   const orig = `../blog-originals/${TOYS_SECTION}/${slug}`;
   console.log(`title:   ${toy.title}${toy.price ? `\nprice:   ${toy.price}` : ""}\npicture: ${file} (from ${toy.image.file ? basename(toy.image.file) : toy.image.url})\ndraft:   ${post}`);
   console.log(`\nnext (on the host):\n  mkdir -p ../blog-originals/${TOYS_SECTION} && mv ${pics} ${orig}        # originals stay outside git`
-    + `\n  scripts/photo.sh ${orig} content/${TOYS_SECTION}/media/${slug}\n  scripts/og-image.sh ${orig}/${toy.image.name} content/${TOYS_SECTION}/media/${slug}`
+    + `\n  scripts/photo.sh ${orig} content/${TOYS_SECTION}/media/${slug}\n  scripts/og-image.sh ${orig}/${toy.image.name} content/${TOYS_SECTION}/media/${slug} --square`
     + `\n  scripts/docker.sh npm run dev        # look at /zh/${TOYS_SECTION}/\n  edit ${post}: ${owner ? "" : "owner, "}${tags.length ? "" : "tags, "}summary; then remove draft: true`
     + `\n  scripts/media.sh push ${TOYS_SECTION} ${slug}; commit the post file`);
 }
