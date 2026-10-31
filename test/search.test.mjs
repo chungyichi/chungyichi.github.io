@@ -65,6 +65,16 @@ test("parseQuery and buildQuery round-trip tags (also tags with a space) and fre
   assert.equal(buildQuery([], "  "), "");
 });
 
+test("a toy is found by its name and by its tag, and the result names the toy section", () => {
+  const toy = parsePost("2026-10-21-robot.zh.md", "---\ntitle: 遙控機器人\nsummary: 會走路\ntags: 機器人, 遙控\nowner: son\nsource: https://shop.example/1\n---\n一段不進索引的內文 secretword\n", undefined, "toys");
+  const idx = buildSearchIndex([toy, parsePost("2026-10-21-a.zh.md", "---\ntitle: 別的\nsummary: S\n---\nx")], "zh", (id) => (id === "toys" ? "玩具庫" : "技術"));
+  const p = prepare(idx);
+  assert.deepEqual(search(p, "機器人").map((e) => [e.t, e.c, e.u]), [["遙控機器人", "玩具庫", "/zh/toys/robot/"]]);
+  assert.deepEqual(search(p, "#遙控").map((e) => e.t), ["遙控機器人"]);
+  assert.deepEqual(search(p, "secretword"), []);                                   // body text is not indexed
+  assert.ok(!JSON.stringify(idx).includes("son") && !JSON.stringify(idx).includes("shop.example"));   // owner and source stay off the index
+});
+
 test("a quoted #tag with a space matches that tag only", async () => {
   const p = prepare([{ ...E("A"), g: ["road trip"] }, { ...E("B"), g: ["road", "trip"] }]);
   assert.deepEqual(search(p, '#"road trip"').map((e) => e.t), ["A"]);

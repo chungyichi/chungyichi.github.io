@@ -340,3 +340,22 @@ test("toys: the owner filter keeps everything for the empty owner, and owner pag
   assert.equal(ownerPath("zh", "toys", "son"), "/zh/toys/owner/son/");
   assert.equal(ownerPath("en", "toys", "me", 2), "/en/toys/owner/me/page/2/");
 });
+
+import { buildRoutes } from "../scripts/routes.mjs";
+import { site } from "../site.config.mjs";
+
+test("toys: the section index is a grid route, one per owner too, each paged; toys keep their post pages and thumbnails", () => {
+  const posts = [toy("owner: me\n"), toy("owner: son\nstatus: want\n", "2026-10-22-car.zh.md"), toy("owner: son\n", "2026-10-23-ball.zh.md"), post("2026-10-21-t.zh.md", "")];
+  const model = buildModel(posts, ["zh", "en"], site.sections);
+  const routes = buildRoutes(model, {}, { langs: ["zh"], toysPerPage: 2, toyOwners: [{ id: "me" }, { id: "son" }], fileExists: (u) => u === "/media/toys/car/thumb.webp" });
+  const grids = routes.filter((r) => r.kind === "toys");
+  assert.deepEqual(grids.map((r) => r.path), ["/zh/toys/", "/zh/toys/page/2/", "/zh/toys/owner/me/", "/zh/toys/owner/son/"]);
+  const all = grids[0].props;
+  assert.deepEqual([all.owner, all.total, all.page, all.pages, all.items.map((p) => p.slug)], ["", 3, 1, 2, ["ball", "car"]]);
+  assert.deepEqual(all.owners, [{ id: "me", total: 1 }, { id: "son", total: 2 }]);
+  assert.deepEqual(all.items.map((p) => [p.owner, p.status, p.thumb]), [["son", "", ""], ["son", "want", "/media/toys/car/thumb.webp"]]);
+  assert.deepEqual(grids[3].props.items.map((p) => p.slug), ["ball", "car"]);
+  assert.equal(routes.find((r) => r.path === "/zh/tech/")?.kind, "index");                 // other sections are unchanged
+  const page = routes.find((r) => r.path === "/zh/toys/car/");
+  assert.deepEqual([page.kind, page.props.owner, page.props.status, page.props.source], ["post", "son", "want", ""]);
+});

@@ -14,6 +14,7 @@ export const t = {
     copyLink: "複製連結", copied: "已複製 ✓", copyFailed: "複製失敗，請手動複製網址", share: "分享",
     search: "搜尋", searchHint: "搜尋標題、摘要、小標題與標籤。輸入 #標籤 再按空白鍵，會變成標籤晶片，可以組合篩選", searchPlaceholder: "搜尋，或輸入 #標籤", removeTag: "移除標籤 {tag}", tagSearch: "在搜尋中組合標籤 →", tagsMoved: "標籤已整合到搜尋頁。", searchNoJs: "搜尋需要 JavaScript。沒有的話，請從上方的分類瀏覽。",
     searchLoading: "載入中…", searchNone: "沒有符合的文章。", searchCount: "找到 {n} 篇", searchError: "搜尋索引載入失敗，請重新整理。",
+    owner: "擁有者", ownerIs: (o: string) => `擁有者：${o}`, ownerAll: "全部", statusWant: "想要", boughtAt: (host: string) => `購買來源：${host}`, noToys: "還沒有玩具。",
   },
   en: {
     home: "Home", about: "About", github: "GitHub", latest: "Latest posts", featured: "Featured", all: "All posts", allInSection: "More",
@@ -26,9 +27,12 @@ export const t = {
     copyLink: "Copy link", copied: "Copied ✓", copyFailed: "Could not copy; copy the address by hand", share: "Share",
     search: "Search", searchHint: "Search titles, summaries, headings and tags. Type #tag and a space to turn it into a tag chip; chips combine", searchPlaceholder: "Search, or type #tag", removeTag: "Remove tag {tag}", tagSearch: "Combine tags in search →", tagsMoved: "Tags now live on the search page.", searchNoJs: "Search needs JavaScript. Without it, browse by section above.",
     searchLoading: "Loading…", searchNone: "No matching posts.", searchCount: "{n} found", searchError: "The search index failed to load; reload the page.",
+    owner: "Owner", ownerIs: (o: string) => `Owner: ${o}`, ownerAll: "All", statusWant: "Wish list", boughtAt: (host: string) => `Bought at ${host}`, noToys: "No toys yet.",
   },
 } as const;
 
 export const sectionTitle = (lang: Lang, id: string) => site.sections.find((s: { id: string }) => s.id === id)?.title[lang] ?? id;
+/** The label of a toy owner id (site.config.mjs toyOwners); an unknown id is shown as is. */
+export const ownerTitle = (lang: Lang, id: string) => site.toyOwners.find((o: { id: string }) => o.id === id)?.title[lang] ?? id;
 export const title = (lang: Lang) => site.title[lang];
 export const tagline = (lang: Lang) => site.tagline[lang];

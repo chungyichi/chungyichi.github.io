@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 import { site } from "../site.config.mjs";
-import { t, title, tagline, sectionTitle, type Lang } from "./i18n";
+import { t, title, tagline, sectionTitle, ownerTitle, type Lang } from "./i18n";
 import type { Brief, Route } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
 import { SEASON_ISLAND_ID } from "./SeasonToggle";
 import { tagPath, tagsIndexPath } from "./tags.mjs";
+import { TOYS_SECTION, ownerPath } from "./toys.mjs";
 
 import { tagSlug as tagSlugOf } from "./tags.mjs";
 const postHref = (lang: Lang, section: string, slug: string) => `/${lang}/${section}/${slug}/`;
@@ -91,20 +92,61 @@ function PostList({ lang, heading, groups, page, pages, hrefFor }: {
           {g.items.map((p) => <PostItem key={`${p.section}/${p.slug}`} lang={lang} p={p} />)}
         </section>
       ))}
-      {pages > 1 && (
-        <nav className="pager" aria-label="Pagination">
-          {page > 1 ? <a rel="prev" href={hrefFor(page - 1)}>{s.prev}</a> : <span />}
-          <span>{s.page(page, pages)}</span>
-          {page < pages ? <a rel="next" href={hrefFor(page + 1)}>{s.next}</a> : <span />}
-        </nav>
-      )}
+      <Pager lang={lang} page={page} pages={pages} hrefFor={hrefFor} />
     </>
+  );
+}
+
+function Pager({ lang, page, pages, hrefFor }: { lang: Lang; page: number; pages: number; hrefFor: (n: number) => string }) {
+  const s = t[lang];
+  if (pages <= 1) return null;
+  return (
+    <nav className="pager" aria-label="Pagination">
+      {page > 1 ? <a rel="prev" href={hrefFor(page - 1)}>{s.prev}</a> : <span />}
+      <span>{s.page(page, pages)}</span>
+      {page < pages ? <a rel="next" href={hrefFor(page + 1)}>{s.next}</a> : <span />}
+    </nav>
   );
 }
 
 function Index({ route }: { route: Extract<Route, { kind: "index" }> }) {
   const { lang } = route, { section, groups, page, pages } = route.props;
   return <PostList lang={lang} heading={sectionTitle(lang, section)} groups={groups} page={page} pages={pages} hrefFor={(n) => pageHref(lang, section, n)} />;
+}
+
+/* The toy library: a picture grid (thumbnail, name, owner, tags) with an owner filter made of plain links, so it works without JavaScript. */
+function ToyCard({ lang, p }: { lang: Lang; p: Brief }) {
+  const href = postHref(lang, p.section, p.slug);
+  return (
+    <li className="toy-card">
+      <a className="thumb" href={href} tabIndex={-1} aria-hidden="true">
+        {p.thumb ? <img src={p.thumb} alt="" width={400} height={210} loading="lazy" decoding="async" /> : <span className="no-thumb" />}
+      </a>
+      <h3><a href={href}>{p.title}</a></h3>
+      <p className="meta">{ownerTitle(lang, p.owner)}{p.status === "want" && <> · {t[lang].statusWant}</>}</p>
+      <TagList lang={lang} tags={p.tags} />
+    </li>
+  );
+}
+
+function ToyGrid({ route }: { route: Extract<Route, { kind: "toys" }> }) {
+  const { lang } = route, s = t[lang], { section, owner, owners, total, items, page, pages } = route.props;
+  const filter = [{ id: "", total, label: s.ownerAll }, ...owners.map((o) => ({ ...o, label: ownerTitle(lang, o.id) }))];
+  return (
+    <>
+      <h1>{sectionTitle(lang, section)}</h1>
+      <nav className="owner-filter" aria-label={s.owner}>
+        {filter.map((o) => (
+          <a key={o.id} href={o.id ? ownerPath(lang, section, o.id) : pageHref(lang, section, 1)} aria-current={o.id === owner ? "page" : undefined}>
+            {o.label}<span className="count">{o.total}</span>
+          </a>
+        ))}
+      </nav>
+      {items.length === 0 && <p>{s.noToys}</p>}
+      <ul className="toy-grid">{items.map((p) => <ToyCard key={p.slug} lang={lang} p={p} />)}</ul>
+      <Pager lang={lang} page={page} pages={pages} hrefFor={(n) => (owner ? ownerPath(lang, section, owner, n) : pageHref(lang, section, n))} />
+    </>
+  );
 }
 
 function TagPage({ route }: { route: Extract<Route, { kind: "tag" }> }) {
@@ -138,6 +180,14 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
           {p.private && <> · <strong>{s.privateNote}</strong></>}
         </p>
         <TagList lang={lang} tags={p.tags} />
+        {p.section === TOYS_SECTION && (
+          <p className="toy-facts">
+            {s.ownerIs(ownerTitle(lang, p.owner))}
+            {p.status === "want" && <> · {s.statusWant}</>}
+            {/* The shop's page: an outside site, so no referrer and no endorsement for search engines. */}
+            {p.source && <> · <a href={p.source} rel="noopener noreferrer nofollow">{s.boughtAt(new URL(p.source).hostname)}</a></>}
+          </p>
+        )}
         {/* Shown by /src/share-client.ts when JavaScript runs; without it there is nothing to click, so it stays hidden. */}
         <p className="share" data-share data-title={p.title} data-copied={s.copied} data-failed={s.copyFailed} hidden>
           <button type="button" data-copy>{s.copyLink}</button>
@@ -215,6 +265,7 @@ export function App({ route }: { route: Route }) {
     case "notfound": return <NotFound route={route} />;
     case "home": return <Layout route={route}><Home route={route} /></Layout>;
     case "index": return <Layout route={route}><Index route={route} /></Layout>;
+    case "toys": return <Layout route={route}><ToyGrid route={route} /></Layout>;
     case "post": return <Layout route={route}><PostPage route={route} /></Layout>;
     case "page": return <Layout route={route}><Page route={route} /></Layout>;
     case "search": return <Layout route={route}><Search route={route} /></Layout>;

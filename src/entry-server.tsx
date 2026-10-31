@@ -1,6 +1,6 @@
 import { renderToString } from "react-dom/server";
 import { App } from "./App";
-import { t, title, tagline, sectionTitle } from "./i18n";
+import { t, title, tagline, sectionTitle, ownerTitle } from "./i18n";
 import type { Route } from "./types";
 
 export function render(route: Route) {
@@ -9,6 +9,7 @@ export function render(route: Route) {
   if (route.kind === "post") { pageTitle = `${route.props.title} · ${site}`; description = route.props.summary; }
   else if (route.kind === "page") { pageTitle = `${route.props.title} · ${site}`; description = route.props.summary; }
   else if (route.kind === "index") { pageTitle = `${sectionTitle(route.lang, route.props.section)}${route.props.page > 1 ? ` (${route.props.page})` : ""} · ${site}`; description = t[route.lang].all; }
+  else if (route.kind === "toys") { pageTitle = `${sectionTitle(route.lang, route.props.section)}${route.props.owner ? `：${ownerTitle(route.lang, route.props.owner)}` : ""}${route.props.page > 1 ? ` (${route.props.page})` : ""} · ${site}`; description = sectionTitle(route.lang, route.props.section); }
   else if (route.kind === "tags") { pageTitle = `${t[route.lang].tags} · ${site}`; }
   else if (route.kind === "tag") { pageTitle = `${t[route.lang].tagged(route.props.tag)}${route.props.page > 1 ? ` (${route.props.page})` : ""} · ${site}`; description = t[route.lang].tagged(route.props.tag); }
   else if (route.kind === "search") { pageTitle = `${t[route.lang].search} · ${site}`; }
