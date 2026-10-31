@@ -4,6 +4,7 @@
 # (photo.sh: web version; og-image.sh --square: share picture, list thumbnail and the square card of the grid). The post is written as a draft;
 # nothing is committed or uploaded.
 #   scripts/toy-add.sh <product-url> [--owner me|son] [--tags a,b] [--slug my-toy] [--title "..."] [--image <file>] [--date YYYY-MM-DD]
+#   scripts/toy-add.sh --image <file> --title "..." [--owner ..] [--slug ..]    (no link: a toy that is no longer sold)
 # --image <file> --title "...": use your own picture and fetch nothing (shops behind a login or captcha, such as shopee.tw).
 # Originals: ../blog-originals/toys/<slug>/ (or BLOG_ORIGINALS=/path).
 set -euo pipefail

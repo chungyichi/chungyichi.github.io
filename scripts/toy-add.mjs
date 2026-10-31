@@ -21,7 +21,7 @@ const url = args.find((a) => !a.startsWith("--"));
 
 const die = (m) => { console.error(`error: ${m}`); process.exit(1); };
 const owners = (site.toyOwners ?? []).map((o) => o.id);
-if (!url || args.length !== 1) die('usage: node scripts/toy-add.mjs <product-url> [--owner me|son] [--tags a,b] [--slug my-toy] [--title "..."] [--image <file>] [--date YYYY-MM-DD]');
+if ((!url && !image) || args.length > 1) die('usage: node scripts/toy-add.mjs <product-url> [--owner me|son] [--tags a,b] [--slug my-toy] [--title "..."] [--image <file>] [--date YYYY-MM-DD]\n       node scripts/toy-add.mjs --image <file> --title "..." [...]    (no link: a toy that is no longer sold)');
 if (owner !== undefined && !owners.includes(owner)) die(`--owner must be one of ${owners.join(", ")} (site.config.mjs toyOwners)`);
 if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) die("--date must be YYYY-MM-DD");
 if (image && !title) die("--image needs --title (nothing is fetched then)");
@@ -32,7 +32,7 @@ async function main() {
   if (image) {
     const ext = extname(image).toLowerCase().replace(/^\.jpeg$/, ".jpg");
     if (!Object.values(IMAGE_TYPES).includes(ext)) die(`--image must be a .jpg, .png or .webp file`);
-    toy = { title, price: "", source: cleanUrl(checkSourceUrl(url, "product url")), image: { name: `cover${ext}`, file: image } };
+    toy = { title, price: "", source: url ? cleanUrl(checkSourceUrl(url, "product url")) : "", image: { name: `cover${ext}`, file: image } };
   } else {
     toy = await fetchToy(url, { fetch, lookup: (host) => lookup(host, { all: true }) });
     if (title) toy.title = title;

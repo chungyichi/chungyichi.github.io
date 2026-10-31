@@ -137,7 +137,7 @@ export async function fetchToy(raw, deps) {
 export function draftText({ title, source, owner = "", tags = [], slug, imageName, price = "", date, owners = [] }) {
   const web = imageName.replace(/\.[^.]+$/, ".webp");                    // what photo.sh makes of the original
   const ownerLine = owner ? `owner: ${owner}` : `# owner: ${owners.join(" | ") || "me"}   (required before publishing)`;
-  const fm = [`title: ${JSON.stringify(title)}`, 'summary: ""', "draft: true", ownerLine, ...(tags.length ? [`tags: ${tags.join(", ")}`] : []), `source: ${source}`,
+  const fm = [`title: ${JSON.stringify(title)}`, 'summary: ""', "draft: true", ownerLine, ...(tags.length ? [`tags: ${tags.join(", ")}`] : []), ...(source ? [`source: ${source}`] : []),
     ...(price ? [`price: ${JSON.stringify(price)}`, `# price as shown on ${date}`] : [])];
   return `---\n${fm.join("\n")}\n---\n![${title.replace(/[[\]]/g, "")}](/media/toys/${slug}/${web})\n`;
 }

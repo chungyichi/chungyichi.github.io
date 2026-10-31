@@ -128,3 +128,10 @@ test("momo: the shop-name tail of the title is cut and a price written 1,856 is 
   assert.equal(p.title, "【My First Book】第四冊-馬戲團篇(3-6Y)");
   assert.equal(p.price, "1856");
 });
+
+test("a toy without a shop link (no longer sold) gets a draft with no source line", () => {
+  const t = draftText({ title: "舊公仔", source: "", owner: "me", tags: ["公仔"], slug: "old", imageName: "cover.jpg", date: "2026-10-31", owners: ["me", "son"] });
+  assert.ok(!/^source:/m.test(t));
+  const { data } = parseFrontMatter(t);
+  assert.equal(data.owner, "me");
+});
