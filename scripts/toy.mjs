@@ -4,7 +4,7 @@ import { parse } from "parse5";
 import { ContentError } from "./errors.mjs";
 
 // Shops the script may talk to. Anything else is refused with a message, never fetched: add a host here on purpose.
-export const TOY_HOSTS = ["www.shopping.bin-music.com.tw", "img.91app.com", "www.beast-kingdom.com.tw", "www.ikea.com.tw"];
+export const TOY_HOSTS = ["www.shopping.bin-music.com.tw", "img.91app.com", "www.beast-kingdom.com.tw", "www.ikea.com.tw", "www.momoshop.com.tw", "i1.momoshop.com.tw"];
 export const USER_AGENT = "chungyichi.github.io-toy-add/1.0 (+https://chungyichi.github.io)";   // says what it is; not a browser
 export const IMAGE_TYPES = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" };
 export const MAX_PAGE = 2 * 1024 * 1024, MAX_IMAGE = 10 * 1024 * 1024, MAX_REDIRECTS = 5, TIMEOUT = 20_000;
@@ -81,11 +81,23 @@ export function parseProductPage(html) {
   const pageTitle = titleEl ? text(titleEl).replace(/\s+/g, " ").trim() : "";
   const images = (meta["og:image"] || []).filter((v) => /^https?:\/\//i.test(v));
   const image = images.find((v) => v.startsWith("https://")) || images[0]?.replace(/^http:/i, "https:") || "";
-  const title = (meta["og:title"]?.[0] || pageTitle).replace(/\s*NT\$\s?[\d,]+(\.\d+)?\s*$/, "").replace(/\s+\|\s+[^|]+$/, "").trim();   // some shops append the price, many a " | Shop name"
-  const price = meta["product:price:amount"]?.[0] || meta.price?.[0] || "";
+  const title = (meta["og:title"]?.[0] || pageTitle).replace(/\s*NT\$\s?[\d,]+(\.\d+)?\s*$/, "").replace(/\s+-\s+momo購物網.*$/, "").replace(/\s+\|\s+[^|]+$/, "").trim();   // some shops append the price, many a " | Shop name" (momo: " - momo購物網 - ...")
+  const price = (meta["product:price:amount"]?.[0] || meta.price?.[0] || "").replace(/,/g, "");   // momo writes "1,856"
   const currency = meta["product:price:currency"]?.[0] || meta.priceCurrency?.[0] || "";
   const wall = WALL.test(pageTitle) ? `the page looks like a login, captcha or age check ("${pageTitle.slice(0, 60)}")` : "";
   return { title, image, price, currency, wall };
+}
+
+/** Advertising and tracking parameters that say where a visitor came from, not which product it is. Product ids and ?lang= stay. */
+const TRACKING = /^(utm_.*|gad_.*|gclid|gclsrc|gbraid|wbraid|dclid|fbclid|msclkid|yclid|igshid|srsltid|mc_cid|mc_eid|_ga|_gl|osm|d_id|uls_trackid)$/i;
+
+/** The address without tracking parameters and without a #fragment: the clean link to keep. A string that is not a URL is returned as it is. */
+export function cleanUrl(raw) {
+  let u;
+  try { u = new URL(raw); } catch { return raw; }
+  for (const k of [...u.searchParams.keys()]) if (TRACKING.test(k)) u.searchParams.delete(k);
+  u.hash = "";
+  return u.href;
 }
 
 /** "15525.00" + "TWD" -> "NT$15,525"; other currencies are shown as "EUR 12.50"; nothing when the page had no price. */
@@ -104,7 +116,7 @@ export const slugOfTitle = (title) => String(title).toLowerCase().normalize("NFK
  * @returns { title, price (formatted), source (final page address), image: { name, bytes, type, url } }
  */
 export async function fetchToy(raw, deps) {
-  const page = await fetchChecked(raw, { ...deps, maxBytes: MAX_PAGE, accept: "text/html" });
+  const page = await fetchChecked(cleanUrl(raw), { ...deps, maxBytes: MAX_PAGE, accept: "text/html" });
   if ([401, 403, 407, 429, 503].includes(page.status)) throw new ContentError(`${page.url}: HTTP ${page.status} (the shop wants a login or a challenge); ${SUPPLY_PICTURE}`);
   if (page.status !== 200) throw new ContentError(`${page.url}: HTTP ${page.status}`);
   const info = parseProductPage(page.bytes.toString("utf8"));
@@ -115,7 +127,7 @@ export async function fetchToy(raw, deps) {
   if (img.status !== 200) throw new ContentError(`${img.url}: HTTP ${img.status}`);
   const ext = IMAGE_TYPES[img.type];
   if (!ext) throw new ContentError(`${img.url}: not a JPEG, PNG or WebP picture (${img.type || "no content-type"})`);
-  return { title: info.title, price: formatPrice(info.price, info.currency), source: page.url, image: { name: `cover${ext}`, bytes: img.bytes, type: img.type, url: img.url } };
+  return { title: info.title, price: formatPrice(info.price, info.currency), source: cleanUrl(page.url), image: { name: `cover${ext}`, bytes: img.bytes, type: img.type, url: img.url } };
 }
 
 /**

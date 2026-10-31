@@ -10,7 +10,7 @@ import { pathToFileURL } from "node:url";
 import { site } from "../site.config.mjs";
 import { todayIn, checkSourceUrl, ContentError } from "./content.mjs";
 import { TOYS_SECTION } from "../src/toys.mjs";
-import { fetchToy, draftText, slugOfTitle, IMAGE_TYPES } from "./toy.mjs";
+import { fetchToy, draftText, slugOfTitle, cleanUrl, IMAGE_TYPES } from "./toy.mjs";
 
 const args = process.argv.slice(2);
 const opt = (name) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args.splice(i, 2)[1] : undefined; };
@@ -32,7 +32,7 @@ async function main() {
   if (image) {
     const ext = extname(image).toLowerCase().replace(/^\.jpeg$/, ".jpg");
     if (!Object.values(IMAGE_TYPES).includes(ext)) die(`--image must be a .jpg, .png or .webp file`);
-    toy = { title, price: "", source: checkSourceUrl(url, "product url"), image: { name: `cover${ext}`, file: image } };
+    toy = { title, price: "", source: cleanUrl(checkSourceUrl(url, "product url")), image: { name: `cover${ext}`, file: image } };
   } else {
     toy = await fetchToy(url, { fetch, lookup: (host) => lookup(host, { all: true }) });
     if (title) toy.title = title;

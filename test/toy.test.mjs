@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { checkHost, isPrivateAddress, fetchChecked, parseProductPage, formatPrice, slugOfTitle, fetchToy, draftText, MAX_IMAGE } from "../scripts/toy.mjs";
+import { checkHost, isPrivateAddress, fetchChecked, parseProductPage, formatPrice, cleanUrl, slugOfTitle, fetchToy, draftText, MAX_IMAGE } from "../scripts/toy.mjs";
 import { parseFrontMatter, parsePost } from "../scripts/content.mjs";
 
 const HOSTS = ["shop.example", "img.example"];
@@ -112,4 +112,19 @@ test("the draft is a valid toys post: draft, title, source, price in the front m
   assert.ok(!blank.includes("price"));
   assert.equal(parseFrontMatter(blank).data.owner, undefined);
   assert.deepEqual([parsePost("2026-10-21-t.zh.md", blank, undefined, "toys").owner, parsePost("2026-10-21-t.zh.md", blank, undefined, "toys").price], ["", ""]);
+});
+
+test("cleanUrl drops advertising and tracking parameters and the fragment, and keeps what names the product", () => {
+  assert.equal(cleanUrl("https://www.momoshop.com.tw/product/11396444?osm=Ad07&utm_source=googleshop&utm_medium=traffic-pla&gad_source=1&gad_campaignid=21870192430&gbraid=0AAAA&gclid=Cj0K"), "https://www.momoshop.com.tw/product/11396444");
+  assert.equal(cleanUrl("https://shopee.tw/product/52024547/3039957571?d_id=040cf&uls_trackid=570t&utm_content=3kn"), "https://shopee.tw/product/52024547/3039957571");
+  assert.equal(cleanUrl("https://www.shopping.bin-music.com.tw/SalePage/Index/10415609?lang=zh-TW&fbclid=abc#top"), "https://www.shopping.bin-music.com.tw/SalePage/Index/10415609?lang=zh-TW");
+  assert.equal(cleanUrl("https://shop.example/p?id=7&UTM_Campaign=x&color=red"), "https://shop.example/p?id=7&color=red");   // names are matched without regard to case
+  assert.equal(cleanUrl("not a url"), "not a url");
+});
+
+test("momo: the shop-name tail of the title is cut and a price written 1,856 is read", () => {
+  const html = '<meta property="og:title" content="【My First Book】第四冊-馬戲團篇(3-6Y) - momo購物網 - 好評推薦 -2026年10月"/><meta name="product:price:amount" content="1,856"/><meta property="og:image" content="https://i1.example/a.webp"/>';
+  const p = parseProductPage(html);
+  assert.equal(p.title, "【My First Book】第四冊-馬戲團篇(3-6Y)");
+  assert.equal(p.price, "1856");
 });
