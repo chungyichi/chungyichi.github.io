@@ -70,10 +70,12 @@ Trust is yours to give: the importer never writes `trusted`, and `npm run check`
   They are kept in `sites/blog-originals/<section>/<post>/` next to this repo (outside git).
 - **Web versions** are made with `scripts/photo.sh <originals-dir> <output-dir>` (long edge 1600 px, WebP, metadata and GPS removed, sandboxed, no network)
   and placed in `content/<section>/media/<post>/`. **That folder is git-ignored**: published pictures are not in git history at all.
-- They are stored in a GitHub Release named `media` (one archive per post, `media-<section>-<post>.tar`): `scripts/media.sh push <section> <post>` uploads
-  (replaces) one, `scripts/media.sh delete <section> <post>` removes one for real, `scripts/media.sh pull` downloads all into `content/` (the deploy does this before every build;
-  a fresh clone runs it too). So replacing or deleting a post's pictures leaves no blob in git. The archives are public, like the pictures on the site.
-- The archive is untrusted input in the deploy: `scripts/media-extract.sh` accepts only plain files named `<section>/media/<slug>/<file>.<image extension>` and refuses everything else.
+- They are stored in a GitHub Release named `media`, all sections in **one bundle** (`media-all-<UTC time>.tar`, the newest is used): `scripts/media.sh push <section> <post>` puts one post's
+  pictures into it (replacing that post's old ones), `scripts/media.sh delete <section> <post>` takes them out for real, `scripts/media.sh pull` downloads the bundle into `content/` (the deploy does this
+  before every build; a fresh clone runs it too). A push uploads the new bundle first, checks its size, then deletes older bundles but keeps the previous one as a way back; `delete` deletes every older bundle,
+  so the pictures are really gone. Each push uploads the whole bundle (about 150 MB today; GitHub allows 2 GiB per file) and two pushes at the same moment would race: push one after another.
+  Replacing or deleting a post's pictures leaves no blob in git. The bundle is public, like the pictures on the site. `scripts/media.sh migrate` / `prune-old` moved the old one-archive-per-post layout into the bundle.
+- The bundle is untrusted input in the deploy: `scripts/media-extract.sh` accepts only plain files named `<section>/media/<slug>/<file>.<image extension>` and refuses everything else.
 - `npm run check` fails if a picture is tracked by git.
 - Order for a new post: `scripts/publish.sh` (or put the pictures in place), look at it with `npm run dev`, `scripts/media.sh push ...`, then commit and push the post file. Uploading changes nothing on the site until a deploy runs.
 - `scripts/backup.sh` copies texts to the vault and deliberately skips every `media/` folder and all picture files.
