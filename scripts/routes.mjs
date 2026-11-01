@@ -3,14 +3,14 @@ import { site } from "../site.config.mjs";
 import { createHash } from "node:crypto";
 import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor, toyHero, collectTags } from "./content.mjs";
 import { tagPath, tagsIndexPath } from "../src/tags.mjs";
-import { gridOf, filterByOwner, ownerPath, pickFeaturedToys } from "../src/toys.mjs";
+import { gridOf, filterByOwner, filterByOwn, gridPath, pickFeaturedToys } from "../src/toys.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
 const briefOf = (fileExists) => (p) => {
   const dir = `/media/${p.section}/${p.slug}`;
   return {
-    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", status: p.status || "", quantity: p.quantity || 1, author: p.author || "",
+    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", own: p.own !== false, status: p.status || "", quantity: p.quantity || 1, author: p.author || "",
     thumb: fileExists(`${dir}/thumb.webp`) ? `${dir}/thumb.webp` : "",                                                   // 400x210, made by scripts/og-image.sh
     card: gridOf(p.section) && fileExists(`${dir}/card.webp`) ? `${dir}/card.webp` : "",                       // 480x480 for the grids (toys, books; og-image.sh --square); the grid falls back to thumb
   };
@@ -43,12 +43,19 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
       const grid = grids[section] ?? gridOf(section);
       if (grid) {
         // A picture grid (toys, books) of every post, plus one grid per owner. The filter is plain links, so it works without JavaScript.
-        const owners = (grid.owners ?? []).map((o) => ({ id: o.id, total: filterByOwner(posts, o.id).length }));
-        for (const owner of ["", ...owners.map((o) => o.id)]) {
-          for (const pg of paginate(filterByOwner(posts, owner), grid.perPage ?? perPage)) {
-            const path = owner ? ownerPath(lang, section, owner, pg.number) : indexPath(lang, section, pg.number);
-            routes.push({ path, kind: "grid", lang, alternates: alt(path, lang),
-              props: { section, owner, owners, total: posts.length, items: pg.items.map(brief), page: pg.number, pages: pg.total } });
+        // A grid that opts in with `ownFilter` has a second filter, own yes / no, that combines with the owner: a page for every pair, and
+        // each filter's counts follow the other's current choice.
+        const ownIds = grid.ownFilter ? ["yes", "no"] : [];
+        for (const owner of ["", ...(grid.owners ?? []).map((o) => o.id)]) {
+          for (const own of ["", ...ownIds]) {
+            const byOwn = filterByOwn(posts, own), byOwner = filterByOwner(posts, owner);
+            const owners = (grid.owners ?? []).map((o) => ({ id: o.id, total: filterByOwner(byOwn, o.id).length }));
+            const owns = ownIds.map((id) => ({ id, total: filterByOwn(byOwner, id).length }));
+            for (const pg of paginate(filterByOwn(byOwner, own), grid.perPage ?? perPage)) {
+              const path = gridPath(lang, section, owner, own, pg.number);
+              routes.push({ path, kind: "grid", lang, alternates: alt(path, lang),
+                props: { section, owner, owners, own, owns, total: byOwn.length, ownTotal: byOwner.length, items: pg.items.map(brief), page: pg.number, pages: pg.total } });
+            }
           }
         }
       } else {
@@ -69,7 +76,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: hero.html, draft: p.draft, private: Boolean(p.private), words: p.words,
-            owner: p.owner || "", author: p.author || "", volumes: p.volumes || [], source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
+            owner: p.owner || "", own: p.own !== false, author: p.author || "", volumes: p.volumes || [], source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
       }
     }
 

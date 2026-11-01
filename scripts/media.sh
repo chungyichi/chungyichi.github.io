@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Published pictures live in ONE archive in a GitHub Release named "media" (all sections together), never in git history. Runs on the host and in the deploy.
 #   scripts/media.sh push <section> <slug>    put content/<section>/media/<slug>/ into the bundle (replaces that post's old pictures); then run the deploy
+#   scripts/media.sh push-many <section>/<slug> ...  the same for several posts with ONE upload of the bundle (use this for a batch)
 #   scripts/media.sh delete <section> <slug>  take that post's pictures out of the bundle; every older bundle is deleted too, so they are really gone
 #   scripts/media.sh pull                     download the newest bundle and unpack it into content/ (the deploy does this before the build)
 #   scripts/media.sh migrate                  old layout (one archive per post) -> one bundle; the old archives stay until `prune-old`
@@ -63,6 +64,18 @@ case $cmd in
     rm -rf "${work:?}/$section/media/$slug"; mkdir -p "$work/$section/media"; cp -r "$dir" "$work/$section/media/$slug"
     upload_bundle "$work" 1
     echo "Deploy with: gh workflow run deploy.yml   (or push a commit)" ;;
+  push-many)
+    shift; [ $# -ge 1 ] || { echo "usage: media.sh push-many <section>/<slug> ..." >&2; exit 2; }
+    work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
+    fetch_all "$work"
+    for a in "$@"; do
+      sec=${a%%/*}; sl=${a#*/}; ok "$sec"; ok "$sl"
+      dir=content/$sec/media/$sl
+      [ -d "$dir" ] && [ -n "$(ls -A "$dir")" ] || { echo "no pictures in $dir" >&2; exit 1; }
+      rm -rf "${work:?}/$sec/media/$sl"; mkdir -p "$work/$sec/media"; cp -r "$dir" "$work/$sec/media/$sl"
+    done
+    upload_bundle "$work" 1
+    echo "$# posts put into the bundle. Deploy with: gh workflow run deploy.yml   (or push a commit)" ;;
   delete)
     ok "$section"; ok "$slug"
     work=$(mktemp -d); trap 'rm -rf "$work"' EXIT

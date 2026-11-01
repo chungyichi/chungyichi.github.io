@@ -52,6 +52,18 @@ test("push puts pictures of different sections in one bundle; pull restores them
   assert.ok(existsSync(join(d, "content/toys/media/car/a.webp")) && existsSync(join(d, "content/life/media/trip/a.webp")));
 });
 
+test("push-many puts several posts into one new bundle with one upload", async () => {
+  const d = setup();
+  pic(d, "toys", "car"); assert.equal(media(d, "push", "toys", "car").status, 0);
+  await wait(); pic(d, "books", "one"); pic(d, "books", "two"); pic(d, "toys", "bus");
+  const r = media(d, "push-many", "books/one", "books/two", "toys/bus"); assert.equal(r.status, 0, r.stderr);
+  assert.equal(store(d).filter((n) => n.startsWith("media-all-")).length, 2, store(d).join());   // one new bundle + the previous one
+  spawnSync("rm", ["-rf", join(d, "content")]); mkdirSync(join(d, "content"));
+  assert.equal(media(d, "pull").status, 0);
+  for (const f of ["toys/media/car", "toys/media/bus", "books/media/one", "books/media/two"]) assert.ok(existsSync(join(d, "content", f, "a.webp")), f);
+  assert.notEqual(media(d, "push-many", "books/missing").status, 0);                   // no pictures: refused
+});
+
 test("delete really removes the pictures from every bundle left", async () => {
   const d = setup();
   pic(d, "toys", "car"); media(d, "push", "toys", "car");

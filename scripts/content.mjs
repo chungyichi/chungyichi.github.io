@@ -6,12 +6,12 @@ import hljs from "highlight.js/lib/common";
 import { ContentError } from "./errors.mjs";
 import { sanitizeHtml } from "./sanitize.mjs";
 import { tagSlug } from "../src/tags.mjs";
-import { TOY_STATUSES, SECTION_KEYS, resolveAuthors } from "../src/toys.mjs";
+import { gridOf, TOY_STATUSES, BOOK_OWN, SECTION_KEYS, resolveAuthors } from "../src/toys.mjs";
 
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author", "volumes"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author", "volumes", "own"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
 // Toys (content/toys/): one post per toy. `owner: me` says whose it is (the ids are in site.config.mjs; scripts/check.mjs compares),
@@ -19,6 +19,7 @@ const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 // `price: "NT$15,525"` is shown as written (text, so any currency or "about 500" works), `quantity: 2` how many of the same toy
 // (a whole number from 1; absent is 1; the pages only mention it from 2 up).
 // Books (content/books/) take `owner` (who reads it) and `source`, and `author`; a book without a summary uses its author line as the summary.
+// `own: no` marks a book you only read (web novel, online comic; absent = a physical copy); the post then has `own: false`.
 const OWNER_RE = /^[a-z][a-z0-9-]{0,20}$/;
 const MAX_AUTHOR = 80, MAX_VOLUMES = 100;
 export const MAX_PRICE = 40;
@@ -157,6 +158,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   }
   if ("author" in data && !(typeof data.author === "string" && data.author.trim() && data.author.trim().length <= MAX_AUTHOR)) throw new ContentError(`${filename}: 'author' must be a short text (at most ${MAX_AUTHOR} characters)`);
   if ("owner" in data && !(typeof data.owner === "string" && OWNER_RE.test(data.owner))) throw new ContentError(`${filename}: 'owner' must be a short id such as me or son`);
+  if ("own" in data && !BOOK_OWN.includes(data.own)) throw new ContentError(`${filename}: 'own' must be one of ${BOOK_OWN.join(", ")}`);
   if ("status" in data && !TOY_STATUSES.includes(data.status)) throw new ContentError(`${filename}: 'status' must be one of ${TOY_STATUSES.join(", ")}`);
   if ("price" in data && !(typeof data.price === "string" && data.price.trim() && data.price.trim().length <= MAX_PRICE)) throw new ContentError(`${filename}: 'price' must be a short text such as "NT$1,250" (quote it; at most ${MAX_PRICE} characters)`);
   if ("quantity" in data && !/^[1-9]\d{0,5}$/.test(String(data.quantity).trim())) throw new ContentError(`${filename}: 'quantity' must be a whole number from 1 up (how many of this toy), such as quantity: 2`);
@@ -165,7 +167,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
-    owner: data.owner || "", author: (data.author || "").trim(), volumes: data.volumes || [], source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
+    owner: data.owner || "", own: data.own !== "no", author: (data.author || "").trim(), volumes: data.volumes || [], source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
     quantity: "quantity" in data ? Number(String(data.quantity).trim()) : 1,
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
@@ -232,6 +234,8 @@ export function headingsOf(html) {
 export function buildSearchIndex(posts, lang, sectionTitleOf) {
   return posts.filter((p) => p.lang === lang).map((p) => ({
     t: p.title, s: p.summary, h: [...headingsOf(p.html), ...(p.volumes || []), ...(p.author ? p.author.split(", ") : [])], g: p.tags || [], d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
+    // grid posts only (kept out of the other entries to keep the index small): owner id `o`, and `w: 0` for a book you only read (own: no)
+    ...(gridOf(p.section) ? { ...(p.owner ? { o: p.owner } : {}), ...(p.own === false ? { w: 0 } : {}) } : {}),
   }));
 }
 

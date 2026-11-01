@@ -4,7 +4,7 @@ import { parsePost, buildModel } from "../scripts/content.mjs";
 import { buildRoutes } from "../scripts/routes.mjs";
 import { site } from "../site.config.mjs";
 import { buildSearchIndex } from "../scripts/content.mjs";
-import { resolveAuthors } from "../src/toys.mjs";
+import { resolveAuthors, isAdultText, filterByOwn, ownPath, gridPath } from "../src/toys.mjs";
 import { inScope, SCOPES } from "../src/search-core.mjs";
 
 const book = (name, extra, section = "books") => parsePost(name, `---\ntitle: Book ${name}\ntags: 書\n${extra}---\nx\n`, undefined, section);
@@ -25,18 +25,19 @@ test("books: 130 books make 3 pages of 48, 48 and 34; every owner has its own pa
   const routes = buildRoutes(buildModel(posts, ["zh", "en"], site.sections), {}, { langs: ["zh"] });
   const grids = routes.filter((r) => r.kind === "grid" && r.props.section === "books");
   const paths = new Set(routes.map((r) => r.path));
-  const all = grids.filter((r) => !r.props.owner);
+  const all = grids.filter((r) => !r.props.owner && !r.props.own);
+  const hrefFor = (r, n) => gridPath("zh", "books", r.props.owner, r.props.own, n);
   assert.deepEqual(all.map((r) => r.path), ["/zh/books/", "/zh/books/page/2/", "/zh/books/page/3/"]);
   assert.deepEqual(all.map((r) => r.props.items.length), [48, 48, 34]);
   assert.deepEqual(all.map((r) => r.props.pages), [3, 3, 3]);
   assert.equal(new Set(all.flatMap((r) => r.props.items.map((p) => p.slug))).size, 130);              // every book once
-  const me = grids.filter((r) => r.props.owner === "me"), son = grids.filter((r) => r.props.owner === "son");
+  const me = grids.filter((r) => r.props.owner === "me" && !r.props.own), son = grids.filter((r) => r.props.owner === "son" && !r.props.own);
   assert.deepEqual([me.length, son.length], [1, 2]);                                                    // 44 and 86 books
   assert.deepEqual([me[0].props.items.length, son.map((r) => r.props.items.length)], [44, [48, 38]]);
   assert.deepEqual(all[0].props.owners, [{ id: "me", total: 44 }, { id: "son", total: 86 }]);
   for (const r of grids) {
     assert.ok(r.props.page >= 1 && r.props.page <= r.props.pages);
-    for (let n = 1; n <= r.props.pages; n++) assert.ok(paths.has(r.props.owner ? `/zh/books/owner/${r.props.owner}/${n > 1 ? `page/${n}/` : ""}` : n > 1 ? `/zh/books/page/${n}/` : "/zh/books/"), `page ${n} of ${r.path}`);
+    for (let n = 1; n <= r.props.pages; n++) assert.ok(paths.has(hrefFor(r, n)), `page ${n} of ${r.path}`);
     for (const p of r.props.items) assert.ok(paths.has(`/zh/books/${p.slug}/`));                          // a card opens an existing page
   }
   assert.equal(routes.filter((r) => r.kind === "grid" && r.props.section === "toys").length, 1 + 3);   // the toys grids are still there, empty: all + three owners
@@ -85,4 +86,45 @@ test("books: a series with 5 pictures has 5 on its page panel, one picture has 1
     const page = buildRoutes(buildModel([b], ["zh"], site.sections), {}, { langs: ["zh"] }).find((r) => r.path === "/zh/books/a/").props;
     assert.deepEqual([page.pictures.length, page.html], [n, ""]);
   }
+});
+
+test("books: own is yes or no (absent = yes), only for books", () => {
+  assert.deepEqual([book("2026-10-21-a.zh.md", "summary: S\n").own, book("2026-10-21-a.zh.md", "summary: S\nown: yes\n").own, book("2026-10-21-a.zh.md", "summary: S\nown: no\n").own], [true, true, false]);
+  assert.throws(() => book("2026-10-21-a.zh.md", "summary: S\nown: maybe\n"), /'own' must be one of yes, no/);
+  assert.throws(() => book("2026-10-21-a.zh.md", "summary: S\nown: false\n"), /'own' must be one of yes, no/);
+  assert.throws(() => book("2026-10-21-a.zh.md", "summary: S\nown: no\n", "toys"), /'own' is only for posts in content\/books\//);
+});
+
+test("books: the own filter combines with the owner: a paged page for every pair, counts follow the other filter, toys have none", () => {
+  // 130 books: owner me for i%3==0, own no for i%4==0
+  const posts = names(130).map((n, i) => book(n, `summary: S\nowner: ${i % 3 ? "son" : "me"}\n${i % 4 === 0 ? "own: no\n" : ""}`));
+  const routes = buildRoutes(buildModel(posts, ["zh", "en"], site.sections), {}, { langs: ["zh", "en"] });
+  const paths = routes.map((r) => r.path);
+  const grid = (owner, own) => routes.filter((r) => r.kind === "grid" && r.lang === "zh" && r.props.section === "books" && r.props.owner === owner && r.props.own === own);
+  assert.deepEqual(grid("", "no").map((r) => r.path), ["/zh/books/own/no/"]);
+  assert.deepEqual(grid("", "yes").map((r) => r.path), ["/zh/books/own/yes/", "/zh/books/own/yes/page/2/", "/zh/books/own/yes/page/3/"]);
+  assert.deepEqual(grid("me", "no").map((r) => r.path), ["/zh/books/owner/me/own/no/"]);
+  assert.deepEqual(grid("son", "yes").map((r) => r.path), ["/zh/books/owner/son/own/yes/", "/zh/books/owner/son/own/yes/page/2/"]);
+  assert.deepEqual(grid("me", "").map((r) => r.path), ["/zh/books/owner/me/"]);
+  assert.ok(paths.includes("/en/books/owner/me/own/no/"));
+  assert.deepEqual(grid("me", "no")[0].alternates, [{ lang: "en", path: "/en/books/owner/me/own/no/" }]);
+  const meNo = grid("me", "no")[0].props;                                   // me and own no: i%12==0 -> 11 books
+  assert.equal(meNo.items.length, 11);
+  assert.ok(meNo.items.every((p) => p.own === false && p.owner === "me"));
+  assert.deepEqual([meNo.total, meNo.ownTotal], [33, 44]);                     // owner pills count own-no books (33); the toggle counts me's books (44)
+  assert.deepEqual(meNo.owners, [{ id: "me", total: 11 }, { id: "son", total: 22 }]);
+  assert.deepEqual(meNo.owns, [{ id: "yes", total: 33 }, { id: "no", total: 11 }]);
+  assert.equal(routes.find((r) => r.kind === "post" && r.lang === "zh" && r.props.slug === "b0").props.own, false);
+  assert.ok(!paths.some((p) => p.startsWith("/zh/toys/own/") || p.includes("/zh/toys/owner/me/own/")));
+  assert.equal(ownPath("zh", "books", "no", 2), "/zh/books/own/no/page/2/");
+  assert.equal(gridPath("zh", "books", "me", "no", 2), "/zh/books/owner/me/own/no/page/2/");
+  assert.deepEqual([gridPath("zh", "books", "", "", 1), gridPath("en", "books", "son", "", 3), gridPath("zh", "books", "", "yes")], ["/zh/books/", "/en/books/owner/son/page/3/", "/zh/books/own/yes/"]);
+  assert.equal(filterByOwn(posts, "").length, 130);
+});
+
+test("books: adult text-only rule applies to own: no with the tag 成人", () => {
+  const mk = (extra, tags = "成人") => parsePost("2026-10-21-a.zh.md", `---\ntitle: T\nsummary: S\ntags: ${tags}\n${extra}---\nx\n`, undefined, "books");
+  assert.equal(isAdultText(mk("own: no\n")), true);
+  assert.equal(isAdultText(mk("")), false);
+  assert.equal(isAdultText(mk("own: no\n", "小說")), false);
 });

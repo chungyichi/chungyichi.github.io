@@ -72,7 +72,7 @@ test("a toy is found by its name and by its tag, and the result names the toy se
   assert.deepEqual(search(p, "機器人").map((e) => [e.t, e.c, e.u]), [["遙控機器人", "玩具庫", "/zh/toys/robot/"]]);
   assert.deepEqual(search(p, "#遙控").map((e) => e.t), ["遙控機器人"]);
   assert.deepEqual(search(p, "secretword"), []);                                   // body text is not indexed
-  assert.ok(!JSON.stringify(idx).includes("son") && !JSON.stringify(idx).includes("shop.example"));   // owner and source stay off the index
+  assert.ok(!JSON.stringify(idx).includes("shop.example"));   // the source stays off the index (the owner id is there as `o`, for the filter)
 });
 
 test("a quoted #tag with a space matches that tag only", async () => {
@@ -87,4 +87,34 @@ test("the search scope: everything, the posts only, or the toys only; the limit 
   assert.deepEqual(search(p, "1", 50, (e) => inScope(e, "posts", "zh")).map((e) => e.t), ["P1"]);
   assert.equal(search(p, "1", 50, (e) => inScope(e, "all", "zh")).length, 2);
   assert.equal(inScope({ u: "/en/toys/a/" }, "toys", "zh"), false);   // another language's address is not this language's toys
+});
+
+test("search: owner and own filters combine with the keyword; a filter alone lists everything it matches, newest first", async () => {
+  const { inFilter, list, SCOPES } = await import("../src/search-core.mjs");
+  const e = (t, d, extra) => ({ t, s: "", h: [], g: [], d, c: "Books", u: `/zh/books/${t}/`, ...extra });
+  const p = prepare([e("red-a", "2026-10-01", { o: "me" }), e("red-b", "2026-10-03", { o: "son", w: 0 }), e("blue-c", "2026-10-02", { o: "son" }), e("red-d", "2026-10-04", { o: "me", w: 0 }), { ...e("red-post", "2026-10-05"), u: "/zh/tech/red-post/" }]);
+  const hits = (q, owner, own, scope = "books") => (q ? search(p, q, 50, (x) => inScope(x, scope, "zh") && inFilter(x, owner, own)) : list(p, 50, (x) => inScope(x, scope, "zh") && inFilter(x, owner, own))).map((x) => x.t);
+  assert.deepEqual(hits("red", "", ""), ["red-d", "red-b", "red-a"]);
+  assert.deepEqual(hits("red", "son", ""), ["red-b"]);
+  assert.deepEqual(hits("red", "", "no"), ["red-d", "red-b"]);
+  assert.deepEqual(hits("red", "me", "no"), ["red-d"]);
+  assert.deepEqual(hits("red", "me", "yes"), ["red-a"]);
+  assert.deepEqual(hits("", "son", ""), ["red-b", "blue-c"]);            // no keyword: all of that owner, newest first
+  assert.deepEqual(hits("", "", "yes"), ["blue-c", "red-a"]);            // own absent = owned
+  assert.deepEqual(hits("", "me", "no"), ["red-d"]);
+  assert.deepEqual(hits("red", "me", "", "all"), ["red-d", "red-a"]);     // scope all: only items that have that owner, a post (no owner) drops out
+  assert.deepEqual(hits("", "son", "", "posts"), []);
+  assert.deepEqual(hits("", "me", "", "all"), ["red-d", "red-a"]);
+  assert.deepEqual(hits("red", "nobody", "", "all"), []);
+  assert.equal(list(p, 2).length, 2);                                     // the limit counts
+  assert.equal(inFilter({ u: "x" }, "", ""), true);
+  assert.ok(SCOPES.includes("books"));
+});
+
+test("search index: grid posts carry owner `o` and `w: 0` for own: no; other entries have neither", async () => {
+  const { buildSearchIndex, parsePost } = await import("../scripts/content.mjs");
+  const mk = (section, extra) => parsePost("2026-10-21-a.zh.md", `---\ntitle: T\nsummary: S\ntags: x\n${extra}---\nbody\n`, undefined, section);
+  const idx = buildSearchIndex([mk("books", "owner: me\nown: no\n"), mk("books", "owner: son\n"), mk("toys", "owner: me\n"), mk("tech", "")], "zh", (s) => s);
+  assert.deepEqual(idx.map((x) => [x.o, x.w]), [["me", 0], ["son", undefined], ["me", undefined], [undefined, undefined]]);
+  assert.ok(!("o" in idx[3]) && !("w" in idx[3]) && !("w" in idx[1]));
 });

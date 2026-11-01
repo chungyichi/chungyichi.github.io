@@ -1,10 +1,10 @@
 // Search page behaviour. Loaded only on the search page. Results are built with textContent, never innerHTML,
 // so nothing in the index can inject markup.
 // Typing #tag and a space (or Enter) turns the word into a tag chip; chips and free text combine into one query.
-import { prepare, search, normalize, parseQuery, buildQuery, inScope, SCOPES } from "./search-core.mjs";
+import { prepare, search, normalize, parseQuery, buildQuery, inScope, inFilter, list as listAll, SCOPES } from "./search-core.mjs";
 import { tagSlug, tagPath } from "./tags.mjs";
 
-type Entry = { t: string; s: string; h: string[]; g?: string[]; d: string; c: string; u: string };
+type Entry = { t: string; s: string; h: string[]; g?: string[]; d: string; c: string; u: string; o?: string; w?: number };
 const lang = document.documentElement.lang === "en" ? "en" : "zh";
 
 const root = document.getElementById("search");
@@ -23,6 +23,9 @@ if (root) {
   let chips: string[] = [];
   const scopeButtons = [...root.querySelectorAll<HTMLButtonElement>("#scope button[data-scope]")];
   let scope = "all";                                       // all | posts | toys: which part of the site the results come from
+  const ownerButtons = [...root.querySelectorAll<HTMLButtonElement>("#owners button[data-owner]")];   // the owners of all grid sections, always shown
+  const ownBoxes = [...root.querySelectorAll<HTMLElement>("[data-own-for]")];                         // a section's own toggle, shown in that scope only
+  let owner = "", own = "";                                // owner id and yes | no chosen ("" = all); a post without that owner drops out
   let composing = false;                                   // an IME (Chinese input) is mid-word: do not touch the text
 
   const load = () => (loading ??= fetch(root.dataset.index!)
@@ -80,9 +83,11 @@ if (root) {
 
   function show(q: string) {
     list.replaceChildren();
-    if (!q.trim()) { status.textContent = ""; return; }
+    const filtered = Boolean(owner || own);
+    if (!q.trim() && !filtered) { status.textContent = ""; return; }
     if (!prepared) { status.textContent = msg("loading"); return; }
-    const hits = search(prepared, q, 50, (e: Entry) => inScope(e, scope, lang)) as Entry[];
+    const accept = (e: Entry) => inScope(e, scope, lang) && inFilter(e, owner, own);
+    const hits = (q.trim() ? search(prepared, q, 50, accept) : listAll(prepared, 50, accept)) as Entry[];   // a filter alone lists everything it matches, newest first
     status.textContent = hits.length ? msg("count").replace("{n}", String(hits.length)) : msg("none");
     for (const e of hits) {
       const li = document.createElement("li");
@@ -119,9 +124,11 @@ if (root) {
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q);
     if (scope !== "all") params.set("scope", scope);
+    if (owner) params.set("owner", owner);
+    if (own) params.set("own", own);
     history.replaceState(null, "", params.size ? `?${params}` : location.pathname);
     show(q);
-    if (!prepared && q.trim()) { await load(); show(buildQuery(chips, input.value)); }
+    if (!prepared && (q.trim() || owner || own)) { await load(); show(buildQuery(chips, input.value)); }
   }
 
   function changed() { if (composing) return; absorb(false); updateSuggest(); void run(); }
@@ -144,13 +151,32 @@ if (root) {
   });
   root.querySelector("form")!.addEventListener("submit", (e) => { e.preventDefault(); absorb(true); updateSuggest(); void run(); });
 
+  /** Mark the chosen buttons and show the own toggle of the scope (none for all, posts and toys). */
+  function showFilters() {
+    for (const b of ownerButtons) b.setAttribute("aria-pressed", String(b.dataset.owner === owner));
+    for (const box of ownBoxes) {
+      box.hidden = box.dataset.ownFor !== scope;
+      for (const b of box.querySelectorAll<HTMLButtonElement>("button")) b.setAttribute("aria-pressed", String(b.dataset.own === own));
+    }
+  }
   function setScope(next: string) {
     scope = next;
+    if (!ownBoxes.some((b) => b.dataset.ownFor === scope)) own = "";   // the owner stays across scopes; own only means something in its section
     for (const b of scopeButtons) b.setAttribute("aria-pressed", String(b.dataset.scope === scope));
+    showFilters();
   }
   for (const b of scopeButtons) b.addEventListener("click", () => { setScope(b.dataset.scope!); void run(); });
-  const wanted = new URLSearchParams(location.search).get("scope");
+  // the chosen chip again clears the owner
+  for (const b of ownerButtons) b.addEventListener("click", () => { owner = owner === b.dataset.owner ? "" : b.dataset.owner!; showFilters(); void run(); });
+  for (const b of root.querySelectorAll<HTMLButtonElement>("[data-own-for] button")) b.addEventListener("click", () => { own = b.dataset.own ?? ""; showFilters(); void run(); });
+  const wantedParams = new URLSearchParams(location.search);
+  const wanted = wantedParams.get("scope");
   if (wanted && SCOPES.includes(wanted)) setScope(wanted);
+  // owner and own are taken only when such a button exists (an id no section knows, or own outside its section, is ignored)
+  const wantedOwner = wantedParams.get("owner"), wantedOwn = wantedParams.get("own");
+  if (wantedOwner && ownerButtons.some((b) => b.dataset.owner === wantedOwner)) owner = wantedOwner;
+  if (wantedOwn && ["yes", "no"].includes(wantedOwn) && ownBoxes.some((b) => b.dataset.ownFor === scope)) own = wantedOwn;
+  showFilters();
 
   const initial = new URLSearchParams(location.search).get("q");
   if (initial) {
@@ -158,5 +184,5 @@ if (root) {
     tags.forEach(addChip); input.value = text;
   }
   updateSuggest();
-  if (initial) void run();
+  if (initial || owner || own) void run();
 }

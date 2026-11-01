@@ -14,6 +14,7 @@ export const site = {
   //   perPage  cards per page (a grid shows more than a text list)
   //   owners   who a post belongs to / is for: `owner: me` in the front matter. Each one gets a filter page, /zh/<section>/owner/<id>/.
   //            Pages show the owner as an icon (person | block | star | tag, drawn in src/icons.tsx) in a colour (--owner-<id> in src/styles/tokens.css), never as text.
+  //            `short` (optional {zh, en}): a shorter name for the small owner chips on the search page (the title is used when absent)
   //   ownerLabel, empty, scope  the filter's name, the text of an empty grid, the search page's scope button
   sections: [
     { id: "tech", title: { zh: "技術", en: "Tech" } },
@@ -22,13 +23,14 @@ export const site = {
       grid: { perPage: 24, ownerLabel: { zh: "擁有者", en: "Owner" }, empty: { zh: "還沒有玩具。", en: "No toys yet." }, scope: { zh: "玩具", en: "Toys" },
         owners: [
           { id: "me", title: { zh: "我", en: "Me" }, icon: "person" },
-          { id: "son", title: { zh: "兒子(紀大哥)", en: "Son" }, icon: "block" },
+          { id: "son", title: { zh: "兒子(紀大哥)", en: "Son" }, short: { zh: "兒子", en: "Son" }, icon: "block" },
           { id: "brother", title: { zh: "弟弟", en: "Brother" }, icon: "star" },
         ] } },
     { id: "books", title: { zh: "書庫", en: "Books" },   // one post per book; `owner` is who reads it
       // authors: the one spelling of each author. A book's `author` (several: comma separated) must be a name or an alias here; an alias is
       // rewritten to the name at build and `npm run check` fails for any other author. A new author is a new entry: { name, aliases: [...] }.
-      grid: { perPage: 48, authors: [{ name: "R．A．薩爾瓦多", aliases: ["R.A. Salvatore", "R. A. Salvatore", "薩爾瓦多"] },
+      // ownFilter: a second filter next to the owners, /zh/books/own/yes/ and /own/no/ (`own: no` = only read, not a physical copy)
+      grid: { perPage: 48, ownFilter: true, authors: [{ name: "R．A．薩爾瓦多", aliases: ["R.A. Salvatore", "R. A. Salvatore", "薩爾瓦多"] },
       { name: "全民熙", aliases: ["전민희", "Jeon Min-hee", "Jeon Minhee"] }],
         ownerLabel: { zh: "誰在看", en: "Reader" }, empty: { zh: "還沒有書。", en: "No books yet." }, scope: { zh: "書", en: "Books" },
         owners: [
@@ -42,7 +44,7 @@ export const site = {
   // Posts on the home page, as "<section>/<slug>" (a post missing in a language is skipped); newest first. An empty list shows the latest few.
   featured: ["tech/site-design", "tech/technique-behind-git", "life/part-1", "life/2023-nikko-day-1-jr", "life/2019-day-1"],
   // Toys in the home page's picture carousel (between the motto and the featured posts), "toys/<slug>" in this order; unpublished ones are skipped, none hides the carousel.
-  featuredToys: ["toys/mayday-max", "toys/mivi-king-of-destruction-3"],
+  featuredToys: ["toys/mayday-max", "toys/mivi-king-of-destruction-3", "toys/soc-franky-general", "toys/mcdonalds-eva-robots"],
   homePosts: 5,
   // Google Analytics 4 Measurement ID ("G-XXXXXXXXXX", not a secret). Empty = no analytics script at all. See template.mjs.
   analytics: { gaId: "G-YP5V272CSS" },

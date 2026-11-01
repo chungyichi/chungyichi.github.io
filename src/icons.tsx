@@ -7,6 +7,7 @@ const PATHS = {
   star: "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z",
   tag: "M20 13l-7 7-9-9V4h7zM8 8h.01",
   heart: "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.6-7 10-7 10z",
+  book: "M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2zM4 20a2 2 0 0 0 2 1h13M3 3l18 18",
   arrow: "M7 17L17 7M9 7h8v8",
   chevronLeft: "M15 6l-6 6 6 6",
   chevronRight: "M9 6l6 6-6 6",
@@ -32,6 +33,11 @@ export function OwnerBadge({ lang, id, section }: { lang: Lang; id: string; sect
   if (!id) return null;
   const label = ownerTitle(lang, id, section);
   return <span className={`badge owner-${id}`} role="img" aria-label={label} title={label}><Icon name={ownerIcon(id)} /></span>;
+}
+
+/** The badge of a book that is only read (`own: no`: a web novel, an online comic); it has no physical copy. */
+export function NoCopyBadge({ label }: { label: string }) {
+  return <span className="badge badge-nocopy" role="img" aria-label={label} title={label}><Icon name="book" /></span>;
 }
 
 export function WantBadge({ label }: { label: string }) {

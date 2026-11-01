@@ -61,6 +61,17 @@ export function search(prepared, query, limit = 50, accept = null) {
   return hits.slice(0, limit).map((h) => h.entry);
 }
 
+/**
+ * The owner / own filters of a grid section on the search page. `o` is the entry's owner id, `w` is 0 for a book you only read (absent = owned);
+ * both exist only on grid posts. "" means no filter.
+ */
+export const inFilter = (entry, owner = "", own = "") => (!owner || entry.o === owner) && (!own || (own === "no") === (entry.w === 0));
+
+/** Every accepted entry, newest first, up to the limit: browsing by a filter alone (an empty keyword).
+ * @param {any} prepared @param {number} [limit] @param {((entry: any) => boolean) | null} [accept] */
+export const list = (prepared, limit = 50, accept = null) =>
+  prepared.map((p) => p.entry).filter((e) => !accept || accept(e)).sort((a, b) => (a.d < b.d ? 1 : a.d > b.d ? -1 : 0)).slice(0, limit);
+
 /** The search page can look at everything, at the posts only, or at one picture-grid section only (toys, books). A toy's address is /<lang>/toys/<slug>/. */
 export const SCOPES = ["all", "posts", ...gridSections()];
 export const inScope = (entry, scope, lang) => {

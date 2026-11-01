@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import { site } from "../site.config.mjs";
-import { t, title, tagline, sectionTitle, ownerTitle, gridOf, type Lang } from "./i18n";
+import { t, title, tagline, sectionTitle, ownerTitle, ownerShort, gridOf, type Lang } from "./i18n";
 import type { Brief, Route, ToySlide } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
 import { SEASON_ISLAND_ID } from "./SeasonToggle";
 import { tagPath, tagsIndexPath } from "./tags.mjs";
-import { TOYS_SECTION, BOOKS_SECTION, ownerPath } from "./toys.mjs";
-import { GithubMark, Icon, OwnerBadge, WantBadge, ownerIcon } from "./icons";
+import { TOYS_SECTION, BOOKS_SECTION, gridPath } from "./toys.mjs";
+import { GithubMark, Icon, NoCopyBadge, OwnerBadge, WantBadge, ownerIcon } from "./icons";
 
 import { tagSlug as tagSlugOf } from "./tags.mjs";
 const postHref = (lang: Lang, section: string, slug: string) => `/${lang}/${section}/${slug}/`;
@@ -174,7 +174,7 @@ function ToyCard({ lang, p }: { lang: Lang; p: Brief }) {
       <a className="toy-pic" href={href} tabIndex={-1} aria-hidden="true">
         {pic ? <img src={pic} alt="" width={p.card ? 480 : 400} height={p.card ? 480 : 210} loading="lazy" decoding="async" /> : <span className="no-thumb"><Icon name="tag" /></span>}
       </a>
-      <span className="badges"><OwnerBadge lang={lang} id={p.owner} section={p.section} />{p.status === "want" && <WantBadge label={t[lang].statusWant} />}</span>
+      <span className="badges"><OwnerBadge lang={lang} id={p.owner} section={p.section} />{p.status === "want" && <WantBadge label={t[lang].statusWant} />}{!p.own && <NoCopyBadge label={t[lang].ownNoLabel} />}</span>
       {p.quantity >= 2 && <span className="qty" title={`${t[lang].quantity} ${p.quantity}`} aria-label={`${t[lang].quantity} ${p.quantity}`}>×{p.quantity}</span>}
       <h3><a href={href}>{p.title}</a></h3>
       <TagList lang={lang} tags={p.tags.slice(0, 2)} />
@@ -183,21 +183,32 @@ function ToyCard({ lang, p }: { lang: Lang; p: Brief }) {
 }
 
 function ToyGrid({ route }: { route: Extract<Route, { kind: "grid" }> }) {
-  const { lang } = route, s = t[lang], { section, owner, owners, total, items, page, pages } = route.props, grid = gridOf(section);
+  const { lang } = route, s = t[lang], { section, owner, owners, own, owns, total, ownTotal, items, page, pages } = route.props, grid = gridOf(section);
   const filter = [{ id: "", total, label: s.ownerAll }, ...owners.map((o) => ({ ...o, label: ownerTitle(lang, o.id, section) }))];
   return (
     <>
       <h1>{sectionTitle(lang, section)}</h1>
-      <nav className="owner-filter" aria-label={grid?.ownerLabel[lang]}>
-        {filter.map((o) => (
-          <a key={o.id} className={o.id ? `owner-${o.id}` : undefined} href={o.id ? ownerPath(lang, section, o.id) : pageHref(lang, section, 1)} aria-current={o.id === owner ? "page" : undefined}>
-            {o.id && <Icon name={ownerIcon(o.id)} />}{o.label}<span className="count">{o.total}</span>
-          </a>
-        ))}
-      </nav>
+      <div className="grid-filters">
+        <nav className="owner-filter" aria-label={grid?.ownerLabel[lang]}>
+          {filter.map((o) => (
+            <a key={o.id} className={o.id ? `owner-${o.id}` : undefined} href={gridPath(lang, section, o.id, own)} aria-current={o.id === owner ? "page" : undefined}>
+              {o.id && <Icon name={ownerIcon(o.id)} />}{o.label}<span className="count">{o.total}</span>
+            </a>
+          ))}
+        </nav>
+        {owns.length > 0 && (
+          <nav className="own-toggle" aria-label={s.ownLabel}>
+            {[{ id: "", total: ownTotal, label: s.ownAll, icon: null }, ...owns.map((o) => ({ ...o, label: o.id === "yes" ? s.ownYes : s.ownNo, icon: o.id === "no" ? "book" as const : null }))].map((o) => (
+              <a key={o.id} href={gridPath(lang, section, owner, o.id)} aria-current={o.id === own ? "page" : undefined}>
+                {o.icon && <Icon name={o.icon} />}{o.label}<span className="count">{o.total}</span>
+              </a>
+            ))}
+          </nav>
+        )}
+      </div>
       {items.length === 0 && <p>{grid?.empty[lang]}</p>}
       <ul className="toy-grid">{items.map((p) => <ToyCard key={p.slug} lang={lang} p={p} />)}</ul>
-      <Pager lang={lang} page={page} pages={pages} hrefFor={(n) => (owner ? ownerPath(lang, section, owner, n) : pageHref(lang, section, n))} />
+      <Pager lang={lang} page={page} pages={pages} hrefFor={(n) => gridPath(lang, section, owner, own, n)} />
     </>
   );
 }
@@ -237,7 +248,7 @@ function Share({ lang, title }: { lang: Lang; title: string }) {
  */
 function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
   const s = t[lang], hasPic = p.pictures.length > 0;
-  const badges = <span className="badges"><OwnerBadge lang={lang} id={p.owner} section={p.section} />{p.status === "want" && <WantBadge label={s.statusWant} />}</span>;
+  const badges = <span className="badges"><OwnerBadge lang={lang} id={p.owner} section={p.section} />{p.status === "want" && <WantBadge label={s.statusWant} />}{!p.own && <NoCopyBadge label={s.ownNoLabel} />}</span>;
   const book = p.section === BOOKS_SECTION;
   return (
     <header className={hasPic ? "toy-hero has-pic" : "toy-hero"}>
@@ -254,8 +265,10 @@ function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
           {p.tags.length > 0 && <><dt>{s.tags}</dt><dd><TagList lang={lang} tags={p.tags} /></dd></>}
         </dl>
         {book && p.volumes.length > 0 && <div className="book-volumes"><p className="meta">{s.volumesCount(p.volumes.length)}</p><ol>{p.volumes.map((v, i) => <li key={i}>{v}</li>)}</ol></div>}
-        {/* A book's source is only a quiet text link: many books are out of print, so there is no button. */}
-        {book && p.source && <p className="book-source"><a href={p.source} rel="noopener noreferrer nofollow">{s.bookSource}</a></p>}
+        {/* A book's source is only a quiet text link: many books are out of print, so there is no button. A book that is only read (own: no) links to where to read it, plainly. */}
+        {book && p.source && (p.own
+          ? <p className="book-source"><a href={p.source} rel="noopener noreferrer nofollow">{s.bookSource}</a></p>
+          : <p className="book-read"><a href={p.source} rel="noopener noreferrer nofollow">{s.readHere}</a></p>)}
         <div className="toy-actions">
           {/* The shop's page: an outside site, so no referrer and no endorsement for search engines. Only this button carries the address. */}
           {p.source && !book && <a className="button" href={p.source} rel="noopener noreferrer nofollow">{s.viewShop}<Icon name="arrow" /></a>}
@@ -294,6 +307,13 @@ function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
   );
 }
 
+/** The owners of all picture-grid sections for the search page: an id once, labelled by the first section that has it. */
+function searchOwners(lang: Lang) {
+  const seen = new Set<string>();
+  return site.sections.flatMap((sec: { id: string; grid?: { owners: { id: string }[] } }) => (sec.grid?.owners ?? []).map((o) => ({ id: o.id, label: ownerShort(lang, o.id, sec.id) })))
+    .filter((o: { id: string }) => !seen.has(o.id) && seen.add(o.id));
+}
+
 function Search({ route }: { route: Extract<Route, { kind: "search" }> }) {
   const { lang } = route, s = t[lang];
   return (
@@ -306,11 +326,25 @@ function Search({ route }: { route: Extract<Route, { kind: "search" }> }) {
           <input id="q" name="q" type="search" autoComplete="off" placeholder={s.searchPlaceholder} />
         </div>
       </form>
-      <nav className="owner-filter scope-filter" id="scope" aria-label={s.scope}>
+      <nav className="scope-tabs" id="scope" aria-label={s.scope}>
         {[["all", s.ownerAll], ["posts", s.scopePosts], ...site.sections.filter((sec: { grid?: unknown }) => sec.grid).map((sec: { id: string }) => [sec.id, gridOf(sec.id)!.scope[lang]])].map(([id, label]) => (
           <button key={id} type="button" data-scope={id} aria-pressed={id === "all"}>{label}</button>
         ))}
       </nav>
+      {/* Owner pills of every picture-grid section (one row, an id once), always shown; the own toggle of a section is shown by src/search-client.ts only in that scope. */}
+      <div className="grid-filters">
+        <nav className="owner-chips" id="owners" aria-label={s.ownerLabel}>
+          <span className="owner-chips-label" aria-hidden="true">{s.ownerLabel}</span>
+          {searchOwners(lang).map((o) => (
+            <button key={o.id} type="button" data-owner={o.id} className={`owner-${o.id}`} aria-pressed="false"><Icon name={ownerIcon(o.id)} />{o.label}</button>
+          ))}
+        </nav>
+        {site.sections.filter((sec: { grid?: { ownFilter?: boolean } }) => sec.grid?.ownFilter).map((sec: { id: string }) => (
+          <nav key={sec.id} className="own-toggle" data-own-for={sec.id} aria-label={s.ownLabel} hidden>
+            {[["", s.ownAll], ["yes", s.ownYes], ["no", s.ownNo]].map(([id, label]) => <button key={id} type="button" data-own={id} aria-pressed={!id}>{id === "no" && <Icon name="book" />}{label}</button>)}
+          </nav>
+        ))}
+      </div>
       {route.props.tags.length > 0 && (
         <div id="tag-suggest">
           <p className="meta">{s.tags}</p>
