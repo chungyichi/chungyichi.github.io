@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { parsePost, buildModel } from "../scripts/content.mjs";
 import { buildRoutes } from "../scripts/routes.mjs";
 import { site } from "../site.config.mjs";
+import { buildSearchIndex } from "../scripts/content.mjs";
+import { resolveAuthors } from "../src/toys.mjs";
 import { inScope, SCOPES } from "../src/search-core.mjs";
 
 const book = (name, extra, section = "books") => parsePost(name, `---\ntitle: Book ${name}\ntags: 書\n${extra}---\nx\n`, undefined, section);
@@ -50,4 +52,36 @@ test("books: a book page has the picture panel; search has a books scope next to
   assert.equal(inScope({ u: "/zh/books/a/" }, "toys", "zh"), false);
   assert.equal(inScope({ u: "/zh/books/a/" }, "posts", "zh"), false);
   assert.equal(inScope({ u: "/zh/tech/a/" }, "posts", "zh"), true);
+});
+
+const AUTHOR = "R．A．薩爾瓦多";
+
+test("books: an author alias is rewritten to the one spelling; several authors are each checked; an unknown one is named with the nearest known names", () => {
+  for (const a of ["R.A. Salvatore", "r. a. salvatore", "薩爾瓦多", AUTHOR]) assert.equal(book("2026-10-21-a.zh.md", `summary: S\nauthor: ${a}\n`).author, AUTHOR, a);
+  assert.equal(book("2026-10-21-a.zh.md", "summary: S\nauthor: 薩爾瓦多, Roald Dahl\n").author, `${AUTHOR}, Roald Dahl`);
+  const r = resolveAuthors("薩爾瓦多, R.A Salvator, Nobody");
+  assert.deepEqual(r.names, [AUTHOR, "R.A Salvator", "Nobody"]);
+  assert.deepEqual(r.unknown.map((u) => u.name), ["R.A Salvator", "Nobody"]);                          // "R.A Salvator" is close to a known name but not equal
+  assert.equal(r.unknown[0].nearest[0], AUTHOR);
+});
+
+test("books: volumes are a comma separated list; the page props and the search index carry them (and the author)", () => {
+  const b = book("2026-10-21-a.zh.md", "summary: S\nowner: me\nauthor: 薩爾瓦多\nvolumes: 第一部, 第二部，第三部\n");
+  assert.deepEqual(b.volumes, ["第一部", "第二部", "第三部"]);
+  assert.deepEqual(book("2026-10-21-a.zh.md", "summary: S\n").volumes, []);
+  assert.throws(() => book("2026-10-21-a.zh.md", "summary: S\nvolumes: ,\n"), /'volumes' needs 1 to/);
+  assert.throws(() => book("2026-10-21-a.zh.md", "summary: S\nvolumes: 一\n", "toys"), /'volumes' is only for posts in content\/books\//);
+  const routes = buildRoutes(buildModel([b], ["zh"], site.sections), {}, { langs: ["zh"] });
+  assert.deepEqual(routes.find((r) => r.path === "/zh/books/a/").props.volumes, ["第一部", "第二部", "第三部"]);
+  const entry = buildSearchIndex([b], "zh", () => "書庫")[0];
+  assert.ok(entry.h.includes("第二部") && entry.h.includes(AUTHOR));
+});
+
+test("books: a series with 5 pictures has 5 on its page panel, one picture has 1", () => {
+  const pics = (n) => Array.from({ length: n }, (_, i) => `![v${i + 1}](/media/books/a/v${i + 1}.webp)`).join("\n\n");
+  for (const n of [1, 5]) {
+    const b = parsePost("2026-10-21-a.zh.md", `---\ntitle: T\nsummary: S\nowner: me\n---\n${pics(n)}\n`, undefined, "books");
+    const page = buildRoutes(buildModel([b], ["zh"], site.sections), {}, { langs: ["zh"] }).find((r) => r.path === "/zh/books/a/").props;
+    assert.deepEqual([page.pictures.length, page.html], [n, ""]);
+  }
 });

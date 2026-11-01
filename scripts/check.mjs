@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { site } from "../site.config.mjs";
 import { loadPosts } from "./load.mjs";
 import { buildModel, externalHosts } from "./content.mjs";
+import { resolveAuthors } from "../src/toys.mjs";
 
 // Known advisories we accept for a limited time, with the reason. An expired entry fails the check.
 const ACCEPTED_ADVISORIES = [
@@ -59,6 +60,11 @@ for (const sec of site.sections.filter((s) => s.grid)) {
     if (!new RegExp(`<img\\b[^>]*\\ssrc="/media/${sec.id}/${p.slug}/`).test(p.html) && !onDisk.length) fail(`${name} has no picture (put one in ${dir}/ and show it in the post)`);
     if (!onDisk.includes("thumb.webp")) warn(`${name} has no ${dir}/thumb.webp (scripts/og-image.sh); the grid shows a blank card`);
   }
+}
+
+// 2b. books: every author is in the list in site.config.mjs (one spelling per author)
+for (const p of all.filter((p) => p.author)) {
+  for (const u of resolveAuthors(p.author).unknown) fail(`${p.section}/${p.date}-${p.slug}.${p.lang}: author "${u.name}" is not in site.config.mjs (sections books, grid.authors). Nearest: ${u.nearest.join(", ") || "(none)"}. A new author is a new entry there: { name: "${u.name}", aliases: [] }`);
 }
 
 // 3. private material must never be tracked or built

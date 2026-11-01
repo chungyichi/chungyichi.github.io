@@ -6,12 +6,12 @@ import hljs from "highlight.js/lib/common";
 import { ContentError } from "./errors.mjs";
 import { sanitizeHtml } from "./sanitize.mjs";
 import { tagSlug } from "../src/tags.mjs";
-import { TOY_STATUSES, SECTION_KEYS } from "../src/toys.mjs";
+import { TOY_STATUSES, SECTION_KEYS, resolveAuthors } from "../src/toys.mjs";
 
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author", "volumes"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
 // Toys (content/toys/): one post per toy. `owner: me` says whose it is (the ids are in site.config.mjs; scripts/check.mjs compares),
@@ -20,7 +20,7 @@ const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 // (a whole number from 1; absent is 1; the pages only mention it from 2 up).
 // Books (content/books/) take `owner` (who reads it) and `source`, and `author`; a book without a summary uses its author line as the summary.
 const OWNER_RE = /^[a-z][a-z0-9-]{0,20}$/;
-const MAX_AUTHOR = 80;
+const MAX_AUTHOR = 80, MAX_VOLUMES = 100;
 export const MAX_PRICE = 40;
 /** A toy's shop address: http(s) only, no credentials, parseable; anything else is refused (it becomes a link on the page). */
 export function checkSourceUrl(raw, where = "post") {
@@ -49,6 +49,7 @@ export function parseFrontMatter(text, where = "post") {
     } else if (/^".*"$/.test(val)) val = JSON.parse(val);
     else if (/^'.*'$/.test(val)) val = val.slice(1, -1).replace(/''/g, "'");
     if (key === "tags" && typeof val === "string") val = val.split(/[,，、]/);   // tags: 日本, 旅行
+    if (key === "volumes" && typeof val === "string") val = val.split(/[,，]/);   // volumes: 第一部, 第二部 (a title has no comma)
     data[key] = val;
   }
   return { data, body: m[2] };
@@ -136,6 +137,8 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   const { data, body } = parseFrontMatter(text, filename);
   const isDraft = data.draft === true;
   if (typeof data.title !== "string" || !data.title.trim()) throw new ContentError(`${filename}: front matter 'title' is required`);
+  // `author` is stored in its one spelling (site.config.mjs books authors); scripts/check.mjs fails for an author that is not in the list.
+  if (typeof data.author === "string" && data.author.trim()) data.author = resolveAuthors(data.author).names.join(", ");
   if (typeof data.author === "string" && data.author.trim() && !(typeof data.summary === "string" && data.summary.trim()) && SECTION_KEYS.author.includes(section)) data.summary = data.author.trim();
   data.summary ??= "";
   // A draft may be unfinished (npm run new creates it with an empty summary); a published post may not.
@@ -146,6 +149,12 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   if ("draft" in data && typeof data.draft !== "boolean") throw new ContentError(`${filename}: 'draft' must be true or false`);
   if ("updated" in data && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.updated))) throw new ContentError(`${filename}: 'updated' must be YYYY-MM-DD`);
   for (const [k, only] of Object.entries(SECTION_KEYS)) if (k in data && !only.includes(section)) throw new ContentError(`${filename}: '${k}' is only for posts in ${only.map((x) => `content/${x}/`).join(", ")}`);
+  if ("volumes" in data) {
+    const v = data.volumes;
+    if (!Array.isArray(v) || v.some((x) => typeof x !== "string")) throw new ContentError(`${filename}: 'volumes' must be a list of titles, such as volumes: 第一部, 第二部`);
+    data.volumes = v.map((x) => x.trim().replace(/\s+/g, " ")).filter(Boolean);
+    if (!data.volumes.length || data.volumes.length > MAX_VOLUMES || data.volumes.some((x) => x.length > MAX_AUTHOR)) throw new ContentError(`${filename}: 'volumes' needs 1 to ${MAX_VOLUMES} titles of at most ${MAX_AUTHOR} characters`);
+  }
   if ("author" in data && !(typeof data.author === "string" && data.author.trim() && data.author.trim().length <= MAX_AUTHOR)) throw new ContentError(`${filename}: 'author' must be a short text (at most ${MAX_AUTHOR} characters)`);
   if ("owner" in data && !(typeof data.owner === "string" && OWNER_RE.test(data.owner))) throw new ContentError(`${filename}: 'owner' must be a short id such as me or son`);
   if ("status" in data && !TOY_STATUSES.includes(data.status)) throw new ContentError(`${filename}: 'status' must be one of ${TOY_STATUSES.join(", ")}`);
@@ -156,7 +165,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
-    owner: data.owner || "", author: (data.author || "").trim(), source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
+    owner: data.owner || "", author: (data.author || "").trim(), volumes: data.volumes || [], source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
     quantity: "quantity" in data ? Number(String(data.quantity).trim()) : 1,
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
@@ -222,7 +231,7 @@ export function headingsOf(html) {
 /** The search index for one language: title, summary, headings, date, section title and address. Titles and summaries only; no body text. */
 export function buildSearchIndex(posts, lang, sectionTitleOf) {
   return posts.filter((p) => p.lang === lang).map((p) => ({
-    t: p.title, s: p.summary, h: headingsOf(p.html), g: p.tags || [], d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
+    t: p.title, s: p.summary, h: [...headingsOf(p.html), ...(p.volumes || []), ...(p.author ? p.author.split(", ") : [])], g: p.tags || [], d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
   }));
 }
 

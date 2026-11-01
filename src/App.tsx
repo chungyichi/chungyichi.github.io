@@ -247,15 +247,18 @@ function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
         <h1>{p.title}</h1>
         {(p.draft || p.private) && <p className="meta"><strong>{p.draft ? s.draft : s.privateNote}</strong></p>}
         <dl className="toy-facts">
-          {p.author && <><dt>{s.author}</dt><dd>{p.author}</dd></>}
+          {p.author && <><dt>{s.author}</dt><dd>{p.author.split(", ").map((a, i) => <span key={a}>{i > 0 && ", "}<a href={`/${lang}/search/?q=${encodeURIComponent(a)}`}>{a}</a></span>)}</dd></>}
           {p.price && <><dt>{s.price}</dt><dd className="price">{p.price}</dd></>}
           {p.quantity >= 2 && <><dt>{s.quantity}</dt><dd>{p.quantity}</dd></>}
           <dt>{s.added}</dt><dd><time dateTime={p.date}>{p.date}</time>{p.updated && <> · {s.updated} <time dateTime={p.updated}>{p.updated}</time></>}</dd>
           {p.tags.length > 0 && <><dt>{s.tags}</dt><dd><TagList lang={lang} tags={p.tags} /></dd></>}
         </dl>
+        {book && p.volumes.length > 0 && <div className="book-volumes"><p className="meta">{s.volumesCount(p.volumes.length)}</p><ol>{p.volumes.map((v, i) => <li key={i}>{v}</li>)}</ol></div>}
+        {/* A book's source is only a quiet text link: many books are out of print, so there is no button. */}
+        {book && p.source && <p className="book-source"><a href={p.source} rel="noopener noreferrer nofollow">{s.bookSource}</a></p>}
         <div className="toy-actions">
           {/* The shop's page: an outside site, so no referrer and no endorsement for search engines. Only this button carries the address. */}
-          {p.source && <a className="button" href={p.source} rel="noopener noreferrer nofollow">{book ? s.viewSource : s.viewShop}<Icon name="arrow" /></a>}
+          {p.source && !book && <a className="button" href={p.source} rel="noopener noreferrer nofollow">{s.viewShop}<Icon name="arrow" /></a>}
           <Share lang={lang} title={p.title} />
         </div>
       </div>

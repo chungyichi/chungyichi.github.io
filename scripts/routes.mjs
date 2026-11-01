@@ -69,7 +69,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: hero.html, draft: p.draft, private: Boolean(p.private), words: p.words,
-            owner: p.owner || "", author: p.author || "", source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
+            owner: p.owner || "", author: p.author || "", volumes: p.volumes || [], source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
       }
     }
 

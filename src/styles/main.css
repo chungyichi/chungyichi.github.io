@@ -205,6 +205,9 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 .toy-facts dd { margin: 0; }
 .toy-facts .price { font-weight: 700; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
 .toy-facts .tags { margin: 0; }
+.book-volumes ol { margin: 0.2rem 0 0.8rem; padding-left: 1.6rem; }
+.book-source { margin: 0.4rem 0 0; font-size: 0.85rem; }
+.book-source a { color: var(--muted); }
 .toy-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: 1.1rem 0 0.4rem; }
 .toy-actions .share { margin: 0; }
 .button { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 1.2rem; border-radius: 999px; background: var(--accent); color: var(--accent-fg); font-weight: 600; text-decoration: none; }

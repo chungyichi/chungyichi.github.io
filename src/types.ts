@@ -13,7 +13,7 @@ export type Route =
   | { kind: "notfound"; path: string; lang: Lang; alternates: Alt[] }
   | { kind: "home"; path: string; lang: Lang; alternates: Alt[]; props: { featured: Brief[]; toys: ToySlide[]; sections: { id: string; total: number }[] } }
   | { kind: "index"; path: string; lang: Lang; alternates: Alt[]; props: { section: string; groups: { date: string; items: Brief[] }[]; page: number; pages: number } }
-  | { kind: "post"; path: string; lang: Lang; alternates: Alt[]; props: Omit<Brief, "thumb" | "card"> & { updated: string; html: string; draft: boolean; private: boolean; words: number; source: string; price: string; pictures: Picture[] } }
+  | { kind: "post"; path: string; lang: Lang; alternates: Alt[]; props: Omit<Brief, "thumb" | "card"> & { updated: string; html: string; draft: boolean; private: boolean; words: number; volumes: string[]; source: string; price: string; pictures: Picture[] } }
   | { kind: "grid"; path: string; lang: Lang; alternates: Alt[]; props: { section: string; owner: string; owners: { id: string; total: number }[]; total: number; items: Brief[]; page: number; pages: number } }
   | { kind: "tags"; path: string; lang: Lang; alternates: Alt[]; props: { tags: { tag: string; slug: string; count: number }[] } }
   | { kind: "tag"; path: string; lang: Lang; alternates: Alt[]; props: { tag: string; slug: string; groups: { date: string; items: Brief[] }[]; page: number; pages: number } }
