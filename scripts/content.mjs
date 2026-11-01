@@ -6,20 +6,21 @@ import hljs from "highlight.js/lib/common";
 import { ContentError } from "./errors.mjs";
 import { sanitizeHtml } from "./sanitize.mjs";
 import { tagSlug } from "../src/tags.mjs";
-import { TOYS_SECTION, TOY_STATUSES } from "../src/toys.mjs";
+import { TOY_STATUSES, SECTION_KEYS } from "../src/toys.mjs";
 
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
 // Toys (content/toys/): one post per toy. `owner: me` says whose it is (the ids are in site.config.mjs; scripts/check.mjs compares),
 // `source: https://...` where it was bought (shown as a link), `status: want` marks a wish rather than something owned,
 // `price: "NT$15,525"` is shown as written (text, so any currency or "about 500" works), `quantity: 2` how many of the same toy
 // (a whole number from 1; absent is 1; the pages only mention it from 2 up).
+// Books (content/books/) take `owner` (who reads it) and `source`, and `author`; a book without a summary uses its author line as the summary.
 const OWNER_RE = /^[a-z][a-z0-9-]{0,20}$/;
-const TOY_KEYS = ["owner", "source", "status", "price", "quantity"];
+const MAX_AUTHOR = 80;
 export const MAX_PRICE = 40;
 /** A toy's shop address: http(s) only, no credentials, parseable; anything else is refused (it becomes a link on the page). */
 export function checkSourceUrl(raw, where = "post") {
@@ -135,6 +136,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   const { data, body } = parseFrontMatter(text, filename);
   const isDraft = data.draft === true;
   if (typeof data.title !== "string" || !data.title.trim()) throw new ContentError(`${filename}: front matter 'title' is required`);
+  if (typeof data.author === "string" && data.author.trim() && !(typeof data.summary === "string" && data.summary.trim()) && SECTION_KEYS.author.includes(section)) data.summary = data.author.trim();
   data.summary ??= "";
   // A draft may be unfinished (npm run new creates it with an empty summary); a published post may not.
   if (typeof data.summary !== "string" || (!data.summary.trim() && !isDraft)) throw new ContentError(`${filename}: front matter 'summary' is required`);
@@ -143,7 +145,8 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   if ("trusted" in data && typeof data.trusted !== "boolean") throw new ContentError(`${filename}: 'trusted' must be true or false`);
   if ("draft" in data && typeof data.draft !== "boolean") throw new ContentError(`${filename}: 'draft' must be true or false`);
   if ("updated" in data && !/^\d{4}-\d{2}-\d{2}$/.test(String(data.updated))) throw new ContentError(`${filename}: 'updated' must be YYYY-MM-DD`);
-  for (const k of TOY_KEYS) if (k in data && section !== TOYS_SECTION) throw new ContentError(`${filename}: '${k}' is only for posts in content/${TOYS_SECTION}/`);
+  for (const [k, only] of Object.entries(SECTION_KEYS)) if (k in data && !only.includes(section)) throw new ContentError(`${filename}: '${k}' is only for posts in ${only.map((x) => `content/${x}/`).join(", ")}`);
+  if ("author" in data && !(typeof data.author === "string" && data.author.trim() && data.author.trim().length <= MAX_AUTHOR)) throw new ContentError(`${filename}: 'author' must be a short text (at most ${MAX_AUTHOR} characters)`);
   if ("owner" in data && !(typeof data.owner === "string" && OWNER_RE.test(data.owner))) throw new ContentError(`${filename}: 'owner' must be a short id such as me or son`);
   if ("status" in data && !TOY_STATUSES.includes(data.status)) throw new ContentError(`${filename}: 'status' must be one of ${TOY_STATUSES.join(", ")}`);
   if ("price" in data && !(typeof data.price === "string" && data.price.trim() && data.price.trim().length <= MAX_PRICE)) throw new ContentError(`${filename}: 'price' must be a short text such as "NT$1,250" (quote it; at most ${MAX_PRICE} characters)`);
@@ -153,7 +156,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
-    owner: data.owner || "", source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
+    owner: data.owner || "", author: (data.author || "").trim(), source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
     quantity: "quantity" in data ? Number(String(data.quantity).trim()) : 1,
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
@@ -251,7 +254,7 @@ export function ogImageFor(post, { baseUrl, exists = () => false, fallback = "" 
 }
 
 /**
- * The pictures a toy page shows on the panel beside its facts, in order: the front matter `image` (when the file exists), then the
+ * The pictures a toy (or book) page shows on the panel beside its facts, in order: the front matter `image` (when the file exists), then the
  * pictures that open the body (a run of paragraphs that are one picture each; toy-add.sh writes one per --image). Those are taken out
  * of the body so the toy is not shown twice; the text after them stays. With no `image` and no opening run, the first picture
  * anywhere in the body is used (and dropped from the body), else cover.webp in the media folder.

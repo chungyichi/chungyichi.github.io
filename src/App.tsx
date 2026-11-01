@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { site } from "../site.config.mjs";
-import { t, title, tagline, sectionTitle, ownerTitle, type Lang } from "./i18n";
+import { t, title, tagline, sectionTitle, ownerTitle, gridOf, type Lang } from "./i18n";
 import type { Brief, Route, ToySlide } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
 import { SEASON_ISLAND_ID } from "./SeasonToggle";
 import { tagPath, tagsIndexPath } from "./tags.mjs";
-import { TOYS_SECTION, ownerPath } from "./toys.mjs";
+import { TOYS_SECTION, BOOKS_SECTION, ownerPath } from "./toys.mjs";
 import { GithubMark, Icon, OwnerBadge, WantBadge, ownerIcon } from "./icons";
 
 import { tagSlug as tagSlugOf } from "./tags.mjs";
@@ -174,7 +174,7 @@ function ToyCard({ lang, p }: { lang: Lang; p: Brief }) {
       <a className="toy-pic" href={href} tabIndex={-1} aria-hidden="true">
         {pic ? <img src={pic} alt="" width={p.card ? 480 : 400} height={p.card ? 480 : 210} loading="lazy" decoding="async" /> : <span className="no-thumb"><Icon name="tag" /></span>}
       </a>
-      <span className="badges"><OwnerBadge lang={lang} id={p.owner} />{p.status === "want" && <WantBadge label={t[lang].statusWant} />}</span>
+      <span className="badges"><OwnerBadge lang={lang} id={p.owner} section={p.section} />{p.status === "want" && <WantBadge label={t[lang].statusWant} />}</span>
       {p.quantity >= 2 && <span className="qty" title={`${t[lang].quantity} ${p.quantity}`} aria-label={`${t[lang].quantity} ${p.quantity}`}>×{p.quantity}</span>}
       <h3><a href={href}>{p.title}</a></h3>
       <TagList lang={lang} tags={p.tags.slice(0, 2)} />
@@ -182,20 +182,20 @@ function ToyCard({ lang, p }: { lang: Lang; p: Brief }) {
   );
 }
 
-function ToyGrid({ route }: { route: Extract<Route, { kind: "toys" }> }) {
-  const { lang } = route, s = t[lang], { section, owner, owners, total, items, page, pages } = route.props;
-  const filter = [{ id: "", total, label: s.ownerAll }, ...owners.map((o) => ({ ...o, label: ownerTitle(lang, o.id) }))];
+function ToyGrid({ route }: { route: Extract<Route, { kind: "grid" }> }) {
+  const { lang } = route, s = t[lang], { section, owner, owners, total, items, page, pages } = route.props, grid = gridOf(section);
+  const filter = [{ id: "", total, label: s.ownerAll }, ...owners.map((o) => ({ ...o, label: ownerTitle(lang, o.id, section) }))];
   return (
     <>
       <h1>{sectionTitle(lang, section)}</h1>
-      <nav className="owner-filter" aria-label={s.owner}>
+      <nav className="owner-filter" aria-label={grid?.ownerLabel[lang]}>
         {filter.map((o) => (
           <a key={o.id} className={o.id ? `owner-${o.id}` : undefined} href={o.id ? ownerPath(lang, section, o.id) : pageHref(lang, section, 1)} aria-current={o.id === owner ? "page" : undefined}>
             {o.id && <Icon name={ownerIcon(o.id)} />}{o.label}<span className="count">{o.total}</span>
           </a>
         ))}
       </nav>
-      {items.length === 0 && <p>{s.noToys}</p>}
+      {items.length === 0 && <p>{grid?.empty[lang]}</p>}
       <ul className="toy-grid">{items.map((p) => <ToyCard key={p.slug} lang={lang} p={p} />)}</ul>
       <Pager lang={lang} page={page} pages={pages} hrefFor={(n) => (owner ? ownerPath(lang, section, owner, n) : pageHref(lang, section, n))} />
     </>
@@ -237,7 +237,8 @@ function Share({ lang, title }: { lang: Lang; title: string }) {
  */
 function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
   const s = t[lang], hasPic = p.pictures.length > 0;
-  const badges = <span className="badges"><OwnerBadge lang={lang} id={p.owner} />{p.status === "want" && <WantBadge label={s.statusWant} />}</span>;
+  const badges = <span className="badges"><OwnerBadge lang={lang} id={p.owner} section={p.section} />{p.status === "want" && <WantBadge label={s.statusWant} />}</span>;
+  const book = p.section === BOOKS_SECTION;
   return (
     <header className={hasPic ? "toy-hero has-pic" : "toy-hero"}>
       {hasPic && <Gallery lang={lang} className="toy-hero-pic" badges={badges} keys={p.pictures.map((pic) => pic.src)} slides={p.pictures.map((pic) => <img src={pic.src} alt={pic.alt} decoding="async" />)} />}
@@ -246,6 +247,7 @@ function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
         <h1>{p.title}</h1>
         {(p.draft || p.private) && <p className="meta"><strong>{p.draft ? s.draft : s.privateNote}</strong></p>}
         <dl className="toy-facts">
+          {p.author && <><dt>{s.author}</dt><dd>{p.author}</dd></>}
           {p.price && <><dt>{s.price}</dt><dd className="price">{p.price}</dd></>}
           {p.quantity >= 2 && <><dt>{s.quantity}</dt><dd>{p.quantity}</dd></>}
           <dt>{s.added}</dt><dd><time dateTime={p.date}>{p.date}</time>{p.updated && <> · {s.updated} <time dateTime={p.updated}>{p.updated}</time></>}</dd>
@@ -253,7 +255,7 @@ function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
         </dl>
         <div className="toy-actions">
           {/* The shop's page: an outside site, so no referrer and no endorsement for search engines. Only this button carries the address. */}
-          {p.source && <a className="button" href={p.source} rel="noopener noreferrer nofollow">{s.viewShop}<Icon name="arrow" /></a>}
+          {p.source && <a className="button" href={p.source} rel="noopener noreferrer nofollow">{book ? s.viewSource : s.viewShop}<Icon name="arrow" /></a>}
           <Share lang={lang} title={p.title} />
         </div>
       </div>
@@ -264,7 +266,7 @@ function ToyHero({ lang, p }: { lang: Lang; p: Post }) {
 function PostPage({ route }: { route: Extract<Route, { kind: "post" }> }) {
   const { lang } = route, s = t[lang], p = route.props;
   const missing = route.alternates.find((a) => a.translated === false);
-  const toy = p.section === TOYS_SECTION;
+  const toy = Boolean(gridOf(p.section));
   return (
     <article className={`post post-${p.slug}${toy ? " toy-page" : ""}`}>
       {toy ? <ToyHero lang={lang} p={p} /> : (
@@ -302,7 +304,7 @@ function Search({ route }: { route: Extract<Route, { kind: "search" }> }) {
         </div>
       </form>
       <nav className="owner-filter scope-filter" id="scope" aria-label={s.scope}>
-        {([["all", s.ownerAll], ["posts", s.scopePosts], ["toys", s.scopeToys]] as const).map(([id, label]) => (
+        {[["all", s.ownerAll], ["posts", s.scopePosts], ...site.sections.filter((sec: { grid?: unknown }) => sec.grid).map((sec: { id: string }) => [sec.id, gridOf(sec.id)!.scope[lang]])].map(([id, label]) => (
           <button key={id} type="button" data-scope={id} aria-pressed={id === "all"}>{label}</button>
         ))}
       </nav>
@@ -357,8 +359,8 @@ export function App({ route }: { route: Route }) {
     case "notfound": return <NotFound route={route} />;
     case "home": return <Layout route={route}><Home route={route} /></Layout>;
     case "index": return <Layout route={route}><Index route={route} /></Layout>;
-    case "toys": return <Layout route={route} wide><ToyGrid route={route} /></Layout>;
-    case "post": return <Layout route={route} wide={route.props.section === TOYS_SECTION}><PostPage route={route} /></Layout>;
+    case "grid": return <Layout route={route} wide><ToyGrid route={route} /></Layout>;
+    case "post": return <Layout route={route} wide={Boolean(gridOf(route.props.section))}><PostPage route={route} /></Layout>;
     case "page": return <Layout route={route}><Page route={route} /></Layout>;
     case "search": return <Layout route={route}><Search route={route} /></Layout>;
     case "tags": return <Layout route={route}><TagsIndex route={route} /></Layout>;

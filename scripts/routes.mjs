@@ -3,16 +3,16 @@ import { site } from "../site.config.mjs";
 import { createHash } from "node:crypto";
 import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor, toyHero, collectTags } from "./content.mjs";
 import { tagPath, tagsIndexPath } from "../src/tags.mjs";
-import { TOYS_SECTION, filterByOwner, ownerPath, pickFeaturedToys } from "../src/toys.mjs";
+import { gridOf, filterByOwner, ownerPath, pickFeaturedToys } from "../src/toys.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
 const briefOf = (fileExists) => (p) => {
   const dir = `/media/${p.section}/${p.slug}`;
   return {
-    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", status: p.status || "", quantity: p.quantity || 1,
+    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", status: p.status || "", quantity: p.quantity || 1, author: p.author || "",
     thumb: fileExists(`${dir}/thumb.webp`) ? `${dir}/thumb.webp` : "",                                                   // 400x210, made by scripts/og-image.sh
-    card: p.section === TOYS_SECTION && fileExists(`${dir}/card.webp`) ? `${dir}/card.webp` : "",                       // 480x480 for the toy grid (og-image.sh --square); the grid falls back to thumb
+    card: gridOf(p.section) && fileExists(`${dir}/card.webp`) ? `${dir}/card.webp` : "",                       // 480x480 for the grids (toys, books; og-image.sh --square); the grid falls back to thumb
   };
 };
 
@@ -22,7 +22,7 @@ function homeList(posts, featured, limit) {
   return pick.slice(0, Math.max(limit, 5));
 }
 
-export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, toysPerPage = site.toysPerPage ?? perPage, toyOwners = site.toyOwners ?? [], homePosts = site.homePosts, featured = site.featured ?? [], featuredToys = site.featuredToys ?? [], fileExists = () => false } = {}) {
+export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, grids = {}, homePosts = site.homePosts, featured = site.featured ?? [], featuredToys = site.featuredToys ?? [], fileExists = () => false } = {}) {
   const routes = [];
   const brief = briefOf(fileExists);
   // A slide of the home page's toy carousel: the toy page's picture (cover), else the square card, else the list thumbnail.
@@ -40,13 +40,14 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
 
     for (const section of sectionIds()) {
       const posts = model.bySection[section][lang];
-      if (section === TOYS_SECTION) {
-        // The toy library: a picture grid of every toy, plus one grid per owner. The filter is plain links, so it works without JavaScript.
-        const owners = toyOwners.map((o) => ({ id: o.id, total: filterByOwner(posts, o.id).length }));
-        for (const owner of ["", ...toyOwners.map((o) => o.id)]) {
-          for (const pg of paginate(filterByOwner(posts, owner), toysPerPage)) {
+      const grid = grids[section] ?? gridOf(section);
+      if (grid) {
+        // A picture grid (toys, books) of every post, plus one grid per owner. The filter is plain links, so it works without JavaScript.
+        const owners = (grid.owners ?? []).map((o) => ({ id: o.id, total: filterByOwner(posts, o.id).length }));
+        for (const owner of ["", ...owners.map((o) => o.id)]) {
+          for (const pg of paginate(filterByOwner(posts, owner), grid.perPage ?? perPage)) {
             const path = owner ? ownerPath(lang, section, owner, pg.number) : indexPath(lang, section, pg.number);
-            routes.push({ path, kind: "toys", lang, alternates: alt(path, lang),
+            routes.push({ path, kind: "grid", lang, alternates: alt(path, lang),
               props: { section, owner, owners, total: posts.length, items: pg.items.map(brief), page: pg.number, pages: pg.total } });
           }
         }
@@ -61,14 +62,14 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
         const path = postPath(lang, section, p.slug);
         const has = (l) => Boolean(model.translations[`${section}/${p.slug}`]?.[l]);
         const alternates = other(lang).map((l) => ({ lang: l, path: has(l) ? postPath(l, section, p.slug) : indexPath(l, section), translated: has(l) }));
-        // A toy page shows its pictures on a panel beside the facts (and not again in the body); other posts show the body as is.
-        const hero = section === TOYS_SECTION ? toyHero(p, fileExists) : { pictures: [], html: p.html };
+        // A toy or book page shows its pictures on a panel beside the facts (and not again in the body); other posts show the body as is.
+        const hero = (grids[section] ?? gridOf(section)) ? toyHero(p, fileExists) : { pictures: [], html: p.html };
         routes.push({ path, kind: "post", lang, alternates,
           ogImage: ogImageFor(p, { baseUrl: site.baseUrl, exists: fileExists, fallback: defaultImage ? site.ogImage : "" }),
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: hero.html, draft: p.draft, private: Boolean(p.private), words: p.words,
-            owner: p.owner || "", source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
+            owner: p.owner || "", author: p.author || "", source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
       }
     }
 

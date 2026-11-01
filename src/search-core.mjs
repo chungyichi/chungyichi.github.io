@@ -2,7 +2,7 @@
 // No word segmentation: a term matches if it is a substring, which works for Chinese (no spaces) and English alike.
 
 /** NFKC folds full-width letters and compatibility forms (Ｔech -> tech); lowercase makes it case-insensitive. */
-import { TOYS_SECTION } from "./toys.mjs";
+import { gridSections } from "./toys.mjs";
 
 export const normalize = (s) => String(s).normalize("NFKC").toLowerCase();
 
@@ -61,6 +61,10 @@ export function search(prepared, query, limit = 50, accept = null) {
   return hits.slice(0, limit).map((h) => h.entry);
 }
 
-/** The search page can look at everything, at the posts only, or at the toys only. A toy's address is /<lang>/toys/<slug>/. */
-export const SCOPES = ["all", "posts", "toys"];
-export const inScope = (entry, scope, lang) => scope === "all" || entry.u.startsWith(`/${lang}/${TOYS_SECTION}/`) === (scope === "toys");
+/** The search page can look at everything, at the posts only, or at one picture-grid section only (toys, books). A toy's address is /<lang>/toys/<slug>/. */
+export const SCOPES = ["all", "posts", ...gridSections()];
+export const inScope = (entry, scope, lang) => {
+  if (scope === "all") return true;
+  if (scope === "posts") return !gridSections().some((id) => entry.u.startsWith(`/${lang}/${id}/`));
+  return entry.u.startsWith(`/${lang}/${scope}/`);
+};

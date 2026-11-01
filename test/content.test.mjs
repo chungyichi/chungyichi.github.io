@@ -387,8 +387,8 @@ import { site } from "../site.config.mjs";
 test("toys: the section index is a grid route, one per owner too, each paged; toys keep their post pages and thumbnails", () => {
   const posts = [toy("owner: me\n"), toy("owner: son\nstatus: want\n", "2026-10-22-car.zh.md"), toy("owner: son\n", "2026-10-23-ball.zh.md"), post("2026-10-21-t.zh.md", "")];
   const model = buildModel(posts, ["zh", "en"], site.sections);
-  const routes = buildRoutes(model, {}, { langs: ["zh"], toysPerPage: 2, toyOwners: [{ id: "me" }, { id: "son" }], fileExists: (u) => u === "/media/toys/car/thumb.webp" });
-  const grids = routes.filter((r) => r.kind === "toys");
+  const routes = buildRoutes(model, {}, { langs: ["zh"], grids: { toys: { perPage: 2, owners: [{ id: "me" }, { id: "son" }] } }, fileExists: (u) => u === "/media/toys/car/thumb.webp" });
+  const grids = routes.filter((r) => r.kind === "grid" && r.props.section === "toys");
   assert.deepEqual(grids.map((r) => r.path), ["/zh/toys/", "/zh/toys/page/2/", "/zh/toys/owner/me/", "/zh/toys/owner/son/"]);
   const all = grids[0].props;
   assert.deepEqual([all.owner, all.total, all.page, all.pages, all.items.map((p) => p.slug)], ["", 3, 1, 2, ["ball", "car"]]);

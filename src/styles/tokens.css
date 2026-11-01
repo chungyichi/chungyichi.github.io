@@ -19,7 +19,7 @@
   --radius-lg: 12px;     /* cards and picture panels */
 
   --hl-comment: #6a737d; --hl-keyword: #b3261e; --hl-string: #0b6e4f; --hl-number: #8a4b00; --hl-title: #5b3fb5;
-  /* One calm colour per toy owner (site.config.mjs toyOwners ids): the icon badge and the filter chip. */
+  /* One calm colour per owner (site.config.mjs grid.owners ids, toys and books): the icon badge and the filter chip. */
   --owner-me: #3b6ea8; --owner-son: #b4651c; --owner-brother: #2f7f6a;
 }
 @media (prefers-color-scheme: dark) {

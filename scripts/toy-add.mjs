@@ -23,9 +23,9 @@ let slug = opt("slug");
 const url = args.find((a) => !a.startsWith("--"));
 
 const die = (m) => { console.error(`error: ${m}`); process.exit(1); };
-const owners = (site.toyOwners ?? []).map((o) => o.id);
+const owners = (site.sections.find((s) => s.id === "toys")?.grid?.owners ?? []).map((o) => o.id);
 if ((!url && !image) || args.length > 1) die('usage: node scripts/toy-add.mjs <product-url> [--owner me|son] [--tags a,b] [--slug my-toy] [--title "..."] [--image <file>] [--date YYYY-MM-DD]\n       node scripts/toy-add.mjs --image <file> --title "..." [...]    (no link: a toy that is no longer sold)');
-if (owner !== undefined && !owners.includes(owner)) die(`--owner must be one of ${owners.join(", ")} (site.config.mjs toyOwners)`);
+if (owner !== undefined && !owners.includes(owner)) die(`--owner must be one of ${owners.join(", ")} (site.config.mjs, toys grid.owners)`);
 if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) die("--date must be YYYY-MM-DD");
 if (image && !title) die("--image needs --title (nothing is fetched then)");
 for (const f of images) if (!f || !existsSync(f)) die(`${f} not found`);

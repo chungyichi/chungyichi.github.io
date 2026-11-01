@@ -98,11 +98,22 @@ Review each result with `npm run dev`, add layout, then move it out of `_private
 ## Toys
 
 `content/toys/` is a toy library: one post per toy, listed at `/zh/toys/` as a grid of square cards (picture, name, up to two tags) with an owner filter made of plain links
-(`/zh/toys/owner/me/`, `/zh/toys/owner/son/`; the ids, labels and icons are `toyOwners` in `site.config.mjs`). Toys share tags, search (by name and tag; the result says 玩具庫), thumbnails and the media release with the other sections.
+(`/zh/toys/owner/me/`, `/zh/toys/owner/son/`; the ids, labels and icons are `grid.owners` of the toys section in `site.config.mjs`). Toys share tags, search (by name and tag; the result says 玩具庫), thumbnails and the media release with the other sections.
 Extra front matter, toys only: `owner: me` (required to publish), `source: https://...` (the shop page: a 前往購買 button with `rel="nofollow"`), `status: want` (a wish; absent = owned),
 `price: "NT$15,525"` (text, shown as written), `quantity: 2` (how many of the same toy, a whole number; absent is 1; shown only from 2 up: 「數量」 in the facts panel and a `×2` chip on the card).
 The owner and a wish are shown as icon badges in a colour per owner (`--owner-<id>` in `tokens.css`), never as text.
 The toy page is two columns on a wide screen: the picture panel beside the facts; the toys pages use a wider column than the reading sections.
+
+## Books
+
+`content/books/` is the book shelf (書庫): one small file per book, `content/books/YYYY-MM-DD-slug.zh.md`, listed at `/zh/books/` with the same picture grid as the toys (48 per page, `grid.perPage` in `site.config.mjs`),
+filter pages `/zh/books/owner/me/` and `/zh/books/owner/son/` ("誰在看"), tags and search (the scope switch has 書). It reuses the toy code; only the front matter differs.
+Front matter: `title`, `summary` (required to publish; when it is empty, `author` is used as the summary), `tags` (1 to 3), `owner: me | son` (who reads it: person icon = me, block icon = son; required to publish),
+optional `author: ...` and `source: https://...` (a 前往來源 button). No price, no quantity, no `status`.
+Pictures: one cover, in the same media bundle as everything else: `content/books/media/<slug>/` with `card.webp`, `thumb.webp`, `cover.webp` and `og.jpg`
+(`scripts/photo.sh` and `scripts/og-image.sh <original> <dir> --square`, as `toy:add` does), then `scripts/media.sh push books <slug>`.
+The card is square (480x480) like the toys; a portrait cover is shown whole on the card (not cropped) and `cover.webp` on the book page. `npm run check` wants an owner and a picture for every published book.
+
 The panel shows the front matter `image` and then the pictures that open the body (one picture per paragraph, as toy-add.sh writes them; they are not repeated below, the text after them stays);
 with none of those, the body's first picture, else `cover.webp`. Several pictures share the panel as a strip that snaps one picture at a time: swipe, scrollbar or arrow keys with no JavaScript,
 plus round left/right buttons, the current dot and `#pic-2` deep links from `src/gallery-client.ts` (loaded only on such pages).

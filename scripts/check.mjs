@@ -5,7 +5,6 @@ import { spawnSync } from "node:child_process";
 import { site } from "../site.config.mjs";
 import { loadPosts } from "./load.mjs";
 import { buildModel, externalHosts } from "./content.mjs";
-import { TOYS_SECTION } from "../src/toys.mjs";
 
 // Known advisories we accept for a limited time, with the reason. An expired entry fails the check.
 const ACCEPTED_ADVISORIES = [
@@ -47,17 +46,17 @@ if (site.languageSwitcher !== false) for (const p of missing) warn(`${p.section}
 for (const p of all.filter((p) => !p.draft && !p.tags?.length)) fail(`${p.section}/${p.date}-${p.slug}.${p.lang} has no tag (every published post needs 1 to 3)`);
 for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slug}.${p.lang} is a draft (not published)`);
 
-// 2a. toys: a published toy has an owner from the config and at least one picture (the grid needs thumb.webp; the page a picture in the body).
+// 2a. picture grids (toys, books): a published post has an owner from the section's config and at least one picture (the grid needs thumb.webp; the page a picture in the body).
 // `source` is checked when the post is parsed. Pictures come from the media release, so this runs after `scripts/media.sh pull` in the deploy.
-{
-  const owners = (site.toyOwners ?? []).map((o) => o.id);
-  for (const p of all.filter((p) => p.section === TOYS_SECTION && !p.draft)) {
+for (const sec of site.sections.filter((s) => s.grid)) {
+  const owners = sec.grid.owners.map((o) => o.id);
+  for (const p of all.filter((p) => p.section === sec.id && !p.draft)) {
     const name = `${p.section}/${p.date}-${p.slug}.${p.lang}`;
     if (!p.owner) fail(`${name} has no owner (add owner: ${owners.join(" | ")})`);
-    else if (!owners.includes(p.owner)) fail(`${name}: owner '${p.owner}' is not in site.config.mjs toyOwners (${owners.join(", ")})`);
-    const dir = join("content", TOYS_SECTION, "media", p.slug);
+    else if (!owners.includes(p.owner)) fail(`${name}: owner '${p.owner}' is not in site.config.mjs ${sec.id} grid.owners (${owners.join(", ")})`);
+    const dir = join("content", sec.id, "media", p.slug);
     const onDisk = existsSync(dir) ? readdirSync(dir).filter((f) => /\.(webp|jpe?g|png)$/i.test(f)) : [];
-    if (!new RegExp(`<img\\b[^>]*\\ssrc="/media/${TOYS_SECTION}/${p.slug}/`).test(p.html) && !onDisk.length) fail(`${name} has no picture (put one in ${dir}/ and show it in the post)`);
+    if (!new RegExp(`<img\\b[^>]*\\ssrc="/media/${sec.id}/${p.slug}/`).test(p.html) && !onDisk.length) fail(`${name} has no picture (put one in ${dir}/ and show it in the post)`);
     if (!onDisk.includes("thumb.webp")) warn(`${name} has no ${dir}/thumb.webp (scripts/og-image.sh); the grid shows a blank card`);
   }
 }

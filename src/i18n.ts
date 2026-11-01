@@ -14,8 +14,8 @@ export const t = {
     copyLink: "複製連結", copied: "已複製 ✓", copyFailed: "複製失敗，請手動複製網址", share: "分享",
     search: "搜尋", searchHint: "搜尋標題、摘要、小標題與標籤。輸入 #標籤 再按空白鍵，會變成標籤晶片，可以組合篩選", searchPlaceholder: "搜尋，或輸入 #標籤", removeTag: "移除標籤 {tag}", tagSearch: "在搜尋中組合標籤 →", tagsMoved: "標籤已整合到搜尋頁。", searchNoJs: "搜尋需要 JavaScript。沒有的話，請從上方的分類瀏覽。",
     searchLoading: "載入中…", searchNone: "沒有符合的文章。", searchCount: "找到 {n} 篇", searchError: "搜尋索引載入失敗，請重新整理。",
-    owner: "擁有者", ownerAll: "全部", scope: "範圍", scopePosts: "文章", scopeToys: "玩具", statusWant: "想要", noToys: "還沒有玩具。",
-    price: "價格", added: "加入", shop: "購買來源", viewShop: "前往購買",
+    ownerAll: "全部", scope: "範圍", scopePosts: "文章", statusWant: "想要",
+    price: "價格", added: "加入", shop: "購買來源", viewShop: "前往購買", author: "作者", bookSource: "來源", viewSource: "前往來源",
     pictures: "圖片", prevPicture: "上一張", nextPicture: "下一張", pictureN: (n: number) => `第 ${n} 張`,
     quantity: "數量", featuredToys: "精選玩具", allToys: "看全部玩具 →",
   },
@@ -30,15 +30,23 @@ export const t = {
     copyLink: "Copy link", copied: "Copied ✓", copyFailed: "Could not copy; copy the address by hand", share: "Share",
     search: "Search", searchHint: "Search titles, summaries, headings and tags. Type #tag and a space to turn it into a tag chip; chips combine", searchPlaceholder: "Search, or type #tag", removeTag: "Remove tag {tag}", tagSearch: "Combine tags in search →", tagsMoved: "Tags now live on the search page.", searchNoJs: "Search needs JavaScript. Without it, browse by section above.",
     searchLoading: "Loading…", searchNone: "No matching posts.", searchCount: "{n} found", searchError: "The search index failed to load; reload the page.",
-    owner: "Owner", ownerAll: "All", scope: "Scope", scopePosts: "Posts", scopeToys: "Toys", statusWant: "Wish list", noToys: "No toys yet.",
-    price: "Price", added: "Added", shop: "Shop", viewShop: "Shop",
+    ownerAll: "All", scope: "Scope", scopePosts: "Posts", statusWant: "Wish list",
+    price: "Price", added: "Added", shop: "Shop", viewShop: "Shop", author: "Author", bookSource: "Source", viewSource: "Open source page",
     pictures: "Pictures", prevPicture: "Previous picture", nextPicture: "Next picture", pictureN: (n: number) => `Picture ${n}`,
     quantity: "Quantity", featuredToys: "Featured toys", allToys: "All toys →",
   },
 } as const;
 
 export const sectionTitle = (lang: Lang, id: string) => site.sections.find((s: { id: string }) => s.id === id)?.title[lang] ?? id;
-/** The label of a toy owner id (site.config.mjs toyOwners); an unknown id is shown as is. */
-export const ownerTitle = (lang: Lang, id: string) => site.toyOwners.find((o: { id: string }) => o.id === id)?.title[lang] ?? id;
+type Owner = { id: string; title: Record<Lang, string>; icon?: string };
+type Grid = { perPage: number; owners: Owner[]; ownerLabel: Record<Lang, string>; empty: Record<Lang, string>; scope: Record<Lang, string> };
+/** The grid settings of a section (site.config.mjs sections[].grid), or undefined for a text section. */
+export const gridOf = (id: string): Grid | undefined => site.sections.find((s: { id: string }) => s.id === id)?.grid;
+/** The owners of a grid section, or (no section given) of every grid; the first with that id wins. */
+const ownersOf = (section?: string): Owner[] => (section ? gridOf(section)?.owners ?? [] : site.sections.flatMap((s: { grid?: Grid }) => s.grid?.owners ?? []));
+/** The label of an owner id in a section (site.config.mjs grid.owners); an unknown id is shown as is. */
+export const ownerTitle = (lang: Lang, id: string, section?: string) => (ownersOf(section).find((o) => o.id === id) ?? ownersOf().find((o) => o.id === id))?.title[lang] ?? id;
+/** The icon name of an owner id (a tag when the id or its icon is unknown). */
+export const ownerIconName = (id: string): string | undefined => ownersOf().find((o) => o.id === id)?.icon;
 export const title = (lang: Lang) => site.title[lang];
 export const tagline = (lang: Lang) => site.tagline[lang];

@@ -1,6 +1,5 @@
 // Small inline SVG icons for the toy library (no files, no network). Stroke icons on a 24-unit grid, drawn in currentColor.
-import { site } from "../site.config.mjs";
-import { ownerTitle, type Lang } from "./i18n";
+import { ownerTitle, ownerIconName, type Lang } from "./i18n";
 
 const PATHS = {
   person: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c0-4 3.6-7 8-7s8 3 8 7",
@@ -22,16 +21,16 @@ export function Icon({ name }: { name: IconName }) {
   );
 }
 
-/** The icon of a toy owner (`icon` in site.config.mjs toyOwners; a tag when none is set). */
+/** The icon of an owner (`icon` in site.config.mjs grid.owners; a tag when none is set). */
 export const ownerIcon = (id: string): IconName => {
-  const icon = site.toyOwners.find((o: { id: string }) => o.id === id)?.icon as IconName | undefined;
+  const icon = ownerIconName(id) as IconName | undefined;
   return icon && icon in PATHS ? icon : "tag";
 };
 
-/** A round badge that says whose a toy is by icon and colour only; the name is in the tooltip and for screen readers. */
-export function OwnerBadge({ lang, id }: { lang: Lang; id: string }) {
+/** A round badge that says whose a toy is (or who reads a book) by icon and colour only; the name is in the tooltip and for screen readers. */
+export function OwnerBadge({ lang, id, section }: { lang: Lang; id: string; section?: string }) {
   if (!id) return null;
-  const label = ownerTitle(lang, id);
+  const label = ownerTitle(lang, id, section);
   return <span className={`badge owner-${id}`} role="img" aria-label={label} title={label}><Icon name={ownerIcon(id)} /></span>;
 }
 
