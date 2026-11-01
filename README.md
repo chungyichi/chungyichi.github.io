@@ -110,7 +110,7 @@ The toy page is two columns on a wide screen: the picture panel beside the facts
 filter pages `/zh/books/owner/me/` and `/zh/books/owner/son/` ("誰在看"), tags and search (the scope switch has 書). It reuses the toy code; only the front matter differs.
 Front matter: `title`, `summary` (required to publish; when it is empty, `author` is used as the summary), `tags` (1 to 3), `owner: me | son` (who reads it: person icon = me, block icon = son; required to publish),
 and optional `author`, `volumes` and `source`. No price, no quantity, no `status`.
-- **A series is one record.** `volumes: 第一部, 第二部, 第三部` (titles in order, comma separated, no comma inside a title) shows as 「共 N 冊」 and a numbered list on the book page, plain text. The volume titles are searchable, so a volume title finds its series.
+- **A series is one record.** `volumes: 第一部, 第二部, 第三部` (titles in order, comma separated; if a title has a comma, separate with `;` instead) shows as 「共 N 冊」 and a numbered list on the book page, plain text. The volume titles are searchable, so a volume title finds its series.
 - **Authors are spelled one way.** `author: R.A. Salvatore` (several: comma separated) must be a name or an alias in `grid.authors` of the books section in `site.config.mjs`; an alias is rewritten to the name when the site is built,
   and `npm run check` fails for any other author, naming the nearest known authors. A new author is a new entry there: `{ name: "...", aliases: ["..."] }`. On the book page an author links to the search page for that name (`/zh/search/?q=...`); the author is in the search index.
 - **`source` is quiet**: no buy button, only a small muted 「來源」 link under the facts (many books are out of print).

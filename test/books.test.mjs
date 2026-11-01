@@ -69,6 +69,7 @@ test("books: volumes are a comma separated list; the page props and the search i
   const b = book("2026-10-21-a.zh.md", "summary: S\nowner: me\nauthor: 薩爾瓦多\nvolumes: 第一部, 第二部，第三部\n");
   assert.deepEqual(b.volumes, ["第一部", "第二部", "第三部"]);
   assert.deepEqual(book("2026-10-21-a.zh.md", "summary: S\n").volumes, []);
+  assert.deepEqual(book("2026-10-21-a.zh.md", "summary: S\nvolumes: 一，二; 三，四\n").volumes, ["一，二", "三，四"]);   // a title with a comma: separate with ;
   assert.throws(() => book("2026-10-21-a.zh.md", "summary: S\nvolumes: ,\n"), /'volumes' needs 1 to/);
   assert.throws(() => book("2026-10-21-a.zh.md", "summary: S\nvolumes: 一\n", "toys"), /'volumes' is only for posts in content\/books\//);
   const routes = buildRoutes(buildModel([b], ["zh"], site.sections), {}, { langs: ["zh"] });

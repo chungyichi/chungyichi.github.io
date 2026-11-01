@@ -49,7 +49,7 @@ export function parseFrontMatter(text, where = "post") {
     } else if (/^".*"$/.test(val)) val = JSON.parse(val);
     else if (/^'.*'$/.test(val)) val = val.slice(1, -1).replace(/''/g, "'");
     if (key === "tags" && typeof val === "string") val = val.split(/[,，、]/);   // tags: 日本, 旅行
-    if (key === "volumes" && typeof val === "string") val = val.split(/[,，]/);   // volumes: 第一部, 第二部 (a title has no comma)
+    if (key === "volumes" && typeof val === "string") val = val.split(/[;；]/.test(val) ? /[;；]/ : /[,，]/);   // volumes: 第一部, 第二部 (commas), or with ; when a title has a comma
     data[key] = val;
   }
   return { data, body: m[2] };

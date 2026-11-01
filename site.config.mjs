@@ -28,7 +28,8 @@ export const site = {
     { id: "books", title: { zh: "書庫", en: "Books" },   // one post per book; `owner` is who reads it
       // authors: the one spelling of each author. A book's `author` (several: comma separated) must be a name or an alias here; an alias is
       // rewritten to the name at build and `npm run check` fails for any other author. A new author is a new entry: { name, aliases: [...] }.
-      grid: { perPage: 48, authors: [{ name: "R．A．薩爾瓦多", aliases: ["R.A. Salvatore", "R. A. Salvatore", "薩爾瓦多"] }],
+      grid: { perPage: 48, authors: [{ name: "R．A．薩爾瓦多", aliases: ["R.A. Salvatore", "R. A. Salvatore", "薩爾瓦多"] },
+      { name: "全民熙", aliases: ["전민희", "Jeon Min-hee", "Jeon Minhee"] }],
         ownerLabel: { zh: "誰在看", en: "Reader" }, empty: { zh: "還沒有書。", en: "No books yet." }, scope: { zh: "書", en: "Books" },
         owners: [
           { id: "me", title: { zh: "我", en: "Me" }, icon: "person" },
