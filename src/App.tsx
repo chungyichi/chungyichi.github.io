@@ -6,7 +6,7 @@ import { ThemeToggle } from "./ThemeToggle";
 import { SEASON_ISLAND_ID } from "./SeasonToggle";
 import { tagPath, tagsIndexPath } from "./tags.mjs";
 import { TOYS_SECTION, ownerPath } from "./toys.mjs";
-import { Icon, OwnerBadge, WantBadge, ownerIcon } from "./icons";
+import { GithubMark, Icon, OwnerBadge, WantBadge, ownerIcon } from "./icons";
 
 import { tagSlug as tagSlugOf } from "./tags.mjs";
 const postHref = (lang: Lang, section: string, slug: string) => `/${lang}/${section}/${slug}/`;
@@ -28,10 +28,10 @@ function Layout({ route, wide, children }: { route: Route; wide?: boolean; child
             {site.sections.map((sec: { id: string }) => <a key={sec.id} href={`/${lang}/${sec.id}/`}>{sectionTitle(lang, sec.id)}</a>)}
             <a href={`/${lang}/search/`}>{s.search}</a>
             <a href={`/${lang}/about/`}>{s.about}</a>
-            <a href={site.github} rel="noopener noreferrer">{s.github}</a>
           </nav>
           <div className="tools">
             {other && site.languageSwitcher !== false && <a className="lang" href={other.path} hrefLang={other.lang} lang={other.lang}>{t[other.lang].langName}</a>}
+            <a className="gh-link" href={site.github} rel="noopener noreferrer" aria-label={s.github} title={s.github}><GithubMark /></a>
             <span id={SEASON_ISLAND_ID} />
             <span id="theme-island"><ThemeToggle label={s.toggleTheme} /></span>
           </div>
