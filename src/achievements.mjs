@@ -1,18 +1,20 @@
-// Achievements (成就), profiles (level, title, mood) and the quest log (閱歷) of the home gear block. Pure (no DOM): shared by the build (scripts/routes.mjs,
+// Achievements (成就), profiles (level, title, mood) and the reading summary (閱歷) of the home gear block. Pure (no DOM): shared by the build (scripts/routes.mjs,
 // scripts/check.mjs), the pages (src/Gear.tsx) and the tests (test/achievements.test.mjs).
 // The data is `achievements` and `gear.<person>.profile` in site.config.mjs. A rule is DATA, never code:
-//   { kind: "count",   section, tag?, own?, owner?, min }  how many posts of the section (a book or a toy is one)
+//   { kind: "count",   section, tag?, own?, owner?, min }  how many posts of the section (a book, a toy or a game is one; games count for GAMES_OWNER)
 //   { kind: "volumes", tag?, own?, owner?, min }           volumes of books (a book that lists none is 1)
 //   { kind: "tag",     tag, section?, owner?, min }        things (a toy's quantity, an owned book's volumes) that carry the tag
 //   { kind: "things",  section?, tag?, owner?, min }       things of the person (same counting as the tag kind, a tag is optional)
 //   { kind: "item",    item: "books/slug", owner?, min }   one post: its volumes (book) or quantity (toy) must reach min (default 1); 0 when the person does not have it
 // A rule is always judged for ONE person and only counts that person's posts (`owner` in the post). `owner` in the rule makes the achievement that
 // person's alone (everybody else stays locked at 0). `own: "no"` = books only read, `own: "yes"` = books we have.
-import { BOOKS_SECTION, TOYS_SECTION } from "./toys.mjs";
+import { BOOKS_SECTION, TOYS_SECTION, GAMES_SECTION } from "./toys.mjs";
 
 export const ACHIEVEMENT_KINDS = ["count", "volumes", "tag", "things", "item"];
 const RULE_KEYS = ["kind", "section", "owner", "tag", "min", "own", "item"];
-const SECTIONS = [TOYS_SECTION, BOOKS_SECTION];
+const SECTIONS = [TOYS_SECTION, BOOKS_SECTION, GAMES_SECTION];
+/** Games have no owner in their posts: the shelf is the Steam / console library of this person. */
+export const GAMES_OWNER = "me";
 /** The prefix of a profile title that names an achievement: "ach:wheel-of-time". */
 export const ACH_PREFIX = "ach:";
 
@@ -30,7 +32,7 @@ const text = (v, lang) => (v && typeof v === "object" ? v[lang] || v.zh || v.en 
 
 /** True when the post matches the filters of the rule (person, section, tag, own). */
 function matches(p, rule, owner, section) {
-  if (p.owner !== owner) return false;
+  if ((p.section === GAMES_SECTION ? GAMES_OWNER : p.owner) !== owner) return false;
   if (section && p.section !== section) return false;
   if (rule.tag !== undefined && !(p.tags || []).includes(rule.tag)) return false;
   if (rule.own !== undefined && p.section === BOOKS_SECTION && (rule.own === "no") !== (p.own === false)) return false;
@@ -157,33 +159,25 @@ export function lockedTitleProblems(gear, achievements, posts, owners) {
   return out;
 }
 
-/** Quests per page of the 閱歷 tab. */
-export const QUEST_PAGE_SIZE = 6;
-/** How many pages `n` quests make (at least 1). */
-export const questPageCount = (n, size = QUEST_PAGE_SIZE) => Math.max(1, Math.ceil(n / size));
-/** A page number kept inside 1..pages (anything else is 1). */
-export const clampPage = (page, pages) => (Number.isInteger(page) ? Math.min(Math.max(1, page), Math.max(1, pages)) : 1);
-
 /**
- * The quest log (閱歷) of one person: every book of theirs is a finished quest (there is no reading-progress data), newest first (date, then slug).
- * The date is only used for the order; a quest does not show it (it is when the post was added, not when it was read).
+ * The reading summary (閱歷) of one person: every book of theirs counts as one finished quest (there is no reading-progress data); the quests themselves are not listed.
  * `volumes` = the listed volumes of all books; a book that lists none (a web novel) is not in it but in `web`, so the summary says "56 卷 + 3 部網文".
- * A card shows `volumes` = the listed volumes, at least 1 (a book that lists none is one volume there).
- * @returns {{ done: number, volumes: number, web: number, quests: { slug: string, title: string, author: string, volumes: number, tags: string[], own: boolean }[] }}
+ * `games` = the games on the shelf (they have no owner, so only GAMES_OWNER has them).
+ * @returns {{ done: number, volumes: number, web: number, games: number }}
  */
 export function questLog(posts, owner) {
-  const mine = posts.filter((p) => p.section === BOOKS_SECTION && p.owner === owner)
-    .sort((a, b) => (b.date || "").localeCompare(a.date || "") || a.slug.localeCompare(b.slug));
+  const mine = posts.filter((p) => p.section === BOOKS_SECTION && p.owner === owner);
   return {
     done: mine.length,
     volumes: mine.reduce((a, p) => a + (p.volumes || []).length, 0),
     web: mine.filter((p) => !(p.volumes || []).length).length,
-    quests: mine.map((p) => ({ slug: p.slug, title: p.title, author: p.author || "", volumes: unitsOf(p), tags: p.tags || [], own: p.own !== false })),
+    games: owner === GAMES_OWNER ? posts.filter((p) => p.section === GAMES_SECTION).length : 0,
   };
 }
 
-/** The one-line summary of the 閱歷 tab: "完成 15 項任務 · 共 56 卷" and, when some books list no volumes, " + 3 部網文". */
+/** The one-line summary of the 閱歷 tab: "完成 15 項任務 · 共 56 卷", " + 3 部網文" when some books list no volumes, and " · 遊戲 77 款" for the person with games. */
 export function questSummary(lang, log) {
-  if (lang === "en") return `${log.done} quest${log.done === 1 ? "" : "s"} done · ${log.volumes} volume${log.volumes === 1 ? "" : "s"}${log.web > 0 ? ` + ${log.web} web novel${log.web === 1 ? "" : "s"}` : ""}`;
-  return `完成 ${log.done} 項任務 · 共 ${log.volumes} 卷${log.web > 0 ? ` + ${log.web} 部網文` : ""}`;
+  const games = log.games || 0;
+  if (lang === "en") return `${log.done} quest${log.done === 1 ? "" : "s"} done · ${log.volumes} volume${log.volumes === 1 ? "" : "s"}${log.web > 0 ? ` + ${log.web} web novel${log.web === 1 ? "" : "s"}` : ""}${games > 0 ? ` · ${games} game${games === 1 ? "" : "s"}` : ""}`;
+  return `完成 ${log.done} 項任務 · 共 ${log.volumes} 卷${log.web > 0 ? ` + ${log.web} 部網文` : ""}${games > 0 ? ` · 遊戲 ${games} 款` : ""}`;
 }

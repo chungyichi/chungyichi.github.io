@@ -95,30 +95,16 @@ html:has(.gear-dialog[open]) { overflow: hidden; }
 .gear-card-link { display: flex; align-items: center; justify-content: center; min-height: 2.75rem; margin: 0.7rem 0 0; border: 1px solid var(--rarity); border-radius: var(--radius-lg); color: var(--rarity); font-weight: 600; text-decoration: none; }
 .gear-card-link:hover { background: color-mix(in srgb, var(--rarity) 12%, transparent); }
 
-/* The 閱歷 tab: the summary line, the achievement shelf (2 columns on a phone), the quest list in pages of 6. */
+/* The 閱歷 tab: the summary line, the achievement shelf (2 columns on a phone). */
 .gear-summary { margin: 0 0 0.9rem; font-size: 1rem; }
 .gear-sub { display: flex; align-items: baseline; gap: 0.5rem; margin: 1rem 0 0.5rem; font-size: 0.92rem; letter-spacing: 0.04em; color: var(--muted); }
 .gear-sub .count { font: 0.78rem var(--font-mono); opacity: 0.8; }
-.ach-list, .quest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.ach-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
 .ach-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.quest-list { grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 40rem) { .ach-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } .quest-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.quest-card, .ach-card { min-width: 0; padding: 0.5rem 0.65rem 0.6rem; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
-.quest-card[hidden] { display: none; }
-.quest-head, .ach-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
-.quest-head h4, .ach-head h4 { margin: 0; min-width: 0; font-size: 0.95rem; line-height: 1.35; overflow-wrap: anywhere; }
-.quest-head h4 a { display: inline-block; padding: 0.1rem 0; color: var(--fg); text-decoration: none; }
-.quest-head h4 a:hover { color: var(--accent); }
-.quest-badge { flex: none; padding: 0.05rem 0.5rem; border: 1px solid var(--rarity-uncommon); border-radius: 999px; color: var(--rarity-uncommon); font-size: 0.75rem; line-height: 1.5; white-space: nowrap; }
-.quest-meta { margin: 0.05rem 0 0.3rem; font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
-.quest-card .tags { margin: 0; }
-.quest-card .tags a { font-size: 0.75rem; padding: 0 0.5rem; }
-.quest-empty { margin: 0; padding: 1.2rem 1rem; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius-lg); }
-.quest-pager { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.7rem; }
-.quest-pager button { min-height: 2.75rem; padding: 0 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); color: var(--fg); font: inherit; font-size: 0.9rem; cursor: pointer; }
-.quest-pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.quest-pager button:disabled { opacity: 0.35; cursor: default; }
-.quest-page { font: 0.85rem var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); text-align: center; }
+@media (min-width: 40rem) { .ach-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ach-card { min-width: 0; padding: 0.5rem 0.65rem 0.6rem; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
+.ach-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.ach-head h4 { margin: 0; min-width: 0; font-size: 0.95rem; line-height: 1.35; overflow-wrap: anywhere; }
 .ach-card { display: flex; flex-direction: column; gap: 0.1rem; }
 .ach-head { flex-wrap: wrap; gap: 0 0.4rem; }
 .ach-on { border-color: var(--rarity-legendary); box-shadow: 0 0 0.6rem color-mix(in srgb, var(--rarity-legendary) 28%, transparent); }

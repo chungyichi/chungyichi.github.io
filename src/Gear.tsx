@@ -1,14 +1,14 @@
 // The equipment block (裝備欄) of the home page: one sheet per person (data: `gear` in site.config.mjs, rules: src/gear.mjs). The tab 裝備 has two views: the overview
 // (default: the word cloud of src/WordCloud.tsx with an ASCII stick figure, src/gearfigure.mjs, in the middle and the equipment names orbiting it) and the slots (the
-// 18-slot character sheet). The second tab 閱歷 has the achievements and the quest log (src/achievements.mjs). ONE shared <dialog> shows an item as a card, whichever
+// 18-slot character sheet). The second tab 閱歷 has the reading summary and the achievements (src/achievements.mjs). ONE shared <dialog> shows an item as a card, whichever
 // view it was tapped in. All pictures are the site's own; the art is plain CSS, SVG and text.
-// The page is static HTML; src/gear-client.ts (only loaded where [data-gear] is) opens the dialog, switches the tabs and views and turns the quest pages.
+// The page is static HTML; src/gear-client.ts (only loaded where [data-gear] is) opens the dialog, switches the tabs and views 
 import { t, ownerShort, type Lang } from "./i18n";
 import type { GearSet, GearSlotData, GearProfile, AchievementState, QuestLog } from "./types";
 import { SLOTS, slotName, rarityName, dialogData, overviewWords, OVERVIEW_TUNE } from "./gear.mjs";
 import { figureOf } from "./gearfigure.mjs";
 import { CloudHost } from "./WordCloud";
-import { progressText, questSummary, questPageCount, QUEST_PAGE_SIZE } from "./achievements.mjs";
+import { progressText, questSummary } from "./achievements.mjs";
 import { BookTile, TagList, postHref } from "./cards";
 import { Icon, ownerIcon } from "./icons";
 import { TOYS_SECTION } from "./toys.mjs";
@@ -81,21 +81,6 @@ function Overview({ lang, set, mode }: { lang: Lang; set: GearSet; mode: "items"
   );
 }
 
-/** One quest card: the book as a finished quest (title, author, volumes, the 已完成 badge, tags); the title links to the book page. No date (it is when the post was added). */
-function QuestCard({ lang, q, page }: { lang: Lang; q: QuestLog["quests"][number]; page: number }) {
-  const s = t[lang];
-  return (
-    <li className="quest-card" data-page={page} hidden={page > 1}>
-      <div className="quest-head">
-        <h4><a href={postHref(lang, "books", q.slug)}>{q.title}</a></h4>
-        <span className="quest-badge"><span aria-hidden="true">✓ </span>{s.questDone}</span>
-      </div>
-      <p className="quest-meta">{[q.author, s.questVolumes(q.volumes)].filter(Boolean).join(" · ")}</p>
-      <TagList lang={lang} tags={q.tags.slice(0, 3)} />
-    </li>
-  );
-}
-
 /** One achievement: unlocked ones first (gold border), locked ones dim with their progress. */
 function AchCard({ lang, a }: { lang: Lang; a: AchievementState }) {
   const s = t[lang];
@@ -111,9 +96,9 @@ function AchCard({ lang, a }: { lang: Lang; a: AchievementState }) {
   );
 }
 
-/** The 閱歷 tab of a sheet: the one-line summary, the achievement shelf, and the quests in pages of QUEST_PAGE_SIZE (all in the HTML, page 1 visible; the buttons turn the pages). */
+/** The 閱歷 tab of a sheet: the one-line summary (books done) and the achievement shelf. */
 function LogPanel({ lang, set }: { lang: Lang; set: GearSet }) {
-  const s = t[lang], { log, achievements } = set, pages = questPageCount(log.quests.length);
+  const s = t[lang], { log, achievements } = set;
   const shelf = [...achievements.filter((a) => a.unlocked), ...achievements.filter((a) => !a.unlocked)];
   return (
     <div className="gear-panel gear-log" role="tabpanel" aria-labelledby="gear-tab-log" data-panel="log" hidden>
@@ -124,18 +109,6 @@ function LogPanel({ lang, set }: { lang: Lang; set: GearSet }) {
           <ul className="ach-list">{shelf.map((a) => <AchCard key={a.id} lang={lang} a={a} />)}</ul>
         </section>
       )}
-      <section aria-label={s.questList}>
-        <h3 className="gear-sub">{s.questList}<span className="count">{log.done}</span></h3>
-        {log.done === 0 && <p className="quest-empty">{s.questNone}</p>}
-        <ul className="quest-list">{log.quests.map((q, i) => <QuestCard key={q.slug} lang={lang} q={q} page={Math.floor(i / QUEST_PAGE_SIZE) + 1} />)}</ul>
-        {pages > 1 && (
-          <div className="quest-pager" data-pager data-pages={pages} data-fmt={s.questPage} role="group" aria-label={s.questPager}>
-            <button type="button" data-step="-1" disabled>‹ {s.questPrev}</button>
-            <span className="quest-page" aria-live="polite">{s.questPage.replace("{p}", "1").replace("{n}", String(pages))}</span>
-            <button type="button" data-step="1">{s.questNext} ›</button>
-          </div>
-        )}
-      </section>
     </div>
   );
 }

@@ -33,6 +33,15 @@ export const site = {
       // rewritten to the name at build and `npm run check` fails for any other author. A new author is a new entry: { name, aliases: [...] }.
       // facets: more filters next to the owners that combine with them (see FACETS in src/toys.mjs): own = ?own=no (`own: no` = only read), type = 小說 | 漫畫
       grid: { perPage: 48, facets: ["type", "own"], authors: [{ name: "R．A．薩爾瓦多", aliases: ["R.A. Salvatore", "R. A. Salvatore", "薩爾瓦多"] },
+      { name: "葛雷克．凱斯", aliases: ["Greg Keyes", "Gregory Keyes", "J. Gregory Keyes", "葛雷克·凱斯", "凱斯"] },
+      { name: "荒川弘", aliases: ["Hiromu Arakawa", "荒川 弘", "荒川宏"] },
+      { name: "柴田啓子", aliases: ["柴田ケイコ", "Keiko Shibata", "柴田 啓子"] },
+      { name: "田中光", aliases: ["田中 光"] },
+      { name: "艾瑞．卡爾", aliases: ["Eric Carle", "艾瑞·卡爾", "艾瑞‧卡爾"] },
+      { name: "比爾．馬丁", aliases: ["Bill Martin Jr.", "Bill Martin", "比爾·馬丁", "比爾‧馬丁"] },
+      { name: "傑茲．阿波羅", aliases: ["Jez Alborough", "傑茲·阿波羅", "傑茲‧阿波羅"] },
+      { name: "風車編輯部", aliases: [] },
+      { name: "入山智", aliases: ["Satoshi Iriyama"] },
       { name: "全民熙", aliases: ["전민희", "Jeon Min-hee", "Jeon Minhee"] },
       { name: "史蒂芬．金", aliases: ["Stephen King", "史蒂芬·金", "史蒂芬‧金", "史蒂芬金"] },
       { name: "羅伯特．喬丹", aliases: ["Robert Jordan", "羅伯特·喬丹", "羅伯特‧喬丹", "喬丹"] },
@@ -80,14 +89,13 @@ export const site = {
   // slots: head neck shoulder back chest shirt wrist hands | waist legs feet ring1 ring2 trinket1 trinket2 emblem | mainhand offhand. An item once per person.
   // A DRAFT first pick (by loose theme), edit freely. `npm run check` fails for an unknown slot or rarity, an item that is not a published toy or game (a book is refused), or an item twice for one person.
   //
-  // profile (optional, per person): level, title and mood shown under the name on the home sheet. SAMPLE VALUES, edit them by hand.
+  // profile (optional, per person): level, title and mood shown under the name on the home sheet.
   //   level  a whole number >= 1;  title  "text" | { zh, en } | "ach:<achievement id>" (the title that achievement grants, shown once it is unlocked);
   //   mood   { zh, en, icon } with one simple emoji (or none)
   gear: {
     // What orbits the stick figure of the home overview (the word cloud): "items" (the equipped things, coloured by rarity; default) or "title" (title, level, mood and unlocked achievements). Not a person.
     overview: "items",
     me: {
-      profile: { level: 12, title: "ach:wheel-of-time", mood: { zh: "今天心情不錯", en: "Feeling good today", icon: "🙂" } },   // SAMPLE: edit me
       head: { item: "toys/mayday-max", rarity: "legendary" },           // 25th anniversary 究極合體, NT$15,525: the most expensive thing
       chest: { item: "toys/mivi-king-of-destruction-3", rarity: "epic" },  // 1/6 figure
       mainhand: { item: "games/elden-ring", rarity: "legendary" },     // the sword-and-shield game
@@ -95,9 +103,16 @@ export const site = {
       back: { item: "games/death-stranding", rarity: "epic" },         // carrying the cargo on the back
       ring1: { item: "games/dave-the-diver", rarity: "rare" },
       trinket1: { item: "games/microsoft-flight-simulator-2020", rarity: "rare" },
+      shoulder: { item: "games/witcher-3", rarity: "legendary" },       // DRAFT: the new games, edit freely
+      legs: { item: "games/the-elder-scrolls-v-skyrim-special-edition", rarity: "legendary" },
+      waist: { item: "games/black-myth-wukong", rarity: "legendary" },   // the staff at the belt
+      hands: { item: "games/portal-2", rarity: "epic" },               // the portal gun
+      ring2: { item: "games/sid-meiers-civilization-vi", rarity: "rare" },
+      wrist: { item: "games/celeste", rarity: "rare" },
+      trinket2: { item: "games/slay-the-spire", rarity: "rare" },
+      feet: { item: "games/euro-truck-simulator-2", rarity: "uncommon" },   // always on the road
     },
     son: {
-      profile: { level: 3, title: { zh: "小小探險家", en: "Little Explorer" }, mood: { zh: "想玩積木", en: "Wants to play blocks", icon: "🤩" } },   // SAMPLE: edit me
       head: { item: "toys/playmate-air", rarity: "epic" },             // the priciest one (about NT$7,000-8,000)
       mainhand: { item: "toys/uppsta", rarity: "common" },             // a hitting toy: NT$299
       offhand: { item: "toys/anpanman-steering-wheel", rarity: "rare" },   // round, like a shield
@@ -108,7 +123,6 @@ export const site = {
       trinket1: { item: "toys/my-first-book-4", rarity: "rare" },      // cloth book, NT$1,856
     },
     brother: {
-      profile: { level: 20, title: { zh: "陀螺大師", en: "Top Master" }, mood: { zh: "想對戰", en: "Ready to battle", icon: "😎" } },   // SAMPLE: edit me
       head: { item: "toys/soc-franky-general", rarity: "legendary" },  // die-cast robot (超合金)
       mainhand: { item: "toys/beyx-bx-01", rarity: "epic" },           // the first blade of the line, "God Sword"
       offhand: { item: "toys/usj-minion-bottle", rarity: "rare" },     // a bottle
@@ -136,6 +150,10 @@ export const site = {
     { id: "bey-master", name: { zh: "陀螺大師", en: "Top Master" }, desc: { zh: "弟弟有 50 個戰鬥陀螺", en: "Brother has 50 battle tops" }, title: { zh: "陀螺大師", en: "Top Master" }, rule: { kind: "tag", tag: "戰鬥陀螺", owner: "brother", min: 50 } },
     { id: "anpanman-fan", name: { zh: "麵包超人迷", en: "Anpanman Fan" }, desc: { zh: "有 5 件麵包超人", en: "Have 5 Anpanman things" }, title: { zh: "麵包超人小英雄", en: "Little Anpanman Hero" }, rule: { kind: "tag", tag: "麵包超人", min: 5 } },
     { id: "baby-toys", name: { zh: "嬰幼兒玩具", en: "Baby Toys" }, desc: { zh: "有 8 件嬰幼兒玩具", en: "Have 8 baby toys" }, title: { zh: "遊戲小達人", en: "Play Expert" }, rule: { kind: "tag", tag: "嬰幼兒", min: 8 } },
+    { id: "dark-tower", name: { zh: "讀完黑塔", en: "The Dark Tower, Done" }, desc: { zh: "讀完《黑塔》全部 10 本", en: "Finish all 10 books of The Dark Tower" }, title: { zh: "槍客", en: "Gunslinger" }, rule: { kind: "item", item: "books/dark-tower", min: 10 } },
+    { id: "game-shelf", name: { zh: "遊戲滿架", en: "Full Game Shelf" }, desc: { zh: "遊戲庫有 50 款遊戲", en: "Have 50 games on the shelf" }, title: { zh: "遊戲收藏家", en: "Game Collector" }, rule: { kind: "count", section: "games", min: 50 } },
+    { id: "game-hundred", name: { zh: "百款遊戲", en: "A Hundred Games" }, desc: { zh: "遊戲庫有 100 款遊戲", en: "Have 100 games on the shelf" }, title: { zh: "遊戲館長", en: "Game Curator" }, rule: { kind: "count", section: "games", min: 100 } },
+    { id: "picture-books", name: { zh: "繪本小書迷", en: "Picture Book Fan" }, desc: { zh: "兒子有 10 本繪本", en: "Son has 10 picture books" }, title: { zh: "繪本小書迷", en: "Little Bookworm" }, rule: { kind: "count", section: "books", tag: "繪本", owner: "son", min: 10 } },
   ],
   // Seasonal decoration (see README "Seasons"). The first season whose window holds today (Asia/Taipei) wins, so the order is the priority.
   //   window  { from: "MM-DD", to: "MM-DD" } every year (from > to wraps over New Year) | { around: "cny", daysBefore, daysAfter } around a date of

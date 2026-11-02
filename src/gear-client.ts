@@ -1,11 +1,11 @@
-// The home page's gear block (only pages with [data-gear] load this), four small jobs on clicks that bubble up to the document:
+// The home page's gear block (only pages with [data-gear] load this), three small jobs on clicks that bubble up to the document:
 // 1. a slot button opens THE dialog (#gear-dialog, a native <dialog>): filled from the button's data-item, opened with showModal(), so Esc, the focus trap and the
 //    return of the focus to the slot are the browser's; a click on the backdrop or on × closes it. A word of the overview (a link to the item, data-ref = the slot id)
 //    opens the dialog of that slot's button, so the item data exists once; a drag of the cloud never reaches here (the cloud swallows its click).
 // 2. the tabs 裝備 | 閱歷 show one panel in every sheet (the bar is hidden in the HTML and shown here: without this script only 裝備 exists).
 // 3. the switch 總覽 | 格子 shows one view of the tab 裝備 in every sheet (the same: without this script only the overview exists).
-// 4. the quest pager shows one page of the quest list (all quests are in the HTML, the other pages are `hidden`).
-import { clampPage } from "./achievements.mjs";
+
+export {};   // a module (the entry loads it with import())
 
 type Item = { title: string; rarity: string; rarityName: string; slotName: string; summary: string; tags: string[]; date: string; pic: string; href: string };
 
@@ -48,14 +48,6 @@ function showView(block: HTMLElement, view: string) {
   block.querySelectorAll<HTMLElement>("[data-view]").forEach((v) => { v.hidden = v.dataset.view !== view; });
 }
 
-function turnPage(pager: HTMLElement, step: number) {
-  const pages = Number(pager.dataset.pages), now = Number(pager.dataset.page || 1), page = clampPage(now + step, pages);
-  pager.dataset.page = String(page);
-  pager.parentElement!.querySelectorAll<HTMLElement>(".quest-card").forEach((c) => { c.hidden = Number(c.dataset.page) !== page; });
-  pager.querySelector<HTMLElement>(".quest-page")!.textContent = (pager.dataset.fmt ?? "").replace("{p}", String(page)).replace("{n}", String(pages));
-  pager.querySelector<HTMLButtonElement>('[data-step="-1"]')!.disabled = page <= 1;
-  pager.querySelector<HTMLButtonElement>('[data-step="1"]')!.disabled = page >= pages;
-}
 
 document.addEventListener("click", (e) => {
   const target = e.target instanceof Element ? e.target : null;
@@ -75,8 +67,6 @@ document.addEventListener("click", (e) => {
   if (view) { showView(view.closest<HTMLElement>("[data-gear]")!, view.dataset.viewBtn!); return; }
   const tab = target.closest<HTMLElement>("button[data-tab]");
   if (tab) { showTab(tab.closest<HTMLElement>("[data-gear]")!, tab.dataset.tab!); return; }
-  const step = target.closest<HTMLElement>("button[data-step]");
-  if (step) turnPage(step.closest<HTMLElement>("[data-pager]")!, Number(step.dataset.step));
 });
 
 // Arrow keys move between the two tabs

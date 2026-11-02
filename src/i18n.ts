@@ -20,7 +20,6 @@ export const t = {
     gearPrev: "上一位", gearNext: "下一位",
     gearTitle: "我們的裝備", gearHint: "點一個裝備看說明", gearViews: "總覽或格子", gearViewOverview: "總覽", gearViewSlots: "格子", gearNone: "還沒有裝備", gearNoTitle: "還沒有稱號", gearOverview: (who: string) => `${who}的裝備總覽`, gearWord: (full: string, rarity: string) => `${full}（${rarity}）`, gearOpenItem: "看物品 →", gearClose: "關閉", gearTabs: "裝備或閱歷", gearTabGear: "裝備", gearTabLog: "閱歷", gearLevel: (n: number) => `Lv.${n}`,
     gearFilled: (n: number, m: number) => `已裝備 ${n} / ${m}`, gearSheet: (who: string) => `${who}的裝備欄`, gearSlotEmpty: (slot: string) => `${slot}：空`, gearSlotLabel: (slot: string, name: string, rarity: string) => `${slot}：${name}（${rarity}）`,
-    questDone: "已完成", questNone: "還沒有任務", questVolumes: (n: number) => `${n} 卷`, questPage: "第 {p} / {n} 頁", questPrev: "上一頁", questNext: "下一頁", questPager: "任務換頁", questList: "任務",
     achTitle: "成就", achUnlocked: "已解鎖", achLocked: "未解鎖", achGrants: (title: string) => `稱號「${title}」`,
   },
   en: {
@@ -40,7 +39,6 @@ export const t = {
     gearPrev: "Previous person", gearNext: "Next person",
     gearTitle: "Our gear", gearHint: "Tap an item for details", gearViews: "Overview or slots", gearViewOverview: "Overview", gearViewSlots: "Slots", gearNone: "Nothing equipped yet", gearNoTitle: "No title yet", gearOverview: (who: string) => `Gear overview of ${who}`, gearWord: (full: string, rarity: string) => `${full} (${rarity})`, gearOpenItem: "Open the item →", gearClose: "Close", gearTabs: "Equipment or log", gearTabGear: "Gear", gearTabLog: "Log", gearLevel: (n: number) => `Lv.${n}`,
     gearFilled: (n: number, m: number) => `${n} / ${m} equipped`, gearSheet: (who: string) => `Equipment of ${who}`, gearSlotEmpty: (slot: string) => `${slot}: empty`, gearSlotLabel: (slot: string, name: string, rarity: string) => `${slot}: ${name} (${rarity})`,
-    questDone: "Done", questNone: "No quests yet", questVolumes: (n: number) => `${n} vol.`, questPage: "Page {p} / {n}", questPrev: "Previous page", questNext: "Next page", questPager: "Quest pages", questList: "Quests",
     achTitle: "Achievements", achUnlocked: "Unlocked", achLocked: "Locked", achGrants: (title: string) => `Title: ${title}`,
   },
 } as const;

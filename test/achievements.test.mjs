@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { site } from "../site.config.mjs";
-import { progressOf, evaluateAchievements, resolveProfile, validateAchievements, validateProfile, lockedTitleProblems, questLog, questSummary, questPageCount, clampPage, QUEST_PAGE_SIZE, unitsOf, thingsOf, ACHIEVEMENT_KINDS } from "../src/achievements.mjs";
+import { progressOf, evaluateAchievements, resolveProfile, validateAchievements, validateProfile, lockedTitleProblems, questLog, questSummary, unitsOf, thingsOf, ACHIEVEMENT_KINDS } from "../src/achievements.mjs";
 import { validateGear } from "../src/gear.mjs";
 
 const owners = ["me", "son", "brother"];
@@ -16,6 +16,13 @@ const posts = [
   toy("b1"), toy("b2", { quantity: 2 }), toy("b3", { status: "want" }), toy("car", { owner: "son", tags: ["麵包超人"] }),
 ];
 const published = posts.map((p) => `${p.section}/${p.slug}`);
+
+test("count: games have no owner in their posts, they count for the person who owns the games (me)", () => {
+  const games = [{ section: "games", slug: "g1", tags: ["遊戲"] }, { section: "games", slug: "g2", tags: ["遊戲"] }];
+  assert.equal(progressOf({ kind: "count", section: "games", min: 2 }, games, "me"), 2);
+  assert.equal(progressOf({ kind: "count", section: "games", min: 2 }, games, "son"), 0);
+  assert.deepEqual(validateAchievements([{ id: "g", name: { zh: "a", en: "a" }, desc: { zh: "a", en: "a" }, title: { zh: "a", en: "a" }, rule: { kind: "count", section: "games", min: 2 } }], { owners, published }), []);
+});
 
 test("count: posts of a section, with tag and own, scoped to the person", () => {
   assert.equal(progressOf({ kind: "count", section: "books", min: 1 }, posts, "me"), 4);
@@ -87,8 +94,8 @@ test("profile: plain text, { zh, en }, an achievement title only when unlocked, 
 });
 
 test("validate achievements: the real config is fine; unknown kind, bad min, duplicates, unknown item / person / field are rejected", () => {
-  assert.deepEqual(validateAchievements(site.achievements, { owners, published: [...published, "books/wheel-of-time"] }), []);
-  assert.ok(site.achievements.length >= 8 && site.achievements.length <= 10);
+  assert.deepEqual(validateAchievements(site.achievements, { owners, published: [...published, "books/wheel-of-time", "books/dark-tower"] }), []);
+  assert.ok(site.achievements.length >= 8 && site.achievements.length <= 16);
   const ok = { id: "x", name: { zh: "a", en: "a" }, desc: { zh: "a", en: "a" }, title: { zh: "a", en: "a" }, rule: { kind: "count", section: "books", min: 1 } };
   const msgs = validateAchievements([
     ok, { ...ok },
@@ -98,7 +105,7 @@ test("validate achievements: the real config is fine; unknown kind, bad min, dup
     { ...ok, id: "o", rule: { kind: "tag", tag: "t", owner: "cat", min: 1 } },
     { ...ok, id: "f", rule: { kind: "count", section: "books", min: 1, extra: 1 } },
     { ...ok, id: "t", title: { zh: "a" } },
-    { ...ok, id: "s", rule: { kind: "count", section: "games", min: 1 } },
+    { ...ok, id: "s", rule: { kind: "count", section: "life", min: 1 } },
     { ...ok, id: "g", rule: { kind: "tag", min: 1 } },
   ], { owners, published });
   const has = (re) => assert.ok(msgs.some((m) => re.test(m)), `${re} in:\n${msgs.join("\n")}`);
@@ -130,17 +137,15 @@ test("a profile title naming a locked achievement is reported", () => {
   assert.deepEqual(lockedTitleProblems({ me: { profile: { title: "plain" } } }, list, posts, owners), []);
 });
 
-test("quest log: only the person's books, newest first, no date shown; listed volumes in the total, web novels counted apart", () => {
+test("reading summary: only the person's books; listed volumes in the total, web novels counted apart; the quests are not listed", () => {
   const log = questLog(posts, "me");
   assert.equal(log.done, 4);
   assert.equal(log.volumes, 21 + 7);   // listed volumes only
   assert.equal(log.web, 2);            // books that list none
-  assert.equal(log.quests.length, 4);
-  assert.deepEqual(log.quests.map((q) => q.slug), ["rune", "web1", "web2", "wheel"]);   // newest first, then by slug
-  assert.equal(log.quests[3].volumes, 21);
-  assert.equal(log.quests[1].volumes, 1);   // a card shows 1 for a book without volumes
-  assert.ok(log.quests.every((q) => !("date" in q)));
-  assert.deepEqual(questLog(posts, "brother"), { done: 0, volumes: 0, web: 0, quests: [] });
+  assert.ok(!("quests" in log));
+  assert.deepEqual(questLog(posts, "brother"), { done: 0, volumes: 0, web: 0, games: 0 });
+  assert.equal(questLog([...posts, { section: "games", slug: "g1" }, { section: "games", slug: "g2" }], "me").games, 2);   // games count for me only
+  assert.equal(questLog([...posts, { section: "games", slug: "g1" }], "son").games, 0);
 });
 
 test("quest summary text, with and without web novels", () => {
@@ -148,16 +153,8 @@ test("quest summary text, with and without web novels", () => {
   assert.equal(questSummary("zh", { done: 15, volumes: 56, web: 3 }), "完成 15 項任務 · 共 56 卷 + 3 部網文");
   assert.equal(questSummary("en", { done: 1, volumes: 1, web: 0 }), "1 quest done · 1 volume");
   assert.equal(questSummary("en", { done: 5, volumes: 20, web: 1 }), "5 quests done · 20 volumes + 1 web novel");
-});
-
-test("quest paging: pages of 6, at least one page, a page is clamped", () => {
-  assert.equal(QUEST_PAGE_SIZE, 6);
-  assert.deepEqual([0, 1, 6, 7, 12, 13, 15].map((n) => questPageCount(n)), [1, 1, 1, 2, 2, 3, 3]);
-  assert.equal(clampPage(0, 3), 1);
-  assert.equal(clampPage(4, 3), 3);
-  assert.equal(clampPage(2, 3), 2);
-  assert.equal(clampPage(NaN, 3), 1);
-  assert.equal(clampPage(1, 0), 1);
+  assert.equal(questSummary("zh", { done: 15, volumes: 56, web: 3, games: 77 }), "完成 15 項任務 · 共 56 卷 + 3 部網文 · 遊戲 77 款");
+  assert.equal(questSummary("en", { done: 1, volumes: 1, web: 0, games: 1 }), "1 quest done · 1 volume · 1 game");
 });
 
 test("the real config shows both unlocked and locked achievements across the people", async () => {

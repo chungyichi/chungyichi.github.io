@@ -37,6 +37,25 @@ if (document.querySelector("[data-share]")) void import("./share-client");
 // A toy page with several pictures gets the picture strip's buttons.
 if (document.querySelector("[data-gallery]")) void import("./gallery-client");
 
-// The main menu scrolls sideways when it is too wide: bring the current page's item to the middle (only the menu moves, never the page).
+// The main menu scrolls sideways when it is too wide: bring the current page's item to the middle (only the menu moves, never the page), and let the
+// mouse wheel and a mouse drag move it too (touch scrolls by itself).
 const menu = document.querySelector<HTMLElement>(".main-nav"), here = menu?.querySelector<HTMLElement>("[aria-current]");
 if (menu && here) menu.scrollLeft = here.offsetLeft - (menu.clientWidth - here.offsetWidth) / 2;
+if (menu) {
+  menu.addEventListener("wheel", (e) => {
+    if (menu.scrollWidth <= menu.clientWidth || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    const before = menu.scrollLeft;
+    menu.scrollLeft += e.deltaY;
+    if (menu.scrollLeft !== before) e.preventDefault();   // at either end the page scrolls as usual
+  }, { passive: false });
+  let from = 0, start = 0, moved = false, down = false;
+  menu.addEventListener("pointerdown", (e) => { if (e.pointerType !== "mouse" || e.button !== 0) return; down = true; moved = false; from = e.clientX; start = menu.scrollLeft; });
+  window.addEventListener("pointermove", (e) => {
+    if (!down) return;
+    if (!moved && Math.abs(e.clientX - from) > 4) { moved = true; menu.classList.add("dragging"); }
+    if (moved) menu.scrollLeft = start - (e.clientX - from);
+  });
+  window.addEventListener("pointerup", () => { down = false; menu.classList.remove("dragging"); });
+  menu.addEventListener("click", (e) => { if (moved) { e.preventDefault(); moved = false; } }, true);   // a drag is not a click on a link
+  menu.addEventListener("dragstart", (e) => e.preventDefault());   // links are draggable by default and would take the drag
+}

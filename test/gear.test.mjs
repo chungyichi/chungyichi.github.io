@@ -121,7 +121,7 @@ test("the real config has no book, and every person keeps their toys; the dialog
 
 // ---- the overview: the word cloud with the stick figure ----
 const fmt = { href: (it) => `/zh/${it.section}/${it.slug}/`, level: (n) => `Lv.${n}` };
-const setOf = (slots, extra = {}) => ({ owner: "me", filled: slots.filter((s) => s.item).length, slots, profile: { level: 0, title: "", mood: { text: "", icon: "" } }, achievements: [], log: { done: 0, volumes: 0, web: 0, quests: [] }, ...extra });
+const setOf = (slots, extra = {}) => ({ owner: "me", filled: slots.filter((s) => s.item).length, slots, profile: { level: 0, title: "", mood: { text: "", icon: "" } }, achievements: [], log: { done: 0, volumes: 0, web: 0, games: 0 }, ...extra });
 const slotOf = (slot, rarity, title, slug = slot) => ({ slot, rarity, item: { section: "toys", slug, title } });
 
 test("overview items: the rarest first, then in slot order; count = rarity rank, tone, ref and the link to the item", () => {
