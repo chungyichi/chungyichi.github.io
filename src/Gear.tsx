@@ -37,28 +37,23 @@ function Slot({ lang, owner, d }: { lang: Lang; owner: string; d: GearSlotData }
 /** "Lv.12 · Top Master": the level and the title, whichever is set ("" when neither). */
 const levelLine = (lang: Lang, p: GearProfile) => [p.level > 0 ? t[lang].gearLevel(p.level) : "", p.title].filter(Boolean).join(" · ");
 
-/** Name, level and title, mood and how many slots are filled: under the stick figure of the overview and in the avatar of the slot sheet. */
+/** Name, level and title, mood: under the figure of the overview and in the avatar of the slot sheet. */
 function Facts({ lang, set }: { lang: Lang; set: GearSet }) {
-  const s = t[lang], name = ownerShort(lang, set.owner, TOYS_SECTION), p = set.profile;
+  const name = ownerShort(lang, set.owner, TOYS_SECTION), p = set.profile;
   return (
     <>
       <h3 className="gear-name">{name}</h3>
       {levelLine(lang, p) && <p className="gear-level">{levelLine(lang, p)}</p>}
       {(p.mood.text || p.mood.icon) && <p className="gear-mood">{p.mood.icon && <span aria-hidden="true">{p.mood.icon} </span>}{p.mood.text}</p>}
-      <p className="gear-count">{s.gearFilled(set.filled, set.slots.length)}</p>
     </>
   );
 }
 
-/** The centre of the slot sheet: a soft silhouette in the owner's colour with the owner icon big on it, then the facts. */
+/** The centre of the slot sheet: the same moving ASCII figure as in the overview (the cloud with no words), then the facts. */
 function Avatar({ lang, set }: { lang: Lang; set: GearSet }) {
   return (
     <div className={`gear-avatar owner-${set.owner}`}>
-      <svg className="gear-figure" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
-        <circle cx="50" cy="32" r="17" />
-        <path d="M14 152C14 108 28 76 50 76s36 32 36 76z" />
-      </svg>
-      <span className="gear-avatar-icon" aria-hidden="true"><Icon name={ownerIcon(set.owner)} /></span>
+      <CloudHost lang={lang} owner={set.owner} words={[]} summary={t[lang].gearOverview(ownerShort(lang, set.owner, TOYS_SECTION))} center={figureOf(set.owner)} centerFx={set.owner === "brother" ? "shark" : "frames"} />
       <Facts lang={lang} set={set} />
     </div>
   );

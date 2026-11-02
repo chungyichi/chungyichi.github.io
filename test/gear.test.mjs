@@ -251,3 +251,20 @@ test("the swimming shark stays inside its box (spine and fins), keeps its length
     assert.ok(moved > 100, "it drifts");
   }
 });
+
+test("collectionMore: the rest of the collection, in turns (game, book, toy), newest first, none equipped, no wish-list toys, games for me only", async () => {
+  const { collectionMore, overviewWords, OVERVIEW_TOTAL } = await import("../src/gear.mjs");
+  const g = (n, d) => ({ section: "games", slug: `g${n}`, title: `G${n}`, date: d });
+  const b = (n, o = "me") => ({ section: "books", slug: `b${n}`, title: `B${n}`, owner: o, date: "2026-11-01" });
+  const toy = (n, o = "me", st = "") => ({ section: "toys", slug: `t${n}`, title: `T${n}`, owner: o, status: st, date: "2026-10-01" });
+  const posts = [g(1, "2026-11-01"), g(2, "2026-11-02"), g(3, "2026-11-02"), b(1), b(2, "son"), toy(1), toy(2, "me", "want"), toy(3, "son")];
+  const keys = (l) => l.map((x) => `${x.section}/${x.slug}`);
+  assert.deepEqual(keys(collectionMore(posts, "me", new Set(["games/g2"]))), ["games/g3", "books/b1", "toys/t1", "games/g1"]);
+  assert.deepEqual(keys(collectionMore(posts, "son", new Set())), ["books/b2", "toys/t3"]);
+  assert.equal(collectionMore(posts, "me", new Set(), 2).length, 2);
+  const set = { slots: [{ slot: "head", rarity: "epic", item: { section: "toys", slug: "t1", title: "T1" } }], more: collectionMore(posts, "me", new Set(["toys/t1"])) };
+  const words = overviewWords(set, "items", { href: (it) => `/${it.section}/${it.slug}`, level: () => "" });
+  assert.equal(words[0].ref, "head");                                   // the equipped item first and with its slot
+  assert.ok(words.slice(1).every((w) => w.count === 1 && !w.ref && w.href));   // the rest: smallest weight, a plain link
+  assert.ok(words.length <= OVERVIEW_TOTAL);
+});

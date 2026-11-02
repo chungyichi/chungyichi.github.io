@@ -6,7 +6,7 @@ import { shareDescription } from "./meta.mjs";
 import { tagsIndexPath } from "../src/tags.mjs";
 import { gridOf, pickFeaturedToys, TOYS_SECTION } from "../src/toys.mjs";
 import { entriesOfSection, tagCounts } from "../src/grid-core.mjs";
-import { resolveGear, filledSets, overviewMode } from "../src/gear.mjs";
+import { resolveGear, filledSets, overviewMode, collectionMore } from "../src/gear.mjs";
 import { evaluateAchievements, resolveProfile, questLog } from "../src/achievements.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
@@ -64,6 +64,7 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
       set.profile = resolveProfile(gear?.[set.owner]?.profile, list, lang);
       set.achievements = list;
       set.log = questLog(model.byLang[lang], set.owner);
+      set.more = collectionMore(model.byLang[lang], set.owner, new Set(set.slots.filter((d) => d.item).map((d) => `${d.item.section}/${d.item.slug}`)));
     }
     routes.push({ path: `/${lang}/`, kind: "home", lang, alternates: alt(`/${lang}/`, lang), shareKey: "home",
       props: { gear: filledSets(gearSets), gearOverview: overviewMode(gear), featured: homeList(model.byLang[lang], featured, homePosts).map(brief), toys: pickFeaturedToys(model.byLang[lang], featuredToys).map(toySlide) } });

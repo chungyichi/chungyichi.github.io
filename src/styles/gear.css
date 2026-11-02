@@ -48,13 +48,12 @@ button.slot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2p
   font-size: clamp(0.6rem, 2.6vw, 0.72rem); line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: no-preference) { button.slot { transition: box-shadow 0.15s, transform 0.15s; } button.slot:hover { transform: translateY(-2px); } }
 
-/* The avatar: a soft silhouette in the owner's colour, the owner icon big on it, the name and the count. */
+/* The avatar: the moving ASCII figure of the overview (a cloud with no words) on a soft glow in the owner's colour, then the name. */
 .gear-avatar { --owner: var(--accent); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; padding: 0 0 0.5rem; text-align: center;
   border-radius: var(--radius-lg); overflow: hidden; background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--owner) 14%, transparent), transparent 72%); }
-.gear-figure { position: absolute; inset: 3% 8% auto; width: 84%; height: 86%; fill: color-mix(in srgb, var(--owner) 17%, transparent); }
-.gear-avatar-icon { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(2.6rem, 11.5vw, 4.2rem); line-height: 1; color: var(--owner); margin-top: 18%; }
+.gear-avatar .wc-host { flex: 1; display: flex; width: 100%; min-height: 0; }
+.gear-avatar .wc { --wc-R: min(5.6rem, 22vw); flex: 1; width: 100%; height: 100%; min-height: calc(var(--wc-R) * 1.6); margin: 0; cursor: default; }
 .gear-name { position: relative; margin: 0.2rem 0 0; max-width: 100%; font-size: 1.05rem; line-height: 1.3; font-weight: 700; letter-spacing: 0.05em; overflow-wrap: anywhere; }
-.gear-count { position: relative; margin: 0.1rem 0 0; font: 0.72rem/1.3 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* Level, title and mood under the name on a sheet. */
 .gear-level { position: relative; margin: 0.15rem 0 0; max-width: 100%; font-size: 0.8rem; line-height: 1.35; font-weight: 600; color: var(--fg); overflow-wrap: anywhere; }
@@ -127,7 +126,7 @@ html:has(.gear-dialog[open]) { overflow: hidden; }
 .gear-overview .wc { --wc-R: min(10rem, 34vw); width: 100%; margin-top: 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }   /* a word crossing the side fades out instead of being cut */
 .gear-overview .wc-host { width: 100%; }
 .gear-lonely { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 1.2rem 0 0.4rem; color: var(--muted); }
-.gear-lonely .wc-center { position: static; transform: none; font-size: 0.8rem; color: var(--owner); }
+.gear-lonely .wc-center { position: static; transform: none; animation: none; font-size: 0.8rem; color: var(--owner); }
 .gear-lonely p { margin: 0; }
 /* Words coloured by rarity: a soft halo in the page colour keeps the light and the grey ones readable on either background. */
 .wc-word[class*="rarity-"] { color: var(--rarity); text-shadow: 0 0 3px var(--bg), 0 0 1px var(--bg), 0 0 6px var(--bg); }

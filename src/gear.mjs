@@ -1,6 +1,6 @@
 // The equipment slots (裝備欄) of the home page: a character-sheet style showcase of the best toys and games of each person.
 // Pure (no DOM), shared by the build (scripts/routes.mjs, scripts/check.mjs), the page (src/Gear.tsx) and the tests.
-import { validateProfile } from "./achievements.mjs";
+import { validateProfile, GAMES_OWNER } from "./achievements.mjs";
 // The data is `gear` in site.config.mjs: { me: { head: { item: "toys/slug", rarity: "epic" }, ... }, son: {...}, brother: {...} }.
 
 /** The rarities, weakest first. The colours are CSS tokens in src/styles/gear.css (--rarity-<id>); the word is always shown too (never colour alone). */
@@ -105,6 +105,8 @@ export const OVERVIEW_MODES = ["items", "title"];
 export const overviewMode = (gear) => (gear?.overview === "title" ? "title" : "items");
 /** Most words in one overview cloud, and the length (in CJK characters; a Latin letter counts 0.6) that a label is cut to. */
 export const OVERVIEW_MAX = 18, LABEL_WIDTH = 10;
+/** The cloud is a sphere you can turn all the way round, so it can hold more: the equipped items (at most OVERVIEW_MAX, big) plus small words from the rest of the collection up to this many in all. */
+export const OVERVIEW_TOTAL = 30;
 
 /** Size options of the overview cloud (src/wordcloud.mjs DEFAULTS): smaller labels than a tag cloud, because the stick figure needs the middle; boxR matches --wc-R of .gear-overview (34vw, at most 10rem; 8.5rem at 400px). */
 export const OVERVIEW_TUNE = { minRem: 0.72, maxRem: 1.05, fitFrom: 8, fitMin: 0.65, boxR: 8.5, fade: 0.3 };
@@ -129,6 +131,20 @@ export function shortTitle(title, max = LABEL_WIDTH) {
 }
 
 /**
+ * The rest of one person's collection for the cloud, besides what is equipped: their toys (not wish-list ones), their books and (for GAMES_OWNER) the games,
+ * newest first inside each shelf and taken in turns (game, book, toy, game, ...) so no shelf takes over. Returns [{ section, slug, title }].
+ * @param {any[]} posts one language's published posts @param {string} owner @param {Set<string>} equipped "section/slug" keys already on the sheet @param {number} max
+ */
+export function collectionMore(posts, owner, equipped, max = OVERVIEW_TOTAL - OVERVIEW_MAX) {
+  const shelf = (section, mine) => posts.filter((p) => p.section === section && mine(p) && !equipped.has(`${p.section}/${p.slug}`))
+    .sort((a, b) => (b.date || "").localeCompare(a.date || "") || a.slug.localeCompare(b.slug)).map((p) => ({ section: p.section, slug: p.slug, title: p.title }));
+  const shelves = [shelf("games", () => owner === GAMES_OWNER), shelf("books", (p) => p.owner === owner), shelf("toys", (p) => p.owner === owner && p.status !== "want")];
+  const out = [];
+  for (let i = 0; out.length < max && shelves.some((s) => i < s.length); i++) for (const s of shelves) if (i < s.length && out.length < max) out.push(s[i]);
+  return out;
+}
+
+/**
  * The words that orbit the stick figure of one person (for src/WordCloud.tsx): [{ label, count, percent, title?, href?, ref?, tone? }] biggest first, at most OVERVIEW_MAX.
  * "items": the equipped things, the rarest first (then in slot order); count = rarity rank (1 poor .. 6 legendary), tone = the rarity id (the colour), ref = the slot id
  * (the click opens the dialog of that slot), href = the item's page (the way without JavaScript), title = the full title.
@@ -144,9 +160,13 @@ export function overviewWords(set, mode, fmt) {
     ].filter(Boolean).slice(0, OVERVIEW_MAX);
     return labels.map((label, i) => ({ label: shortTitle(label, LABEL_WIDTH + 2), count: labels.length - i, percent: 0, title: label, plain: true }));
   }
-  return set.slots.map((d, order) => ({ d, order })).filter(({ d }) => d.item)
+  const equipped = set.slots.map((d, order) => ({ d, order })).filter(({ d }) => d.item)
     .sort((a, b) => RARITY_IDS.indexOf(b.d.rarity) - RARITY_IDS.indexOf(a.d.rarity) || a.order - b.order).slice(0, OVERVIEW_MAX)
     .map(({ d }) => ({ label: shortTitle(d.item.title), count: RARITY_IDS.indexOf(d.rarity) + 1, percent: 0, title: d.item.title, href: fmt.href(d.item), ref: d.slot, tone: d.rarity }));
+  // the rest of the collection: the smallest, plainest words (the weight of a poor item), a link to the item, no slot
+  const more = (set.more ?? []).slice(0, Math.max(0, OVERVIEW_TOTAL - equipped.length))
+    .map((it) => ({ label: shortTitle(it.title), count: 1, percent: 0, title: it.title, href: fmt.href(it), tone: "poor" }));
+  return [...equipped, ...more];
 }
 
 /**

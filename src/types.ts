@@ -23,7 +23,7 @@ export type AchievementState = { id: string; name: string; desc: string; title: 
 /** The reading summary (閱歷) of a person: their books as finished quests, counted (questLog). `volumes` counts listed volumes only, `web` the books that list none. */
 export type QuestLog = { done: number; volumes: number; web: number; games: number };
 /** One person's sheet: all slots in the order of SLOTS, `filled` of them with an item; plus the 閱歷 tab (achievements and quest log). */
-export type GearSet = { owner: string; filled: number; slots: GearSlotData[]; profile: GearProfile; achievements: AchievementState[]; log: QuestLog };
+export type GearSet = { owner: string; filled: number; slots: GearSlotData[]; profile: GearProfile; achievements: AchievementState[]; log: QuestLog; more?: { section: string; slug: string; title: string }[] };
 
 
 export type Route =

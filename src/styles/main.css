@@ -254,6 +254,28 @@ span.wc-word:hover { text-decoration: none; }
 .wc-center { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -50%); font: calc(var(--wc-R) * 0.12)/1.05 var(--font-mono, monospace); white-space: pre; color: var(--wc-color, var(--fg)); pointer-events: none; text-shadow: 0 0 3px var(--bg), 0 0 1px var(--bg), 0 0 6px var(--bg); }   /* a halo in the page colour: a word passing behind does not scribble over the glyphs */
 .wc-frames { width: 19ch; text-align: left; }   /* the frames of the walking hero / hopping bunny are placed with leading spaces inside 19 columns */
 .wc-fx { width: calc(var(--wc-R) * 1.5); height: calc(var(--wc-R) * 1); text-shadow: none; }   /* the canvas of the swimming shark replaces the <pre> */
+/* On a wide screen the figure is bigger and drifts up, down and sideways slowly (the `translate` property, so it does not fight the centring transform); a phone keeps it still and small. */
+@media (min-width: 50rem) and (prefers-reduced-motion: no-preference) {
+  .wc-center { font-size: calc(var(--wc-R) * 0.16); animation: wc-wander 13s ease-in-out infinite; }
+  .wc-fx { width: calc(var(--wc-R) * 1.9); height: calc(var(--wc-R) * 1.25); }
+  @keyframes wc-wander {
+    0%, 100% { translate: calc(var(--wc-R) * -0.14) calc(var(--wc-R) * -0.32); }
+    25% { translate: calc(var(--wc-R) * 0.16) calc(var(--wc-R) * -0.06); }
+    50% { translate: calc(var(--wc-R) * 0.05) calc(var(--wc-R) * 0.32); }
+    75% { translate: calc(var(--wc-R) * -0.16) calc(var(--wc-R) * 0.1); }
+  }
+  /* The slot sheet's middle cell is tall and empty: a bigger figure that roams over most of its height. */
+  .gear-avatar .wc { --wc-R: 8.5rem; }
+  .gear-avatar .wc-center { font-size: calc(var(--wc-R) * 0.17); animation-name: wc-roam; animation-duration: 21s; }
+  .gear-avatar .wc-fx { width: calc(var(--wc-R) * 2); height: calc(var(--wc-R) * 1.3); }
+  @keyframes wc-roam {
+    0%, 100% { translate: calc(var(--wc-R) * -0.25) calc(var(--wc-R) * -1.05); }
+    20% { translate: calc(var(--wc-R) * 0.3) calc(var(--wc-R) * -0.45); }
+    40% { translate: calc(var(--wc-R) * -0.2) calc(var(--wc-R) * 0.1); }
+    60% { translate: calc(var(--wc-R) * 0.28) calc(var(--wc-R) * 0.7); }
+    80% { translate: calc(var(--wc-R) * -0.3) calc(var(--wc-R) * 0.95); }
+  }
+}
 .wc-word:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; background: var(--bg, transparent); opacity: 1 !important; z-index: 2000 !important; }
 .toy-hero-info .badges { margin-top: 0.3rem; }
 .toy-hero:not(.has-pic) .toy-hero-info { max-width: var(--measure); }

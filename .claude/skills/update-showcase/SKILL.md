@@ -28,8 +28,8 @@ Content changes leave the showcase stale and it is easy to forget one part. Go t
 Level, title, mood: none are set. Only the user writes them. Do not add sample values.
 
 ## 4. Word cloud (home overview)
-- It has no list of its own: the words are the equipped items of each person (`overviewWords` in `src/gear.mjs`; `gear.overview: "items" | "title"`). So step 1 *is* the cloud update.
-- More than about 12 items for one person crowds the sphere: look at it in the browser (knobs `OVERVIEW_TUNE` in `src/gear.mjs`, `CENTER_BOX` in `src/wordcloud.mjs`).
+- No list of its own: the big words are the equipped items of each person (`overviewWords` in `src/gear.mjs`; `gear.overview: "items" | "title"`), so step 1 updates them. The small words are the rest of the collection (`collectionMore`: the person's toys, books and, for me, games, newest first, in turns; up to `OVERVIEW_TOTAL` = 30 in all), so new books and games appear by themselves, no config.
+- The sphere turns all the way round, so many words are fine; if it looks crowded in the browser, tune `OVERVIEW_TOTAL` / `OVERVIEW_TUNE` in `src/gear.mjs` and `CENTER_BOX` in `src/wordcloud.mjs`.
 
 ## 5. Other numbers and lists on the home page
 - `featuredToys` (the toy carousel) — still published? Still the ones the user wants?
