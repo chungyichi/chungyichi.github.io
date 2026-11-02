@@ -19,7 +19,7 @@ export async function main() {
   const posts = selectPublished(loadPosts(), today);
   const model = buildModel(posts, site.langs, site.sections);
   const pages = loadPages();
-  const routes = buildRoutes(model, pages, { fileExists: (u) => publishedFileExists(u) });
+  const routes = buildRoutes(model, pages, { fileExists: (u) => publishedFileExists(u), warn: (m) => console.warn(`warning: ${m}`) });
 
   await build({ logLevel: "warn" });                                     // client: dist/assets + manifest
   rmSync(".ssr", { recursive: true, force: true });

@@ -6,12 +6,12 @@ import hljs from "highlight.js/lib/common";
 import { ContentError } from "./errors.mjs";
 import { sanitizeHtml } from "./sanitize.mjs";
 import { tagSlug } from "../src/tags.mjs";
-import { gridOf, TOY_STATUSES, BOOK_OWN, SECTION_KEYS, resolveAuthors } from "../src/toys.mjs";
+import { gridOf, TOY_STATUSES, BOOK_OWN, BOOK_TYPES, SECTION_KEYS, resolveAuthors } from "../src/toys.mjs";
 
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author", "volumes", "own"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author", "volumes", "own", "original", "type", "platform", "developer"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
 // Toys (content/toys/): one post per toy. `owner: me` says whose it is (the ids are in site.config.mjs; scripts/check.mjs compares),
@@ -19,9 +19,12 @@ const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 // `price: "NT$15,525"` is shown as written (text, so any currency or "about 500" works), `quantity: 2` how many of the same toy
 // (a whole number from 1; absent is 1; the pages only mention it from 2 up).
 // Books (content/books/) take `owner` (who reads it) and `source`, and `author`; a book without a summary uses its author line as the summary.
+// `original: "SSS급 ... / SSS-Class ..."` (books): the original and English titles, shown under the title and searchable (the parts between " / " too).
+// Books also take `type: 漫畫` (小說 when absent). Games (content/games/) take `platform` (one or more ids of the games grid `platforms` in site.config.mjs, comma separated; check.mjs wants it
+// to publish), `status` (playing | done | backlog | want; absent = none shown), `developer` and `original`.
 // `own: no` marks a book you only read (web novel, online comic; absent = a physical copy); the post then has `own: false`.
 const OWNER_RE = /^[a-z][a-z0-9-]{0,20}$/;
-const MAX_AUTHOR = 80, MAX_VOLUMES = 100;
+const MAX_AUTHOR = 80, MAX_VOLUMES = 100, MAX_ORIGINAL = 160, MAX_DEVELOPER = 60;
 export const MAX_PRICE = 40;
 /** A toy's shop address: http(s) only, no credentials, parseable; anything else is refused (it becomes a link on the page). */
 export function checkSourceUrl(raw, where = "post") {
@@ -117,17 +120,6 @@ export function normalizeTags(raw, where = "post") {
   return out;
 }
 
-/** The tags used by a list of posts (one language): [{ tag, slug, posts }] by number of posts, then name. */
-export function collectTags(posts) {
-  const by = new Map();
-  for (const p of posts) for (const tag of p.tags || []) {
-    const slug = tagSlug(tag);
-    if (!by.has(slug)) by.set(slug, { tag, slug, posts: [] });
-    by.get(slug).posts.push(p);
-  }
-  return [...by.values()].sort((a, b) => b.posts.length - a.posts.length || a.slug.localeCompare(b.slug));
-}
-
 /** Turn one file into a post object, or throw a ContentError that names the file. */
 export function parsePost(filename, text, md = createMarkdown(), section = "tech") {
   const fm = FILE_RE.exec(filename);
@@ -158,8 +150,15 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   }
   if ("author" in data && !(typeof data.author === "string" && data.author.trim() && data.author.trim().length <= MAX_AUTHOR)) throw new ContentError(`${filename}: 'author' must be a short text (at most ${MAX_AUTHOR} characters)`);
   if ("owner" in data && !(typeof data.owner === "string" && OWNER_RE.test(data.owner))) throw new ContentError(`${filename}: 'owner' must be a short id such as me or son`);
+  if ("original" in data && !(typeof data.original === "string" && data.original.trim() && data.original.trim().length <= MAX_ORIGINAL)) throw new ContentError(`${filename}: 'original' must be a short text (at most ${MAX_ORIGINAL} characters), such as "원제 / English title"`);
   if ("own" in data && !BOOK_OWN.includes(data.own)) throw new ContentError(`${filename}: 'own' must be one of ${BOOK_OWN.join(", ")}`);
-  if ("status" in data && !TOY_STATUSES.includes(data.status)) throw new ContentError(`${filename}: 'status' must be one of ${TOY_STATUSES.join(", ")}`);
+  const statuses = TOY_STATUSES;
+  if ("status" in data && !statuses.includes(data.status)) throw new ContentError(`${filename}: 'status' must be one of ${statuses.join(", ")}`);
+  if ("type" in data && !(data.type in BOOK_TYPES)) throw new ContentError(`${filename}: 'type' must be one of ${Object.keys(BOOK_TYPES).join(", ")}`);
+  const platforms = (gridOf(section)?.platforms ?? []).map((x) => x.id);
+  const platform = "platform" in data ? String(data.platform).split(/[,，、]/).map((x) => x.trim()).filter(Boolean) : [];
+  if ("platform" in data && (!platform.length || new Set(platform).size !== platform.length || platform.some((x) => !platforms.includes(x)))) throw new ContentError(`${filename}: 'platform' must be one or more of ${platforms.join(", ")}, each once, such as platform: steam, ps (site.config.mjs, games grid.platforms)`);
+  if ("developer" in data && !(typeof data.developer === "string" && data.developer.trim() && data.developer.trim().length <= MAX_DEVELOPER)) throw new ContentError(`${filename}: 'developer' must be a short text (at most ${MAX_DEVELOPER} characters)`);
   if ("price" in data && !(typeof data.price === "string" && data.price.trim() && data.price.trim().length <= MAX_PRICE)) throw new ContentError(`${filename}: 'price' must be a short text such as "NT$1,250" (quote it; at most ${MAX_PRICE} characters)`);
   if ("quantity" in data && !/^[1-9]\d{0,5}$/.test(String(data.quantity).trim())) throw new ContentError(`${filename}: 'quantity' must be a whole number from 1 up (how many of this toy), such as quantity: 2`);
   return {
@@ -167,7 +166,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
-    owner: data.owner || "", own: data.own !== "no", author: (data.author || "").trim(), volumes: data.volumes || [], source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
+    owner: data.owner || "", own: data.own !== "no", original: (data.original || "").trim(), type: "type" in data ? BOOK_TYPES[data.type] : section === "books" ? "novel" : "", platform, developer: (data.developer || "").trim(), author: (data.author || "").trim(), volumes: data.volumes || [], source: "source" in data ? checkSourceUrl(data.source, filename) : "", status: data.status || "", price: (data.price || "").trim(),
     quantity: "quantity" in data ? Number(String(data.quantity).trim()) : 1,
     html: ext === "html" ? (data.trusted === true ? body : sanitizeHtml(body, filename)) : md.render(body),
     words: countWords(ext === "html" ? body : md.render(body)),
@@ -212,16 +211,7 @@ export function paginate(items, perPage) {
   return Array.from({ length: pages }, (_, i) => ({ number: i + 1, total: pages, items: items.slice(i * perPage, (i + 1) * perPage) }));
 }
 
-/** Group an already-sorted list by date, like the reference blog's index. */
-export function groupByDate(items) {
-  const groups = [];
-  for (const p of items) {
-    const last = groups[groups.length - 1];
-    if (last && last.date === p.date) last.items.push(p);
-    else groups.push({ date: p.date, items: [p] });
-  }
-  return groups;
-}
+export { groupByDate } from "../src/grid-core.mjs";
 
 const unescapeText = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&amp;/g, "&");
 
@@ -230,13 +220,32 @@ export function headingsOf(html) {
   return [...html.matchAll(/<h[2-4](?:\s[^>]*)?>([\s\S]*?)<\/h[2-4]>/g)].map((m) => unescapeText(m[1].replace(/<[^>]*>/g, "")).replace(/\s+/g, " ").trim()).filter(Boolean);
 }
 
-/** The search index for one language: title, summary, headings, date, section title and address. Titles and summaries only; no body text. */
-export function buildSearchIndex(posts, lang, sectionTitleOf) {
-  return posts.filter((p) => p.lang === lang).map((p) => ({
-    t: p.title, s: p.summary, h: [...headingsOf(p.html), ...(p.volumes || []), ...(p.author ? p.author.split(", ") : [])], g: p.tags || [], d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
-    // grid posts only (kept out of the other entries to keep the index small): owner id `o`, and `w: 0` for a book you only read (own: no)
-    ...(gridOf(p.section) ? { ...(p.owner ? { o: p.owner } : {}), ...(p.own === false ? { w: 0 } : {}) } : {}),
-  }));
+/** An author's names for search: the one spelling plus its aliases (original script, English), so "Stephen King" finds 史蒂芬．金. */
+const authorSearchNames = (author) => (author ? author.split(", ").flatMap((name) => { const a = (gridOf("books")?.authors ?? []).find((x) => x.name === name); return a ? [a.name, ...(a.aliases ?? [])] : [name]; }) : []);
+
+/** A book's original/English titles for search: the whole line and each part between slashes. */
+const originalNames = (original) => (original ? [original, ...original.split("/").map((x) => x.trim()).filter((x) => x && x !== original)] : []);
+
+const platformTitle = (p, id) => (gridOf(p.section)?.platforms ?? []).find((x) => x.id === id)?.title ?? id;
+
+/**
+ * The search index for one language: title, summary, headings, date, section title and address. Titles and summaries only; no body text.
+ * It is also the data of the grid pages and the tag page (src/grid-core.mjs), so a card's facts are in it: `im` 1 = thumb.webp, 2 = card.webp
+ * exist (`fileExists(path)` says), `a` author, `st: 1` wish list, `q` quantity from 2.
+ */
+export function buildSearchIndex(posts, lang, sectionTitleOf, fileExists = () => false) {
+  return posts.filter((p) => p.lang === lang).map((p) => {
+    const dir = `/media/${p.section}/${p.slug}`, grid = gridOf(p.section);
+    const im = (fileExists(`${dir}/thumb.webp`) ? 1 : 0) | (grid && fileExists(`${dir}/card.webp`) ? 2 : 0);
+    return {
+      t: p.title, s: p.summary, h: [...headingsOf(p.html), ...(p.volumes || []), ...authorSearchNames(p.author), ...originalNames(p.original), ...(p.platform || []).map((id) => platformTitle(p, id))], g: p.tags || [], d: p.date, c: sectionTitleOf(p.section), u: postPath(lang, p.section, p.slug),
+      ...(im ? { im } : {}),
+      // grid posts only (kept out of the other entries to keep the index small): owner id `o`, `w: 0` for a book you only read (own: no),
+      // `ty: "comic"` for a comic (a novel is the default), a game's platform ids `pf`, a book's author `a`, `st: 1` for a toy on the wish list, `q` quantity
+      ...(grid ? { ...(p.owner ? { o: p.owner } : {}), ...(p.own === false ? { w: 0 } : {}), ...(p.type === "comic" ? { ty: "comic" } : {}), ...(p.platform?.length ? { pf: p.platform } : {}),
+        ...(p.author ? { a: p.author } : {}), ...(p.status === "want" ? { st: 1 } : {}), ...((p.quantity || 1) >= 2 ? { q: p.quantity } : {}) } : {}),
+    };
+  });
 }
 
 /** Hosts a piece of trusted content talks to (scripts, frames, stylesheets, images, fetches): shown by `npm run check` so nothing third-party sneaks in unnoticed. */

@@ -31,3 +31,14 @@ export function metaTags(route, { siteName, baseUrl, title, description, image, 
     tag("name", "twitter:description", description), tag("name", "twitter:image", image?.url), tag("name", "author", author));
   return lines.filter(Boolean).join("\n    ");
 }
+
+/**
+ * The share description of a page from site.meta: meta[key].description[lang] with {n} replaced by `count`.
+ * Returns "" when there is no entry, or when the text needs {n} and there is nothing yet (a language without posts says nothing wrong, e.g. "0 items");
+ * the caller then keeps the page's old description.
+ */
+export function shareDescription(meta, key, lang, count = 0) {
+  const text = meta?.[key]?.description?.[lang];
+  if (!text || (String(text).includes("{n}") && !count)) return "";
+  return String(text).replaceAll("{n}", String(count));
+}

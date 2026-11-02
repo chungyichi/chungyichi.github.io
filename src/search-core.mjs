@@ -62,10 +62,15 @@ export function search(prepared, query, limit = 50, accept = null) {
 }
 
 /**
- * The owner / own filters of a grid section on the search page. `o` is the entry's owner id, `w` is 0 for a book you only read (absent = owned);
- * both exist only on grid posts. "" means no filter.
+ * The owner and facet filters of a grid section on the search page. Index fields (grid posts only): `o` owner id, `w` 0 for a book you only read,
+ * `ty` "comic" for a comic (absent = novel), `pf` a game's platform ids, `filters` is { own, type, platform }; "" or absent = no filter.
  */
-export const inFilter = (entry, owner = "", own = "") => (!owner || entry.o === owner) && (!own || (own === "no") === (entry.w === 0));
+const FACET_MATCH = {
+  own: (e, v) => (v === "no") === (e.w === 0),
+  type: (e, v) => (e.ty ?? "novel") === v,
+  platform: (e, v) => (e.pf || []).includes(v),
+};
+export const inFilter = (entry, owner = "", filters = {}) => (!owner || entry.o === owner) && Object.entries(filters).every(([id, v]) => !v || FACET_MATCH[id]?.(entry, v));
 
 /** Every accepted entry, newest first, up to the limit: browsing by a filter alone (an empty keyword).
  * @param {any} prepared @param {number} [limit] @param {((entry: any) => boolean) | null} [accept] */

@@ -1,16 +1,12 @@
 // Assemble one HTML document. Shared by the build and the dev server.
 import { site } from "../site.config.mjs";
 import { metaTags } from "./meta.mjs";
+import { seasonDataTag, SEASON_INIT } from "../src/season-core.mjs";
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 // Runs before first paint so the page never flashes the wrong theme.
 const THEME_INIT = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
-
-// Halloween season, decided in the browser (the site is built once, so a build-time check would go stale).
-// On from Oct 15 through Nov 2 by the date in Asia/Taipei (UTC+8, no DST), every year. Order: ?season=halloween|off,
-// then a saved "off" choice, then the date. data-season-window="1" tells the toggle button it may show itself.
-const SEASON_INIT = `try{var d=document.documentElement,m=/[?&]season=(halloween|off)\\b/.exec(location.search),o=m&&m[1],x=new Date(Date.now()+288e5),mo=x.getUTCMonth(),dy=x.getUTCDate(),w=(mo===9&&dy>=15)||(mo===10&&dy<=2),s="";try{s=localStorage.getItem("season")}catch(e){}if(o==="halloween"||(!o&&w&&s!=="off")){d.dataset.season="halloween"}if(o==="halloween"||w)d.dataset.seasonWindow="1"}catch(e){}`;
 
 // Google Analytics 4, only when site.analytics.gaId is set. Skipped for readers who send Do Not Track, and never in the dev server.
 // Google signals and ad personalisation are off; the page view is the only thing counted.
@@ -33,7 +29,7 @@ export function document_({ route, rendered, assets, analytics = true }) {
     : `\n    <script>(function(){var l=(navigator.languages&&navigator.languages[0])||navigator.language||"";location.replace("/"+(/^zh/i.test(l)?"zh":"en")+"/")})()</script>`;
   const redirect = route.kind === "entry"
     ? `<meta http-equiv="refresh" content="0; url=/${site.defaultLang}/">${langPick}`
-    : route.kind === "tags" ? `<meta http-equiv="refresh" content="0; url=/${lang}/search/">` : "";
+    : "";
   const css = (assets.css || []).map((h) => `<link rel="stylesheet" href="${esc(h)}">`).join("\n    ");
   const postCss = route.postCss ? `<link rel="stylesheet" href="${esc(route.postCss.href)}">` : "";
   return `<!doctype html>
@@ -51,6 +47,7 @@ export function document_({ route, rendered, assets, analytics = true }) {
     ${css}
     ${postCss}
     <script>${THEME_INIT}</script>
+    ${seasonDataTag(site.seasons ?? [], new Date(), lang)}
     <script>${SEASON_INIT}</script>
     ${analytics ? analyticsTags(site.analytics?.gaId) : ""}
   </head>

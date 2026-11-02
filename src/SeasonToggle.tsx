@@ -1,54 +1,62 @@
 import { useEffect, useState } from "react";
+import { SeasonArt } from "./SeasonArt";
 
 export const SEASON_ISLAND_ID = "season-island";
 
-/** Fixed, deterministic flight plans (vw / vh waypoints). Decorative only; CSS hides the whole layer under reduced motion. */
-const FLIERS = [
-  { k: "bat", s: 34, dur: 38, delay: -4, o: 0.55, w: [[-12, 20], [30, 8], [55, 38], [80, 14], [112, 30]] },
-  { k: "bat", s: 26, dur: 31, delay: -19, o: 0.5, w: [[112, 60], [78, 72], [50, 50], [22, 80], [-12, 64]] },
-  { k: "bat", s: 40, dur: 52, delay: -30, o: 0.45, w: [[-12, 78], [24, 60], [48, 86], [74, 58], [112, 82]] },
-  { k: "bat", s: 22, dur: 27, delay: -9, o: 0.55, w: [[112, 10], [84, 30], [58, 12], [30, 36], [-12, 18]] },
-  { k: "bat", s: 30, dur: 44, delay: -36, o: 0.5, w: [[30, 112], [20, 80], [46, 56], [38, 26], [60, -12]] },
-  { k: "pumpkin", s: 34, dur: 62, delay: -12, o: 0.55, w: [[-12, 40], [18, 52], [44, 34], [70, 48], [112, 36]] },
-  { k: "pumpkin", s: 26, dur: 74, delay: -46, o: 0.5, w: [[112, 88], [82, 70], [58, 90], [28, 72], [-12, 92]] },
-  { k: "pumpkin", s: 42, dur: 90, delay: -58, o: 0.4, w: [[70, 112], [76, 84], [62, 62], [86, 40], [92, -12]] },
-] as const;
+type Info = { id: string; icon: string; name: string; art: string; interaction: string };
 
-function Sky() {
-  return (
-    <div className="season-sky" aria-hidden="true">
-      {FLIERS.map((f, i) => {
-        const style: Record<string, string | number> = { "--s": `${f.s}px`, "--dur": `${f.dur}s`, "--delay": `${f.delay}s`, "--o": f.o };
-        f.w.forEach(([x, y], n) => { style[`--x${n}`] = `${x}vw`; style[`--y${n}`] = `${y}vh`; });
-        return <span key={i} className={`flier ${f.k}`} style={style}><i /></span>;
-      })}
-    </div>
-  );
+/** The seasons table of this page: the JSON that scripts/template.mjs writes and the inline script already read. */
+function readInfo(): Info | null {
+  const id = document.documentElement.dataset.seasonWindow;
+  try {
+    const m = JSON.parse(document.getElementById("season-data")?.textContent ?? "{}").m as Record<string, string[]> | undefined;
+    const row = id && m && Object.hasOwn(m, id) ? m[id] : null;
+    return row && id ? { id, icon: row[0] ?? "", name: row[1] ?? id, art: row[2] ?? "", interaction: row[3] ?? "" } : null;
+  } catch { return null; }
 }
 
 /**
- * Shown only in the Halloween window (or with ?season=halloween), and only when JavaScript runs.
- * Server and first client render are both empty, so hydration always matches.
+ * One button for whichever season is current: shown only inside a season's window (or with ?season=<id>), and only when JavaScript runs.
+ * Server and first client render are both empty, so hydration always matches. The inline script (src/season-core.mjs) sets
+ * data-season (decoration on) and data-season-window (which season this button belongs to); this component draws the layer and keeps both in step.
  */
 export function SeasonToggle({ label }: { label: string }) {
-  const [on, setOn] = useState<boolean | null>(null);
+  const [info, setInfo] = useState<Info | null>(null);
+  const [on, setOn] = useState(false);
   useEffect(() => {
-    const d = document.documentElement.dataset;
-    setOn(d.seasonWindow === "1" ? d.season === "halloween" : null);
+    const i = readInfo();
+    setInfo(i);
+    setOn(!!i && document.documentElement.dataset.season === i.id);
   }, []);
-  if (on === null) return null;
+  // Animations stop while the tab is hidden (the layers' CSS reads this class).
+  useEffect(() => {
+    if (!on) return;
+    const sync = () => document.documentElement.classList.toggle("season-paused", document.hidden);
+    document.addEventListener("visibilitychange", sync);
+    return () => { document.removeEventListener("visibilitychange", sync); document.documentElement.classList.remove("season-paused"); };
+  }, [on]);
+  // Touch and pointer interactions live in a small module that is fetched only for a season that has one.
+  useEffect(() => {
+    if (!on || !info?.interaction) return;
+    let stop = () => {}, gone = false;
+    void import("./season-client").then((m) => { if (!gone) stop = m.attach(info.interaction); });
+    return () => { gone = true; stop(); };
+  }, [on, info]);
+  if (!info) return null;
   function toggle() {
+    if (!info) return;
     const next = !on;
     setOn(next);
-    if (next) document.documentElement.dataset.season = "halloween";
+    if (next) document.documentElement.dataset.season = info.id;
     else delete document.documentElement.dataset.season;
-    try { localStorage.setItem("season", next ? "on" : "off"); } catch { /* the choice just isn't remembered */ }
+    try { if (next) localStorage.removeItem("season-off"); else localStorage.setItem("season-off", info.id); } catch { /* the choice just isn't remembered */ }
   }
+  const text = label.replace("{name}", info.name);
   return (
     <>
-      {on && <Sky />}
-      <button type="button" className="theme season-toggle" onClick={toggle} aria-label={label} title={label} aria-pressed={on}>
-        <span aria-hidden="true">🎃</span>
+      {on && <SeasonArt art={info.art} />}
+      <button type="button" className="theme season-toggle" onClick={toggle} aria-label={text} title={text} aria-pressed={on}>
+        <span aria-hidden="true">{info.icon}</span>
       </button>
     </>
   );

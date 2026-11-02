@@ -1,0 +1,147 @@
+/* Equipment block (裝備欄) of the home page: sheets, the 閱歷 tab and the item dialog (src/Gear.tsx, src/gear-client.ts). Plain CSS and SVG, no outside art. */
+
+/* Rarity colours: a border and glow on the slot, the colour of the dialog's border, top bar and title. The rarity WORD is always written too, so colour is never the only cue.
+   Light values are dark enough for text on white; "common" is white in dark mode and near-black in light mode (white would vanish on a white page). */
+:root {
+  --rarity-poor: #6b7280; --rarity-common: #2b2f36; --rarity-uncommon: #187a33; --rarity-rare: #1a62bf; --rarity-epic: #8438c9; --rarity-legendary: #b85300;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --rarity-poor: #8a919b; --rarity-common: #f4f5f7; --rarity-uncommon: #55d68a; --rarity-rare: #62adff; --rarity-epic: #c697ff; --rarity-legendary: #ff9d42;
+  }
+}
+:root[data-theme="dark"] {
+  --rarity-poor: #8a919b; --rarity-common: #f4f5f7; --rarity-uncommon: #55d68a; --rarity-rare: #62adff; --rarity-epic: #c697ff; --rarity-legendary: #ff9d42;
+}
+.rarity-poor { --rarity: var(--rarity-poor); }
+.rarity-common { --rarity: var(--rarity-common); }
+.rarity-uncommon { --rarity: var(--rarity-uncommon); }
+.rarity-rare { --rarity: var(--rarity-rare); }
+.rarity-epic { --rarity: var(--rarity-epic); }
+.rarity-legendary { --rarity: var(--rarity-legendary); }
+.gear-rarity { color: var(--rarity); font-weight: 600; }
+
+/* The home carousel: same card and control row as "what we have" (the strip is the card, the controls are a row under it). */
+.home-gear h2 { margin-top: 0; }
+.gallery.home-gear-panel { aspect-ratio: auto; background: none; border-radius: 0; max-width: 100%; }
+.home-gear-panel .gallery-strip { height: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--code-bg) 45%, var(--bg)); }
+.home-gear-panel .gallery-slide { height: auto; min-width: 0; }
+
+/* One sheet: left column | avatar | right column, the two hands under them. Every sheet has all slots, so all slides are the same height. */
+.gear-sheet { --tile: clamp(2.7rem, 13.5vw, 3.9rem); --gap: clamp(0.3rem, 1.4vw, 0.5rem); box-sizing: border-box; min-width: 0; padding: 1rem clamp(0.6rem, 3vw, 1.2rem) 1.1rem; }
+.gear-body { display: grid; grid-template-columns: var(--tile) minmax(0, 1fr) var(--tile); gap: 0 clamp(0.4rem, 2.5vw, 1.2rem); align-items: stretch; max-width: 30rem; margin: 0 auto; }
+.slots { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); }
+.slots-left, .slots-right { grid-auto-rows: var(--tile); align-content: space-between; }
+.slots-bottom { display: flex; justify-content: center; gap: clamp(1rem, 8vw, 2.5rem); margin-top: calc(var(--gap) * 1.6); }
+.slot-cell { position: relative; width: var(--tile); height: var(--tile); }
+
+.slot { box-sizing: border-box; display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 2px solid var(--rarity); border-radius: 0.5rem; background: var(--code-bg); color: var(--fg); font: inherit;
+  box-shadow: 0 0 0.55rem color-mix(in srgb, var(--rarity) 45%, transparent), inset 0 0 0.45rem color-mix(in srgb, var(--rarity) 22%, transparent); }
+button.slot { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.slot:hover { box-shadow: 0 0 0.9rem color-mix(in srgb, var(--rarity) 70%, transparent), inset 0 0 0.45rem color-mix(in srgb, var(--rarity) 30%, transparent); }
+button.slot:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.slot img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.slot .no-thumb { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--muted); opacity: 0.45; }
+.slot .book-tile { padding: 7%; gap: 0; border-radius: 0; font-size: 0.7rem; }
+.slot .book-tile-title { font-size: clamp(0.56rem, 2.5vw, 0.7rem); line-height: 1.2; -webkit-line-clamp: 3; line-clamp: 3; }
+.slot-empty { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line); background: none; box-shadow: none; color: var(--muted); opacity: 0.7;
+  font-size: clamp(0.6rem, 2.6vw, 0.72rem); line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: no-preference) { button.slot { transition: box-shadow 0.15s, transform 0.15s; } button.slot:hover { transform: translateY(-2px); } }
+
+/* The avatar: a soft silhouette in the owner's colour, the owner icon big on it, the name and the count. */
+.gear-avatar { --owner: var(--accent); position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; padding: 0 0 0.5rem; text-align: center;
+  border-radius: var(--radius-lg); overflow: hidden; background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--owner) 14%, transparent), transparent 72%); }
+.gear-figure { position: absolute; inset: 3% 8% auto; width: 84%; height: 86%; fill: color-mix(in srgb, var(--owner) 17%, transparent); }
+.gear-avatar-icon { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; font-size: clamp(2.6rem, 11.5vw, 4.2rem); line-height: 1; color: var(--owner); margin-top: 18%; }
+.gear-name { position: relative; margin: 0.2rem 0 0; max-width: 100%; font-size: 1.05rem; line-height: 1.3; font-weight: 700; letter-spacing: 0.05em; overflow-wrap: anywhere; }
+.gear-count { position: relative; margin: 0.1rem 0 0; font: 0.72rem/1.3 var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Level, title and mood under the name on a sheet. */
+.gear-level { position: relative; margin: 0.15rem 0 0; max-width: 100%; font-size: 0.8rem; line-height: 1.35; font-weight: 600; color: var(--fg); overflow-wrap: anywhere; }
+.gear-mood { position: relative; margin: 0.1rem 0 0.1rem; max-width: 100%; font-size: 0.74rem; line-height: 1.35; color: var(--muted); overflow-wrap: anywhere; }
+.home-gear .gear-note { margin: 0.4rem 0 2rem; color: var(--muted); font-size: 0.85rem; }
+
+/* The tabs 裝備 | 閱歷 above the carousel (shown by the script). */
+.gear-tabs { display: flex; gap: 0.3rem; margin: 0 0 0.6rem; border-bottom: 1px solid var(--line); }
+.gear-tabs[hidden] { display: none; }
+.gear-tabs button { min-height: 2.75rem; min-width: 5rem; padding: 0 1.1rem; margin-bottom: -1px; border: 1px solid transparent; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: none; color: var(--muted); font: inherit; font-size: 1rem; cursor: pointer; }
+.gear-tabs button:hover { color: var(--fg); }
+.gear-tabs button[aria-selected="true"] { border-color: var(--line); border-bottom-color: var(--bg); background: var(--bg); color: var(--fg); font-weight: 700; box-shadow: inset 0 2px 0 var(--accent); }
+
+/* The item dialog: ONE native <dialog>, a card in the middle of the screen. The border, the glow, the top bar and the title take the item's rarity colour. */
+.gear-dialog { box-sizing: border-box; width: min(22rem, calc(100vw - 32px)); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); margin: auto; padding: 0; overflow: hidden auto; overscroll-behavior: contain;
+  border: 2px solid var(--rarity); border-radius: var(--radius-lg); background: var(--bg); color: var(--fg); text-align: left;
+  box-shadow: 0 0 1.4rem color-mix(in srgb, var(--rarity) 45%, transparent), 0 16px 40px -12px rgba(0, 0, 0, 0.55); }
+.gear-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+html:has(.gear-dialog[open]) { overflow: hidden; }
+.gear-card { position: relative; border-top: 0.4rem solid var(--rarity); }
+.gear-close { position: absolute; top: 0.4rem; right: 0.4rem; z-index: 1; display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; padding: 0; border: 1px solid var(--line); border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 85%, transparent); color: var(--fg); font: inherit; font-size: 1.6rem; line-height: 1; cursor: pointer; }
+.gear-close:hover { border-color: var(--accent); color: var(--accent); }
+.gear-card-pic { height: min(13rem, 34vh); height: min(13rem, 34dvh); background: var(--code-bg); }
+.gear-card-pic[hidden] { display: none; }
+.gear-card-pic img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.gear-card-body { padding: 0.8rem 1rem 1rem; }
+.gear-card-body > * { margin: 0 0 0.5rem; }
+.gear-card-title { padding-right: 2.6rem; font-size: 1.15rem; line-height: 1.35; color: var(--rarity); overflow-wrap: anywhere; }
+.gear-card-pic:not([hidden]) + .gear-card-body .gear-card-title { padding-right: 0; }
+.gear-card-meta { font-size: 0.85rem; color: var(--muted); }
+.gear-card-sum { font-size: 0.92rem; line-height: 1.55; overflow-wrap: anywhere; }
+.gear-card-sum[hidden], .gear-card-date[hidden] { display: none; }
+.gear-card-tags { list-style: none; display: flex; flex-wrap: wrap; gap: 0.35rem 0.5rem; padding: 0; }
+.gear-card-tags:empty { display: none; }
+.gear-card-tags li { padding: 0.05rem 0.6rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 0.8rem; }
+.gear-card-date { font: 0.78rem/1.4 var(--font-mono); color: var(--muted); }
+.gear-card-link { display: flex; align-items: center; justify-content: center; min-height: 2.75rem; margin: 0.7rem 0 0; border: 1px solid var(--rarity); border-radius: var(--radius-lg); color: var(--rarity); font-weight: 600; text-decoration: none; }
+.gear-card-link:hover { background: color-mix(in srgb, var(--rarity) 12%, transparent); }
+
+/* The 閱歷 tab: the summary line, the achievement shelf (2 columns on a phone), the quest list in pages of 6. */
+.gear-summary { margin: 0 0 0.9rem; font-size: 1rem; }
+.gear-sub { display: flex; align-items: baseline; gap: 0.5rem; margin: 1rem 0 0.5rem; font-size: 0.92rem; letter-spacing: 0.04em; color: var(--muted); }
+.gear-sub .count { font: 0.78rem var(--font-mono); opacity: 0.8; }
+.ach-list, .quest-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+.ach-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.quest-list { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 40rem) { .ach-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } .quest-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.quest-card, .ach-card { min-width: 0; padding: 0.5rem 0.65rem 0.6rem; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); }
+.quest-card[hidden] { display: none; }
+.quest-head, .ach-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.quest-head h4, .ach-head h4 { margin: 0; min-width: 0; font-size: 0.95rem; line-height: 1.35; overflow-wrap: anywhere; }
+.quest-head h4 a { display: inline-block; padding: 0.1rem 0; color: var(--fg); text-decoration: none; }
+.quest-head h4 a:hover { color: var(--accent); }
+.quest-badge { flex: none; padding: 0.05rem 0.5rem; border: 1px solid var(--rarity-uncommon); border-radius: 999px; color: var(--rarity-uncommon); font-size: 0.75rem; line-height: 1.5; white-space: nowrap; }
+.quest-meta { margin: 0.05rem 0 0.3rem; font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
+.quest-card .tags { margin: 0; }
+.quest-card .tags a { font-size: 0.75rem; padding: 0 0.5rem; }
+.quest-empty { margin: 0; padding: 1.2rem 1rem; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius-lg); }
+.quest-pager { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-top: 0.7rem; }
+.quest-pager button { min-height: 2.75rem; padding: 0 0.9rem; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--bg); color: var(--fg); font: inherit; font-size: 0.9rem; cursor: pointer; }
+.quest-pager button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.quest-pager button:disabled { opacity: 0.35; cursor: default; }
+.quest-page { font: 0.85rem var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); text-align: center; }
+.ach-card { display: flex; flex-direction: column; gap: 0.1rem; }
+.ach-head { flex-wrap: wrap; gap: 0 0.4rem; }
+.ach-on { border-color: var(--rarity-legendary); box-shadow: 0 0 0.6rem color-mix(in srgb, var(--rarity-legendary) 28%, transparent); }
+.ach-off { border-style: dashed; opacity: 0.75; }
+.ach-off h4, .ach-off .ach-desc { color: var(--muted); }
+.ach-progress { flex: none; font: 0.78rem/1.5 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); }
+.ach-on .ach-progress { color: var(--rarity-legendary); font-weight: 700; }
+.ach-desc { margin: 0; font-size: 0.8rem; line-height: 1.45; }
+.ach-state { margin: 0.1rem 0 0; font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
+.ach-on .ach-state { color: var(--fg); }
+
+/* The overview (the default view of the tab 裝備): the word cloud with the stick figure in the middle (.wc-center in main.css), the facts under it. */
+.gear-views { display: inline-flex; margin: 0 0 0.6rem; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.gear-views[hidden] { display: none; }
+.gear-views button { min-height: 2.75rem; min-width: 4.5rem; padding: 0 1rem; border: 0; background: none; color: var(--muted); font: inherit; font-size: 0.95rem; cursor: pointer; }
+.gear-views button + button { border-left: 1px solid var(--line); }
+.gear-views button[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--fg); font-weight: 700; }
+.gear-views button:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.gear-overview { --owner: var(--accent); display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 0.2rem 0 0.5rem; text-align: center; }
+.gear-overview .wc { --wc-R: min(10rem, 34vw); width: 100%; margin-top: 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }   /* a word crossing the side fades out instead of being cut */
+.gear-overview .wc-host { width: 100%; }
+.gear-lonely { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; padding: 1.2rem 0 0.4rem; color: var(--muted); }
+.gear-lonely .wc-center { position: static; transform: none; font-size: 0.8rem; color: var(--owner); }
+.gear-lonely p { margin: 0; }
+/* Words coloured by rarity: a soft halo in the page colour keeps the light and the grey ones readable on either background. */
+.wc-word[class*="rarity-"] { color: var(--rarity); text-shadow: 0 0 3px var(--bg), 0 0 1px var(--bg), 0 0 6px var(--bg); }

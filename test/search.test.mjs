@@ -93,7 +93,7 @@ test("search: owner and own filters combine with the keyword; a filter alone lis
   const { inFilter, list, SCOPES } = await import("../src/search-core.mjs");
   const e = (t, d, extra) => ({ t, s: "", h: [], g: [], d, c: "Books", u: `/zh/books/${t}/`, ...extra });
   const p = prepare([e("red-a", "2026-10-01", { o: "me" }), e("red-b", "2026-10-03", { o: "son", w: 0 }), e("blue-c", "2026-10-02", { o: "son" }), e("red-d", "2026-10-04", { o: "me", w: 0 }), { ...e("red-post", "2026-10-05"), u: "/zh/tech/red-post/" }]);
-  const hits = (q, owner, own, scope = "books") => (q ? search(p, q, 50, (x) => inScope(x, scope, "zh") && inFilter(x, owner, own)) : list(p, 50, (x) => inScope(x, scope, "zh") && inFilter(x, owner, own))).map((x) => x.t);
+  const hits = (q, owner, own, scope = "books") => (q ? search(p, q, 50, (x) => inScope(x, scope, "zh") && inFilter(x, owner, { own })) : list(p, 50, (x) => inScope(x, scope, "zh") && inFilter(x, owner, { own }))).map((x) => x.t);
   assert.deepEqual(hits("red", "", ""), ["red-d", "red-b", "red-a"]);
   assert.deepEqual(hits("red", "son", ""), ["red-b"]);
   assert.deepEqual(hits("red", "", "no"), ["red-d", "red-b"]);

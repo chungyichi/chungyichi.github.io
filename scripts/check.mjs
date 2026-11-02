@@ -4,8 +4,10 @@ import { join, posix } from "node:path";
 import { spawnSync } from "node:child_process";
 import { site } from "../site.config.mjs";
 import { loadPosts } from "./load.mjs";
-import { buildModel, externalHosts } from "./content.mjs";
-import { resolveAuthors, isAdultText as adultText } from "../src/toys.mjs";
+import { buildModel, externalHosts, selectPublished, todayIn } from "./content.mjs";
+import { resolveAuthors, isAdultText as adultText, gridOf, TOYS_SECTION } from "../src/toys.mjs";
+import { validateGear } from "../src/gear.mjs";
+import { validateAchievements, lockedTitleProblems } from "../src/achievements.mjs";
 
 // Known advisories we accept for a limited time, with the reason. An expired entry fails the check.
 const ACCEPTED_ADVISORIES = [
@@ -16,7 +18,7 @@ let failed = false;
 const fail = (m) => { console.error(`FAIL  ${m}`); failed = true; };
 const warn = (m) => console.log(`warn  ${m}`);
 
-// 1. internal links and assets
+// 1. internal links and assets (a ?query or #fragment is cut off: /zh/tags/?tag=x must find /zh/tags/)
 function htmlFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? htmlFiles(join(dir, e.name)) : e.name.endsWith(".html") ? [join(dir, e.name)] : []));
 }
@@ -37,7 +39,16 @@ else {
       if (!ok) fail(`${f}: broken link ${u}`);
     }
   }
-  console.log(`checked ${links} internal links`);
+  // the grid pages and the tag page filter in the browser on the data file named by data-index (hashed, written by the build)
+  let browsers = 0;
+  for (const f of htmlFiles("dist")) {
+    const m = /id="browse"[^>]*\sdata-index="([^"]+)"/.exec(readFileSync(f, "utf8"));
+    if (!m) continue;
+    browsers++;
+    if (!existsSync(join("dist", m[1]))) fail(`${f}: data file ${m[1]} is missing`);
+  }
+  if (browsers === 0) fail("no grid or tag page names its data file (data-index)");
+  console.log(`checked ${links} internal links, ${browsers} filter pages`);
 }
 
 // 2. translations (a reminder, not a failure)
@@ -48,20 +59,33 @@ for (const p of all.filter((p) => !p.draft && !p.tags?.length)) fail(`${p.sectio
 for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slug}.${p.lang} is a draft (not published)`);
 
 
-// 2a. picture grids (toys, books): a published post has an owner from the section's config and at least one picture (the grid needs thumb.webp; the page a picture in the body).
+// 2a. picture grids (toys, books): a published post has an owner from the section's config; a toy also at least one picture (books and games none) (the grid needs thumb.webp; the page a picture in the body). A book needs none.
 // `source` is checked when the post is parsed. Pictures come from the media release, so this runs after `scripts/media.sh pull` in the deploy.
 for (const sec of site.sections.filter((s) => s.grid)) {
-  const owners = sec.grid.owners.map((o) => o.id);
+  const owners = (sec.grid.owners ?? []).map((o) => o.id);
   for (const p of all.filter((p) => p.section === sec.id && !p.draft)) {
     const name = `${p.section}/${p.date}-${p.slug}.${p.lang}`;
-    if (!p.owner) fail(`${name} has no owner (add owner: ${owners.join(" | ")})`);
+    if (!owners.length) { /* no owners in this grid (games) */ }
+    else if (!p.owner) fail(`${name} has no owner (add owner: ${owners.join(" | ")})`);
     else if (!owners.includes(p.owner)) fail(`${name}: owner '${p.owner}' is not in site.config.mjs ${sec.id} grid.owners (${owners.join(", ")})`);
+    if (sec.grid.platforms && !p.platform?.length) fail(`${name} has no platform (add platform: ${sec.grid.platforms.map((x) => x.id).join(" | ")}, several comma separated)`);
     const dir = join("content", sec.id, "media", p.slug);
     const onDisk = existsSync(dir) ? readdirSync(dir).filter((f) => /\.(webp|jpe?g|png)$/i.test(f)) : [];
-    if (adultText(p)) continue;                                  // text only (2c): no picture needed
+    if (adultText(p) || sec.id !== "toys") continue;           // a book or a game needs no cover (the card shows its title); toys keep the rule
     if (!new RegExp(`<img\\b[^>]*\\ssrc="/media/${sec.id}/${p.slug}/`).test(p.html) && !onDisk.length) fail(`${name} has no picture (put one in ${dir}/ and show it in the post)`);
     if (!onDisk.includes("thumb.webp")) warn(`${name} has no ${dir}/thumb.webp (scripts/og-image.sh); the grid shows a blank card`);
   }
+}
+
+// 2d. equipment slots (site.config.mjs gear): known people, slots and rarities; every item is a published toy or game (a book is refused: it is read, not equipped); an item once per person;
+// profiles (level, title, mood) and the achievements list (rule kinds, fields, items)
+{
+  const owners = (gridOf(TOYS_SECTION)?.owners ?? []).map((o) => o.id), published = selectPublished(all, todayIn(site.timezone)), keys = published.map((p) => `${p.section}/${p.slug}`);
+  const achievementIds = (site.achievements ?? []).map((a) => a.id);
+  for (const m of validateAchievements(site.achievements, { owners, published: keys })) fail(m);
+  for (const m of validateGear(site.gear, { owners, published: keys, achievementIds })) fail(m);
+  // a profile title "ach:<id>" must be unlocked (zh posts: the default language)
+  for (const m of lockedTitleProblems(site.gear, site.achievements, published.filter((p) => p.lang === site.defaultLang), owners)) fail(m);
 }
 
 // 2c. adult books you only read (own: no, tag 成人) are text only: no source link and no picture (body or media folder), draft or not.

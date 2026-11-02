@@ -1,10 +1,11 @@
-// The picture-grid sections (the toy library, the books): shared by the build (scripts/) and the pages (src/). Pure.
+// The picture-grid sections (the toy library, the books, the games): shared by the build (scripts/) and the pages (src/). Pure.
 // One post per toy or book; the list is a picture grid with an owner filter made of plain links (no JavaScript needed).
 // Which sections are grids, and their owners, is the `grid` of a section in site.config.mjs.
 import { site } from "../site.config.mjs";
 
 export const TOYS_SECTION = "toys";
 export const BOOKS_SECTION = "books";
+export const GAMES_SECTION = "games";
 
 /** The grid settings of a section (site.config.mjs sections[].grid), or undefined for a text section. */
 export const gridOf = (section) => site.sections.find((s) => s.id === section)?.grid;
@@ -39,28 +40,32 @@ export function resolveAuthors(raw, authors = gridOf(BOOKS_SECTION)?.authors) {
 }
 
 /** The front matter keys only some sections take, and which: owner and source for every grid, the rest per section (scripts/content.mjs checks). */
-export const SECTION_KEYS = { owner: [TOYS_SECTION, BOOKS_SECTION], source: [TOYS_SECTION, BOOKS_SECTION], status: [TOYS_SECTION], price: [TOYS_SECTION], quantity: [TOYS_SECTION], author: [BOOKS_SECTION], volumes: [BOOKS_SECTION], own: [BOOKS_SECTION] };
+export const SECTION_KEYS = { owner: [TOYS_SECTION, BOOKS_SECTION], source: [TOYS_SECTION, BOOKS_SECTION, GAMES_SECTION], status: [TOYS_SECTION], platform: [GAMES_SECTION], developer: [GAMES_SECTION], type: [BOOKS_SECTION], price: [TOYS_SECTION], quantity: [TOYS_SECTION], author: [BOOKS_SECTION], volumes: [BOOKS_SECTION], own: [BOOKS_SECTION], original: [BOOKS_SECTION, GAMES_SECTION] };
 /** `status:` of a toy: owned (the default when absent) or on the wish list. */
 export const TOY_STATUSES = ["own", "want"];
 
-/** The toys of one owner; every toy when owner is "". */
-export const filterByOwner = (posts, owner) => (owner ? posts.filter((p) => p.owner === owner) : posts);
 
 /** `own:` of a book: a physical copy (the default when absent) or something only read (web novel, online comic). */
 export const BOOK_OWN = ["yes", "no"];
-/** The books with (own "yes") or without (own "no") a physical copy; every book when own is "". */
-export const filterByOwn = (posts, own) => (own ? posts.filter((p) => (own === "yes") === (p.own !== false)) : posts);
+/** `type:` of a book as written (小說 when absent) and the id used in addresses and the search index. */
+export const BOOK_TYPES = { 小說: "novel", 漫畫: "comic" };
+
+/**
+ * The filters besides the owner that a grid can offer (`grid.facets` in site.config.mjs): the UI (tabs | toggle) and the values in order.
+ * The order of the keys is the order of the address: /zh/books/?owner=me&type=comic&own=no (src/grid-core.mjs).
+ */
+export const FACETS = {
+  own: { ui: "toggle", values: BOOK_OWN },
+  type: { ui: "tabs", values: Object.values(BOOK_TYPES) },
+  platform: { ui: "tabs", values: null },   // a game can be on several; the ids are `platforms` of the games grid in site.config.mjs
+};
+/** The values of a facet of one grid (site.config.mjs sections[].grid), in order. */
+export const facetValues = (id, grid) => (id === "platform" ? (grid?.platforms ?? []).map((x) => x.id) : FACETS[id].values);
 
 /** The toys shown on the home page: `featuredToys` in site.config.mjs ("toys/<slug>"), in that order, kept only when the toy exists in `posts` (one language). */
 export function pickFeaturedToys(posts, ids) {
   return (ids || []).map((id) => posts.find((p) => p.section === TOYS_SECTION && `${p.section}/${p.slug}` === id)).filter(Boolean);
 }
 
-/** Where one owner's grid is: /zh/toys/owner/son/ (paged like a section index). */
-export const ownerPath = (lang, section, owner, page = 1) => `/${lang}/${section}/owner/${owner}/${page > 1 ? `page/${page}/` : ""}`;
-/** Where the own filter of a books grid is: /zh/books/own/no/ (paged like ownerPath; a second filter, never combined with the owner). */
-export const ownPath = (lang, section, own, page = 1) => `/${lang}/${section}/own/${own}/${page > 1 ? `page/${page}/` : ""}`;
 /** An adult book you only read (own: no, tag 成人) is text only: scripts/check.mjs fails it when it has a source link or a picture. */
 export const isAdultText = (p) => p.section === BOOKS_SECTION && p.own === false && (p.tags || []).includes("成人");
-/** Any grid page: owner and own filters combine, /zh/books/owner/me/own/no/page/2/; either or both may be "" (then it is ownerPath, ownPath or the section index). */
-export const gridPath = (lang, section, owner = "", own = "", page = 1) => `/${lang}/${section}/${owner ? `owner/${owner}/` : ""}${own ? `own/${own}/` : ""}${page > 1 ? `page/${page}/` : ""}`;

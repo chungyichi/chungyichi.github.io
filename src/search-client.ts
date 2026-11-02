@@ -2,9 +2,10 @@
 // so nothing in the index can inject markup.
 // Typing #tag and a space (or Enter) turns the word into a tag chip; chips and free text combine into one query.
 import { prepare, search, normalize, parseQuery, buildQuery, inScope, inFilter, list as listAll, SCOPES } from "./search-core.mjs";
-import { tagSlug, tagPath } from "./tags.mjs";
+import { tagPath } from "./tags.mjs";
+import { writeFilters } from "./grid-core.mjs";
 
-type Entry = { t: string; s: string; h: string[]; g?: string[]; d: string; c: string; u: string; o?: string; w?: number };
+type Entry = { t: string; s: string; h: string[]; g?: string[]; d: string; c: string; u: string; o?: string; w?: number; ty?: string; pf?: string[]; };
 const lang = document.documentElement.lang === "en" ? "en" : "zh";
 
 const root = document.getElementById("search");
@@ -24,8 +25,9 @@ if (root) {
   const scopeButtons = [...root.querySelectorAll<HTMLButtonElement>("#scope button[data-scope]")];
   let scope = "all";                                       // all | posts | toys: which part of the site the results come from
   const ownerButtons = [...root.querySelectorAll<HTMLButtonElement>("#owners button[data-owner]")];   // the owners of all grid sections, always shown
-  const ownBoxes = [...root.querySelectorAll<HTMLElement>("[data-own-for]")];                         // a section's own toggle, shown in that scope only
-  let owner = "", own = "";                                // owner id and yes | no chosen ("" = all); a post without that owner drops out
+  const facetBoxes = [...root.querySelectorAll<HTMLElement>("[data-facet-for]")];                      // a section's tabs and toggles (type, own, platform, status), shown in that scope only
+  let owner = "";                                          // owner id chosen ("" = none); a post without that owner drops out
+  let facets: Record<string, string> = {};                 // the chosen value of each facet of the scope ("" or absent = all)
   let composing = false;                                   // an IME (Chinese input) is mid-word: do not touch the text
 
   const load = () => (loading ??= fetch(root.dataset.index!)
@@ -83,10 +85,10 @@ if (root) {
 
   function show(q: string) {
     list.replaceChildren();
-    const filtered = Boolean(owner || own);
+    const filtered = Boolean(owner || Object.values(facets).some(Boolean));
     if (!q.trim() && !filtered) { status.textContent = ""; return; }
     if (!prepared) { status.textContent = msg("loading"); return; }
-    const accept = (e: Entry) => inScope(e, scope, lang) && inFilter(e, owner, own);
+    const accept = (e: Entry) => inScope(e, scope, lang) && inFilter(e, owner, facets);
     const hits = (q.trim() ? search(prepared, q, 50, accept) : listAll(prepared, 50, accept)) as Entry[];   // a filter alone lists everything it matches, newest first
     status.textContent = hits.length ? msg("count").replace("{n}", String(hits.length)) : msg("none");
     for (const e of hits) {
@@ -105,7 +107,7 @@ if (root) {
         ul.className = "tags";
         for (const name of e.g) {
           const item = document.createElement("li"), link = document.createElement("a");
-          link.href = tagPath(lang, tagSlug(name)); link.textContent = name;
+          link.href = tagPath(lang, name); link.textContent = name;
           // a plain click adds the tag as a chip; the link still works with middle-click / open in new tab
           link.addEventListener("click", (ev) => {
             if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) return;
@@ -124,11 +126,10 @@ if (root) {
     const params = new URLSearchParams();
     if (q.trim()) params.set("q", q);
     if (scope !== "all") params.set("scope", scope);
-    if (owner) params.set("owner", owner);
-    if (own) params.set("own", own);
+    writeFilters(params, owner, facets);                    // ?owner=&own=&type=&platform=, the same names as the grid pages
     history.replaceState(null, "", params.size ? `?${params}` : location.pathname);
     show(q);
-    if (!prepared && (q.trim() || owner || own)) { await load(); show(buildQuery(chips, input.value)); }
+    if (!prepared && (q.trim() || owner || Object.values(facets).some(Boolean))) { await load(); show(buildQuery(chips, input.value)); }
   }
 
   function changed() { if (composing) return; absorb(false); updateSuggest(); void run(); }
@@ -151,31 +152,37 @@ if (root) {
   });
   root.querySelector("form")!.addEventListener("submit", (e) => { e.preventDefault(); absorb(true); updateSuggest(); void run(); });
 
-  /** Mark the chosen buttons and show the own toggle of the scope (none for all, posts and toys). */
+  /** Mark the chosen buttons and show the facet tabs and toggles of the scope (none for all and posts). */
   function showFilters() {
     for (const b of ownerButtons) b.setAttribute("aria-pressed", String(b.dataset.owner === owner));
-    for (const box of ownBoxes) {
-      box.hidden = box.dataset.ownFor !== scope;
-      for (const b of box.querySelectorAll<HTMLButtonElement>("button")) b.setAttribute("aria-pressed", String(b.dataset.own === own));
+    for (const box of facetBoxes) {
+      box.hidden = box.dataset.facetFor !== scope;
+      for (const b of box.querySelectorAll<HTMLButtonElement>("button")) b.setAttribute("aria-pressed", String(b.dataset.value === (facets[box.dataset.facet!] ?? "")));
     }
   }
   function setScope(next: string) {
     scope = next;
-    if (!ownBoxes.some((b) => b.dataset.ownFor === scope)) own = "";   // the owner stays across scopes; own only means something in its section
+    // the owner stays across scopes; a facet only means something in its section
+    facets = Object.fromEntries(Object.entries(facets).filter(([id]) => facetBoxes.some((b) => b.dataset.facetFor === scope && b.dataset.facet === id)));
     for (const b of scopeButtons) b.setAttribute("aria-pressed", String(b.dataset.scope === scope));
     showFilters();
   }
   for (const b of scopeButtons) b.addEventListener("click", () => { setScope(b.dataset.scope!); void run(); });
   // the chosen chip again clears the owner
   for (const b of ownerButtons) b.addEventListener("click", () => { owner = owner === b.dataset.owner ? "" : b.dataset.owner!; showFilters(); void run(); });
-  for (const b of root.querySelectorAll<HTMLButtonElement>("[data-own-for] button")) b.addEventListener("click", () => { own = b.dataset.own ?? ""; showFilters(); void run(); });
+  for (const b of root.querySelectorAll<HTMLButtonElement>("[data-facet-for] button")) b.addEventListener("click", () => {
+    facets[(b.closest("[data-facet-for]") as HTMLElement).dataset.facet!] = b.dataset.value ?? ""; showFilters(); void run();
+  });
   const wantedParams = new URLSearchParams(location.search);
   const wanted = wantedParams.get("scope");
   if (wanted && SCOPES.includes(wanted)) setScope(wanted);
-  // owner and own are taken only when such a button exists (an id no section knows, or own outside its section, is ignored)
-  const wantedOwner = wantedParams.get("owner"), wantedOwn = wantedParams.get("own");
+  // owner and the facets are taken only when such a button exists (an id no section knows, or a facet outside its section, is ignored)
+  const wantedOwner = wantedParams.get("owner");
   if (wantedOwner && ownerButtons.some((b) => b.dataset.owner === wantedOwner)) owner = wantedOwner;
-  if (wantedOwn && ["yes", "no"].includes(wantedOwn) && ownBoxes.some((b) => b.dataset.ownFor === scope)) own = wantedOwn;
+  for (const box of facetBoxes.filter((b) => b.dataset.facetFor === scope)) {
+    const v = wantedParams.get(box.dataset.facet!);
+    if (v && [...box.querySelectorAll<HTMLButtonElement>("button")].some((b) => b.dataset.value === v)) facets[box.dataset.facet!] = v;
+  }
   showFilters();
 
   const initial = new URLSearchParams(location.search).get("q");
@@ -184,5 +191,5 @@ if (root) {
     tags.forEach(addChip); input.value = text;
   }
   updateSuggest();
-  if (initial || owner || own) void run();
+  if (initial || owner || Object.values(facets).some(Boolean)) void run();
 }

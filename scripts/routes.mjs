@@ -1,16 +1,20 @@
 // Content model -> list of pages. Plain data only (it is serialised into nothing; pages are rendered at build time).
 import { site } from "../site.config.mjs";
 import { createHash } from "node:crypto";
-import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor, toyHero, collectTags } from "./content.mjs";
-import { tagPath, tagsIndexPath } from "../src/tags.mjs";
-import { gridOf, filterByOwner, filterByOwn, gridPath, pickFeaturedToys } from "../src/toys.mjs";
+import { paginate, groupByDate, postPath, indexPath, searchPath, buildSearchIndex, ogImageFor, toyHero, OG_SIZE } from "./content.mjs";
+import { shareDescription } from "./meta.mjs";
+import { tagsIndexPath } from "../src/tags.mjs";
+import { gridOf, pickFeaturedToys, TOYS_SECTION } from "../src/toys.mjs";
+import { entriesOfSection, tagCounts } from "../src/grid-core.mjs";
+import { resolveGear, filledSets, overviewMode } from "../src/gear.mjs";
+import { evaluateAchievements, resolveProfile, questLog } from "../src/achievements.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
 const briefOf = (fileExists) => (p) => {
   const dir = `/media/${p.section}/${p.slug}`;
   return {
-    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", own: p.own !== false, status: p.status || "", quantity: p.quantity || 1, author: p.author || "",
+    section: p.section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, tags: p.tags || [], owner: p.owner || "", own: p.own !== false, type: p.type || "", platform: p.platform || [], status: p.status || "", quantity: p.quantity || 1, author: p.author || "",
     thumb: fileExists(`${dir}/thumb.webp`) ? `${dir}/thumb.webp` : "",                                                   // 400x210, made by scripts/og-image.sh
     card: gridOf(p.section) && fileExists(`${dir}/card.webp`) ? `${dir}/card.webp` : "",                       // 480x480 for the grids (toys, books; og-image.sh --square); the grid falls back to thumb
   };
@@ -22,7 +26,7 @@ function homeList(posts, featured, limit) {
   return pick.slice(0, Math.max(limit, 5));
 }
 
-export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, grids = {}, homePosts = site.homePosts, featured = site.featured ?? [], featuredToys = site.featuredToys ?? [], fileExists = () => false } = {}) {
+export function buildRoutes(model, pages, { langs = site.langs, perPage = site.postsPerPage, grids = {}, homePosts = site.homePosts, featured = site.featured ?? [], featuredToys = site.featuredToys ?? [], gear = site.gear ?? {}, achievements = site.achievements ?? [], fileExists = () => false, meta = site.meta ?? {}, warn = () => {} } = {}) {
   const routes = [];
   const brief = briefOf(fileExists);
   // A slide of the home page's toy carousel: the toy page's picture (cover), else the square card, else the list thumbnail.
@@ -31,33 +35,47 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
   const alt = (path, lang) => other(lang).map((l) => ({ lang: l, path: path.replace(`/${lang}/`, `/${l}/`) }));
 
   const defaultImage = site.ogImage && fileExists(site.ogImage) ? { url: site.baseUrl + site.ogImage, alt: site.title.en } : null;
+  // Share picture of a page: meta[key].image ("<section>/<slug>", a published post in this language with an og.jpg), else the default picture.
+  const pageImage = (key, lang) => {
+    const ref = meta[key]?.image;
+    if (!ref) return defaultImage;
+    const [section, slug] = ref.split("/");
+    const post = model.bySection[section]?.[lang]?.find((p) => p.slug === slug);
+    const file = `/media/${ref}/og.jpg`;
+    if (post && fileExists(file)) return { url: site.baseUrl + file, ...OG_SIZE, alt: post.title };
+    warn(`share image for "${key}" (${ref}) is missing in ${lang}; using the default picture`);
+    return defaultImage;
+  };
+  const shared = (route, key, count) => { const d = shareDescription(meta, key, route.lang, count); if (d) route.description = d; route.ogImage = pageImage(key, route.lang); return route; };
   routes.push({ path: "/", kind: "entry", lang: site.defaultLang, alternates: langs.map((l) => ({ lang: l, path: `/${l}/` })) });
 
   for (const lang of langs) {
-    routes.push({ path: `/${lang}/`, kind: "home", lang, alternates: alt(`/${lang}/`, lang),
-      props: { featured: homeList(model.byLang[lang], featured, homePosts).map(brief), toys: pickFeaturedToys(model.byLang[lang], featuredToys).map(toySlide),
-        sections: sectionIds().map((id) => ({ id, total: model.bySection[id][lang].length })) } });
+    // One data file per language, loaded on demand by the search page, the picture grids and the tag page. The file name carries a content hash so a cached
+    // copy can never be paired with a newer page.
+    const entries = buildSearchIndex(model.byLang[lang], lang, (id) => site.sections.find((s) => s.id === id)?.title[lang] ?? id, fileExists);
+    const indexText = JSON.stringify(entries);
+    const indexHref = `/search/${lang}.${createHash("sha1").update(indexText).digest("hex").slice(0, 10)}.json`;
+    // Equipment slots: every person's sheet in this language (an item missing in the language is an empty slot); the home page shows the people who have something. No page of their own.
+    const gearOwners = (gridOf(TOYS_SECTION)?.owners ?? []).map((o) => o.id);
+    const gearSets = resolveGear(gear, model.byLang[lang], gearOwners, (p) => { const b = brief(p); return { section: p.section, slug: p.slug, title: p.title, summary: p.summary || "", tags: b.tags, date: p.date, pic: b.card || b.thumb }; });
+    // Profile, achievements and the quest log (the 閱歷 tab) of every person from this language's posts.
+    for (const set of gearSets) {
+      const list = evaluateAchievements(achievements, model.byLang[lang], set.owner, lang);
+      set.profile = resolveProfile(gear?.[set.owner]?.profile, list, lang);
+      set.achievements = list;
+      set.log = questLog(model.byLang[lang], set.owner);
+    }
+    routes.push({ path: `/${lang}/`, kind: "home", lang, alternates: alt(`/${lang}/`, lang), shareKey: "home",
+      props: { gear: filledSets(gearSets), gearOverview: overviewMode(gear), featured: homeList(model.byLang[lang], featured, homePosts).map(brief), toys: pickFeaturedToys(model.byLang[lang], featuredToys).map(toySlide) } });
 
     for (const section of sectionIds()) {
       const posts = model.bySection[section][lang];
       const grid = grids[section] ?? gridOf(section);
       if (grid) {
-        // A picture grid (toys, books) of every post, plus one grid per owner. The filter is plain links, so it works without JavaScript.
-        // A grid that opts in with `ownFilter` has a second filter, own yes / no, that combines with the owner: a page for every pair, and
-        // each filter's counts follow the other's current choice.
-        const ownIds = grid.ownFilter ? ["yes", "no"] : [];
-        for (const owner of ["", ...(grid.owners ?? []).map((o) => o.id)]) {
-          for (const own of ["", ...ownIds]) {
-            const byOwn = filterByOwn(posts, own), byOwner = filterByOwner(posts, owner);
-            const owners = (grid.owners ?? []).map((o) => ({ id: o.id, total: filterByOwner(byOwn, o.id).length }));
-            const owns = ownIds.map((id) => ({ id, total: filterByOwn(byOwner, id).length }));
-            for (const pg of paginate(filterByOwn(byOwner, own), grid.perPage ?? perPage)) {
-              const path = gridPath(lang, section, owner, own, pg.number);
-              routes.push({ path, kind: "grid", lang, alternates: alt(path, lang),
-                props: { section, owner, owners, own, owns, total: byOwn.length, ownTotal: byOwner.length, items: pg.items.map(brief), page: pg.number, pages: pg.total } });
-            }
-          }
-        }
+        // A picture grid (toys, books, games) is ONE page per section: the first page of the unfiltered list is rendered here (readable without
+        // JavaScript); the owner and facet filters and the paging run in the browser on the search index (src/grid-client.tsx), ?owner=me&own=no&page=2.
+        routes.push({ path: indexPath(lang, section), kind: "grid", lang, alternates: alt(indexPath(lang, section), lang), shareKey: section, shareCount: posts.length,
+          props: { section, index: indexHref, entries: entriesOfSection(entries, lang, section) } });
       } else {
         for (const pg of paginate(posts, perPage)) {
           const path = indexPath(lang, section, pg.number);
@@ -76,28 +94,15 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
           postJs: p.js ? { href: `/post-js/${section}/${p.slug}.js`, text: p.js } : undefined,
           postCss: p.css ? { href: `/post-css/${section}/${p.slug}.css`, text: p.css } : undefined,
           props: { section, slug: p.slug, title: p.title, summary: p.summary, date: p.date, updated: p.updated, tags: p.tags || [], html: hero.html, draft: p.draft, private: Boolean(p.private), words: p.words,
-            owner: p.owner || "", own: p.own !== false, author: p.author || "", volumes: p.volumes || [], source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
+            owner: p.owner || "", own: p.own !== false, type: p.type || "", platform: p.platform || [], author: p.author || "", original: p.original || "", developer: p.developer || "", volumes: p.volumes || [], source: p.source || "", status: p.status || "", price: p.price || "", quantity: p.quantity || 1, pictures: hero.pictures } });
       }
     }
 
-    // Tags: /<lang>/tags/ lists them, /<lang>/tags/<tag>/ the posts that carry one (all sections, newest first)
-    const tags = collectTags(model.byLang[lang]);
-    routes.push({ path: tagsIndexPath(lang), kind: "tags", lang, alternates: alt(tagsIndexPath(lang), lang),
-      props: { tags: tags.map((t) => ({ tag: t.tag, slug: t.slug, count: t.posts.length })) } });
-    for (const t of tags) {
-      for (const pg of paginate(t.posts, perPage)) {
-        const path = tagPath(lang, t.slug, pg.number);
-        routes.push({ path, kind: "tag", lang, alternates: other(lang).map((l) => ({ lang: l, path: tagsIndexPath(l), translated: false })),
-          props: { tag: t.tag, slug: t.slug, groups: groupByDate(pg.items.map(brief)), page: pg.number, pages: pg.total } });
-      }
-    }
-
-    // One search index per language, loaded by the search page on demand. The file name carries a content hash so a cached
-    // copy can never be paired with a newer page.
-    const indexText = JSON.stringify(buildSearchIndex(model.byLang[lang], lang, (id) => site.sections.find((s) => s.id === id)?.title[lang] ?? id));
-    const indexHref = `/search/${lang}.${createHash("sha1").update(indexText).digest("hex").slice(0, 10)}.json`;
-    routes.push({ path: searchPath(lang), kind: "search", lang, alternates: alt(searchPath(lang), lang),
-      searchIndex: { href: indexHref, text: indexText }, props: { index: indexHref, tags: tags.map((t) => ({ tag: t.tag, slug: t.slug, count: t.posts.length })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag)) } });
+    // Tags: ONE page, /<lang>/tags/ (the list of tags); ?tag=x lists the posts that carry one (all sections, newest first, paged) in the browser.
+    const tags = tagCounts(entries);
+    routes.push({ path: tagsIndexPath(lang), kind: "tags", lang, alternates: alt(tagsIndexPath(lang), lang), shareKey: "tags", props: { index: indexHref, entries } });
+    routes.push({ path: searchPath(lang), kind: "search", lang, alternates: alt(searchPath(lang), lang), shareKey: "search",
+      searchIndex: { href: indexHref, text: indexText }, props: { index: indexHref, tags: tags.map((t) => ({ tag: t.tag, count: t.count })) } });
 
     for (const [name, byLang] of Object.entries(pages)) {
       const pg = byLang[lang];
@@ -106,7 +111,12 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
       routes.push({ path, kind: "page", lang, alternates: alt(path, lang).filter((a) => byLang[a.lang]), props: { name, ...pg } });
     }
   }
-  for (const route of routes) if (route.kind !== "post" && route.kind !== "notfound" && defaultImage) route.ogImage = defaultImage;
+  for (const route of routes) {
+    if (route.kind === "post" || route.kind === "notfound") continue;
+    route.ogImage = defaultImage ?? undefined;
+    if (route.shareKey) shared(route, route.shareKey, route.shareCount);
+    delete route.shareKey; delete route.shareCount;
+  }
   routes.push({ path: "/404.html", kind: "notfound", lang: site.defaultLang, alternates: [] });
   return routes;
 }

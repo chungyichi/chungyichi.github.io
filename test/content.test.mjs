@@ -275,7 +275,7 @@ test("meta tags: no picture means a plain summary card, and a page is a website"
 });
 
 // ---- tags ----
-import { normalizeTags, collectTags } from "../scripts/content.mjs";
+import { normalizeTags } from "../scripts/content.mjs";
 import { tagSlug, tagPath } from "../src/tags.mjs";
 
 test("tags: comma list or JSON list in the front matter, tidied and de-duplicated", () => {
@@ -293,14 +293,11 @@ test("tags: bad ones are refused with a message that names the problem", () => {
   assert.throws(() => parsePost("2026-10-21-x.zh.md", "---\ntitle: T\nsummary: S\ntags: [oops\n---\nx"), /tags must look like/);
 });
 
-test("tags: slugs, paths and the per-language tag list", () => {
+test("tags: slugs and the address of the one tag page", () => {
   assert.equal(tagSlug("Linux BPF"), "linux-bpf");
   assert.equal(tagSlug("日本"), "日本");
-  assert.equal(tagPath("zh", "日本"), "/zh/tags/%E6%97%A5%E6%9C%AC/");
-  assert.equal(tagPath("en", "bpf", 2), "/en/tags/bpf/page/2/");
-  const mk = (slug, tags) => ({ ...post(`2026-10-0${slug}-p${slug}.zh.md`, ""), tags });
-  const list = collectTags([mk(1, ["日本", "旅行"]), mk(2, ["旅行"]), mk(3, ["Linux", "linux"].slice(0, 1))]);
-  assert.deepEqual(list.map((t) => [t.tag, t.posts.length]), [["旅行", 2], ["linux", 1], ["日本", 1]].map(([t, n]) => [t === "linux" ? "Linux" : t, n]));
+  assert.equal(tagPath("zh", "日本"), "/zh/tags/?tag=%E6%97%A5%E6%9C%AC");
+  assert.equal(tagPath("en", "road trip", 2), "/en/tags/?tag=road+trip&page=2");
 });
 
 test("tags: at most three per post", () => {
@@ -310,7 +307,7 @@ test("tags: at most three per post", () => {
 
 // ---- toys ----
 import { checkSourceUrl } from "../scripts/content.mjs";
-import { filterByOwner, ownerPath, pickFeaturedToys } from "../src/toys.mjs";
+import { pickFeaturedToys } from "../src/toys.mjs";
 
 const toy = (extra, name = "2026-10-21-robot.zh.md") => parsePost(name, `---\ntitle: Robot\nsummary: S\ntags: 公仔\n${extra}---\n![Robot](/media/toys/robot/cover.webp)\n`, undefined, "toys");
 
@@ -340,7 +337,7 @@ test("toys: the quantity is a whole number from 1 up; absent is 1; it reaches th
   assert.throws(() => parsePost("2026-10-21-a.zh.md", "---\ntitle: T\nsummary: S\nquantity: 2\n---\nx", undefined, "tech"), /'quantity' is only for posts in content\/toys\//);
   const posts = [toy("owner: me\nquantity: 2\n"), toy("owner: me\n", "2026-10-22-car.zh.md")];
   const routes = buildRoutes(buildModel(posts, ["zh", "en"], site.sections), {}, { langs: ["zh"] });
-  assert.deepEqual(routes.find((r) => r.path === "/zh/toys/").props.items.map((p) => [p.slug, p.quantity]), [["car", 1], ["robot", 2]]);
+  assert.deepEqual(briefs(routes.find((r) => r.path === "/zh/toys/").props.entries).map((p) => [p.slug, p.quantity]), [["car", 1], ["robot", 2]]);
   assert.equal(routes.find((r) => r.path === "/zh/toys/robot/").props.quantity, 2);
   assert.equal(routes.find((r) => r.path === "/zh/toys/car/").props.quantity, 1);
 });
@@ -372,44 +369,37 @@ test("toys: bad values are refused and the fields are only for the toys section"
   assert.equal(checkSourceUrl("http://shop.example/a b"), "http://shop.example/a%20b");
 });
 
-test("toys: the owner filter keeps everything for the empty owner, and owner pages are paged like an index", () => {
-  const posts = [toy("owner: me\n"), toy("owner: son\n", "2026-10-22-car.zh.md"), toy("owner: son\n", "2026-10-23-ball.zh.md")];
-  assert.deepEqual(filterByOwner(posts, "son").map((p) => p.slug), ["car", "ball"]);
-  assert.equal(filterByOwner(posts, "").length, 3);
-  assert.equal(filterByOwner(posts, "nobody").length, 0);
-  assert.equal(ownerPath("zh", "toys", "son"), "/zh/toys/owner/son/");
-  assert.equal(ownerPath("en", "toys", "me", 2), "/en/toys/owner/me/page/2/");
-});
-
 import { buildRoutes } from "../scripts/routes.mjs";
 import { site } from "../site.config.mjs";
 
-test("toys: the section index is a grid route, one per owner too, each paged; toys keep their post pages and thumbnails", () => {
+test("toys: the section index is ONE grid route (all entries of the section, newest first); toys keep their post pages", () => {
   const posts = [toy("owner: me\n"), toy("owner: son\nstatus: want\n", "2026-10-22-car.zh.md"), toy("owner: son\n", "2026-10-23-ball.zh.md"), post("2026-10-21-t.zh.md", "")];
   const model = buildModel(posts, ["zh", "en"], site.sections);
-  const routes = buildRoutes(model, {}, { langs: ["zh"], grids: { toys: { perPage: 2, owners: [{ id: "me" }, { id: "son" }] } }, fileExists: (u) => u === "/media/toys/car/thumb.webp" });
+  const routes = buildRoutes(model, {}, { langs: ["zh"], fileExists: (u) => u === "/media/toys/car/thumb.webp" });
   const grids = routes.filter((r) => r.kind === "grid" && r.props.section === "toys");
-  assert.deepEqual(grids.map((r) => r.path), ["/zh/toys/", "/zh/toys/page/2/", "/zh/toys/owner/me/", "/zh/toys/owner/son/"]);
-  const all = grids[0].props;
-  assert.deepEqual([all.owner, all.total, all.page, all.pages, all.items.map((p) => p.slug)], ["", 3, 1, 2, ["ball", "car"]]);
-  assert.deepEqual(all.owners, [{ id: "me", total: 1 }, { id: "son", total: 2 }]);
-  assert.deepEqual(all.items.map((p) => [p.owner, p.status, p.thumb]), [["son", "", ""], ["son", "want", "/media/toys/car/thumb.webp"]]);
-  assert.deepEqual(grids[3].props.items.map((p) => p.slug), ["ball", "car"]);
+  assert.deepEqual(grids.map((r) => r.path), ["/zh/toys/"]);
+  assert.deepEqual(grids[0].props.entries.map((e) => [e.u, e.o, e.st, e.im]), [["/zh/toys/ball/", "son", undefined, undefined], ["/zh/toys/car/", "son", 1, 1], ["/zh/toys/robot/", "me", undefined, undefined]]);
+  assert.match(grids[0].props.index, /^\/search\/zh\.[0-9a-f]{10}\.json$/);
   assert.equal(routes.find((r) => r.path === "/zh/tech/")?.kind, "index");                 // other sections are unchanged
   const page = routes.find((r) => r.path === "/zh/toys/car/");
   assert.deepEqual([page.kind, page.props.owner, page.props.status, page.props.source, page.props.price], ["post", "son", "want", "", ""]);
+  assert.ok(!routes.some((r) => /\/(owner|page)\//.test(r.path) && r.path.startsWith("/zh/toys/")));   // no per-owner or paged grid pages
 });
 
 import { toyHero } from "../scripts/content.mjs";
+import { briefOfEntry } from "../src/grid-core.mjs";
+const briefs = (entries) => entries.map(briefOfEntry);
 
-test("toys: the square card picture is used when it exists, the list thumbnail otherwise; other sections never get one", () => {
+test("toys: the square card picture (im 2) and the list thumbnail (im 1) are flagged in the data file; other sections never get a card", () => {
   const posts = [toy("owner: me\n"), toy("owner: me\n", "2026-10-22-car.zh.md"), post("2026-10-21-t.zh.md", "")];
   const files = ["/media/toys/robot/card.webp", "/media/toys/robot/thumb.webp", "/media/toys/car/thumb.webp", "/media/tech/t/card.webp", "/media/tech/t/thumb.webp"];
   const routes = buildRoutes(buildModel(posts, ["zh", "en"], site.sections), {}, { langs: ["zh"], fileExists: (u) => files.includes(u) });
-  const grid = routes.find((r) => r.path === "/zh/toys/").props.items;
-  assert.deepEqual(grid.map((p) => [p.slug, p.card, p.thumb]), [["car", "", "/media/toys/car/thumb.webp"], ["robot", "/media/toys/robot/card.webp", "/media/toys/robot/thumb.webp"]]);
+  const grid = routes.find((r) => r.path === "/zh/toys/").props.entries;
+  assert.deepEqual(grid.map((e) => [e.u, e.im]), [["/zh/toys/car/", 1], ["/zh/toys/robot/", 3]]);
+  assert.deepEqual(grid.map((e) => briefOfEntry(e)).map((p) => [p.slug, p.card, p.thumb]), [["car", "", "/media/toys/car/thumb.webp"], ["robot", "/media/toys/robot/card.webp", "/media/toys/robot/thumb.webp"]]);
   const tech = routes.find((r) => r.path === "/zh/tech/").props.groups[0].items[0];
   assert.deepEqual([tech.card, tech.thumb], ["", "/media/tech/t/thumb.webp"]);
+  assert.equal(routes.find((r) => r.path === "/zh/search/").props.index, routes.find((r) => r.path === "/zh/toys/").props.index);   // one data file for search, grids and tags
 });
 
 const COVER = "/media/toys/robot/cover.webp", OWN = "/media/toys/robot/own.webp";
