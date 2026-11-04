@@ -3,6 +3,10 @@
 @import "./ink.css";
 @import "./gear.css";
 
+/* The site is static pages (no client router): a link is a real page load. Where the browser supports it, cross-fade between our own pages instead of flashing blank. */
+@view-transition { navigation: auto; }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
+
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 1rem/var(--leading) var(--font-body); }
@@ -232,6 +236,21 @@ main { padding-bottom: 3rem; min-height: 60vh; }
   color: var(--fg); background: color-mix(in srgb, var(--bg) 75%, transparent); border: 1px solid var(--line); }
 .gallery-count[hidden] { display: none; }
 /* The home page's toy carousel: a wider panel than the toy page's square; a slide is the picture with the name under it, and opens the toy. */
+/* The island game card on the home page: a picture and a short text; one link, no script */
+.home-island { margin: 0 0 2rem; }
+.home-island-link { display: grid; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--code-bg); color: inherit; text-decoration: none; }
+.home-island-link img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.home-island-body { display: grid; gap: .45rem; padding: 1rem 1.1rem 1.2rem; }
+.home-island-kicker { font: 600 .78rem var(--font-mono); letter-spacing: .05em; color: var(--muted); }
+.home-island-title { font-size: 1.55rem; font-weight: 700; line-height: 1.3; }
+.home-island-blurb { color: var(--muted); line-height: 1.65; }
+.home-island-cta { justify-self: start; margin-top: .3rem; padding: .45rem 1.15rem; border-radius: 99px; background: var(--accent); color: var(--accent-fg); font-weight: 600; }
+.home-island-link:hover .home-island-cta, .home-island-link:focus-visible .home-island-cta { filter: brightness(1.12); }
+@media (min-width: 50rem) {
+  .home-island-link { grid-template-columns: 1.4fr 1fr; }
+  .home-island-link img { height: 100%; aspect-ratio: auto; min-height: 16rem; }
+  .home-island-body { align-content: center; padding: 1.8rem; }
+}
 .home-toys h2 { margin-top: 0; }
 .home-toys-pic { aspect-ratio: 4 / 3; }
 .home-toy { display: flex; flex-direction: column; height: 100%; color: var(--fg); text-decoration: none; }

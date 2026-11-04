@@ -2,6 +2,16 @@
 export const site = {
   title: { zh: "Chungyi Chi", en: "Chungyi Chi" },
   tagline: { zh: "認識我是你一生最大的榮幸", en: "Systems, verification and open source" },
+  // The island game (a day in the life): a static game under /island/ (no intro page: the menu item and the card open it directly). The menu item and the home card appear only in the
+  // languages that have a `title` here (zh for now). `nav` is the short menu label (not "game": the games library is the Steam collection).
+  island: {
+    title: { zh: "重禕的一天" },
+    nav: { zh: "小島" },
+    kicker: { zh: "小遊戲" },
+    blurb: { zh: "5:30 起床，送兒子上托嬰，趕在 10:00 前到麥當勞鏟薯條。一座台灣形狀的小島，和身邊的人過一天。" },
+    cta: { zh: "開始玩" },
+    picture: "/media/games/island/card.webp",
+  },
   author: "Chungyi Chi",
   baseUrl: "https://chungyichi.github.io",
   github: "https://github.com/chungyichi",

@@ -265,8 +265,8 @@ The site lives on `master`. Settings → Pages → Source is **GitHub Actions**;
 ## Private vault
 
 `scripts/backup.sh` (run on the host, not in the container) copies everything (`content/` including `_private/`, and `backup/`)
-into a clone of the **private** repo `chungyichi/blog-vault` at `../blog-vault`, and commits there. It refuses to run if it cannot
-confirm that repo is private, and it never pushes: review, then `git -C ../blog-vault push`. The copy is one-way and a mirror,
+into a clone of the **private** repo `chungyichi/site-vault` at `../site-vault`, and commits there. It refuses to run if it cannot
+confirm that repo is private, and it never pushes: review, then `git -C ../site-vault push`. The copy is one-way and a mirror,
 so the vault's history keeps what a later snapshot no longer has.
 
 `/` is only a redirect: browser language `zh*` goes to `/zh/`, anything else to `/en/` (no JavaScript: `/zh/`).
