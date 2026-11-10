@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-Hant" data-style="retro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>遊樂區 – Chungyi Chi</title>
+<meta name="description" content="我做的小遊戲都放在這裡。">
+<style>
+  /* One page, two looks: data-style="retro" (an early-2000s Taiwanese personal download site homage: pale blue page, a column of button links,
+     a green and yellow diary box, cream tables) or "modern". The default look needs no script. */
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .wrap { max-width: 58rem; margin: 0 auto; padding: 1rem; }
+  .layout { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+  @media (max-width: 40rem) { .layout { grid-template-columns: 1fr; } }
+  .head { position: relative; text-align: center; }
+  h1, h2, p { margin: 0; }
+  #switch { font: inherit; cursor: pointer; position: absolute; right: 0; top: 0; }
+  .side ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+  .side a { display: block; text-decoration: none; color: inherit; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; vertical-align: top; }
+  .game-pic { display: block; width: 8rem; max-width: 100%; height: auto; margin-top: .4rem; }
+  .go { display: inline-block; text-decoration: none; }
+  .day ul { list-style: none; margin: 0; padding: 0; }
+  .foot { margin-top: 1.5rem; text-align: center; }
+
+  /* ---- retro ---- */
+  [data-style="retro"] body { background: #aedde6; color: #000; font: 17px/1.7 "Noto Sans TC", "PMingLiU", "Microsoft JhengHei", sans-serif; }
+  [data-style="retro"] .head { padding: 1rem 0 .8rem; border-bottom: 3px solid #f0a030; margin-bottom: 1.2rem; }
+  [data-style="retro"] .head h1 { font: 700 2.3rem/1.2 "Noto Sans TC", "Microsoft JhengHei", sans-serif; letter-spacing: .12em; color: #5a6b2a; text-shadow: 2px 2px 3px #9bb; }
+  [data-style="retro"] .head p { color: #4a5a63; font-size: .95rem; letter-spacing: .08em; }
+  [data-style="retro"] #switch { background: #f4f8fc; border: 1px solid #5577aa; border-radius: 1rem; padding: .1rem .8rem; color: #123; }
+  [data-style="retro"] .side a { background: #e3edf9; box-shadow: 1px 2px 3px #7aa; font-weight: 700; font-size: 1.1rem; color: #3a3a40; padding: .45rem .9rem; }
+  [data-style="retro"] .side a:hover { background: #fff; color: #c00; }
+  [data-style="retro"] .box { border: 1px solid #7a9a7a; margin-bottom: 1.5rem; background: #ccffcc; }
+  [data-style="retro"] .box > h2 { background: #84c620; color: #000; text-align: center; font-size: 1.1rem; padding: .35rem .5rem; border-bottom: 1px solid #7a9a7a; }
+  [data-style="retro"] .date { background: #ffff00; text-align: center; border-bottom: 1px solid #7a9a7a; }
+  [data-style="retro"] .day ul { padding: .6rem 1rem 1rem; }
+  [data-style="retro"] .day li { position: relative; padding-left: 1.4rem; margin-top: .6rem; }
+  [data-style="retro"] .day li::before { content: "▸"; position: absolute; left: 0; top: 0; width: 1rem; height: 1rem; line-height: 1rem; text-align: center; font-size: .8rem; background: #6aa820; color: #efe; border-radius: 2px; margin-top: .35rem; }
+  [data-style="retro"] .box.list { background: #fffff0; }
+  [data-style="retro"] th { background: #d8f0c0; font-weight: 400; border: 1px solid #9a9; padding: .3rem .6rem; text-align: center; }
+  [data-style="retro"] td { border: 1px solid #9a9; padding: .5rem .6rem; background: #fffff4; }
+  [data-style="retro"] td a:not(.go) { color: #0000cc; }
+  [data-style="retro"] td a:not(.go):visited { color: #551a8b; }
+  [data-style="retro"] .by { color: #551a8b; text-decoration: underline; white-space: nowrap; }
+  [data-style="retro"] .go { background: #e3edf9; border: 1px solid #5577aa; border-radius: 1rem; padding: .1rem 1.1rem; color: #123; margin-top: .5rem; }
+  [data-style="retro"] .go:hover { background: #fff; }
+  [data-style="retro"] .foot { font-size: .9rem; color: #234; }
+  [data-style="retro"] .foot a { color: #0000cc; }
+
+  /* ---- modern ---- */
+  :root { --bg: #fbfaf8; --fg: #1d1d1f; --muted: #6b6b70; --line: #dcdad4; --card: #fff; --accent: #0b5cad; --accent-fg: #fff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #16181b; --fg: #e8e8ea; --muted: #9a9aa0; --line: #33363b; --card: #1d2024; --accent: #7db7ff; --accent-fg: #0b1626; } }
+  [data-style="modern"] body { background: var(--bg); color: var(--fg); font: 16px/1.65 system-ui, -apple-system, "Segoe UI", "Noto Sans TC", sans-serif; }
+  [data-style="modern"] .head { text-align: left; margin-bottom: 1.2rem; padding-right: 8rem; }
+  [data-style="modern"] .head h1 { font-size: 1.7rem; }
+  [data-style="modern"] .head p { color: var(--muted); }
+  [data-style="modern"] #switch { background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 99px; padding: .25rem .9rem; }
+  [data-style="modern"] .side a { padding: .25rem .6rem; border-radius: .5rem; }
+  [data-style="modern"] .side a:hover { background: var(--card); }
+  [data-style="modern"] .box { margin-bottom: 1.8rem; }
+  [data-style="modern"] .box > h2 { font-size: 1.15rem; margin-bottom: .6rem; }
+  [data-style="modern"] .date { color: var(--muted); font-size: .85rem; margin-top: .6rem; }
+  [data-style="modern"] .day ul { list-style: disc; padding-left: 1.2rem; }
+  [data-style="modern"] table, [data-style="modern"] tbody, [data-style="modern"] tr, [data-style="modern"] td { display: block; }
+  [data-style="modern"] thead { display: none; }
+  [data-style="modern"] .games tr { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: .3rem 1rem; padding: 1rem; background: var(--card); border: 1px solid var(--line); border-radius: 1rem; }
+  [data-style="modern"] .games td:nth-child(3) { grid-column: 2; color: var(--muted); font-size: .85rem; }
+  @media (max-width: 40rem) { [data-style="modern"] .games tr { grid-template-columns: 1fr; } [data-style="modern"] .games td:nth-child(3) { grid-column: 1; } }
+  [data-style="modern"] .game-pic { border-radius: .6rem; width: 9rem; }
+  [data-style="modern"] .go { background: var(--accent); color: var(--accent-fg); padding: .4rem 1.1rem; border-radius: 99px; font-weight: 600; margin-top: .5rem; }
+  [data-style="modern"] a:not(.go) { color: var(--accent); }
+  [data-style="modern"] .side a { color: var(--fg); }
+  [data-style="modern"] .foot { color: var(--muted); font-size: .85rem; }
+</style>
+<script>
+  // The look is a per-visitor choice; the page works without storage or script (it stays retro).
+  try { var s = localStorage.getItem("play-style"); if (s === "modern" || s === "retro") document.documentElement.dataset.style = s; } catch (e) {}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <h1>遊樂區</h1>
+    <p>我自己做的小遊戲,都放在這裡</p>
+    <button id="switch" type="button">懷舊 / 現代</button>
+  </header>
+  <div class="layout">
+    <nav class="side" aria-label="選單">
+      <ul>
+        <li><a href="#news">最新消息</a></li>
+        <li><a href="#games">遊戲列表</a></li>
+        <li><a href="/zh/">回首頁</a></li>
+      </ul>
+    </nav>
+    <main>
+      <section class="box" id="news">
+        <h2>遊樂區日記~有更新就會記下來</h2>
+        <div class="day">
+          <p class="date">11月10日</p>
+          <ul><li>遊樂區開張了,先放一款遊戲。</li></ul>
+        </div>
+        <div class="day">
+          <p class="date">11月4日</p>
+          <ul><li>〈重禕的一天〉上線。</li></ul>
+        </div>
+      </section>
+      <section class="box list" id="games">
+        <h2>遊戲列表</h2>
+        <table class="games">
+          <thead><tr><th>遊戲</th><th>內容簡介</th><th>作者</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><a href="/island/">重禕的一天</a><a href="/island/"><img class="game-pic" src="/media/games/island/card.webp" alt="" loading="lazy"></a></td>
+              <td>5:30 起床,送兒子上托嬰,趕在 10:00 前到麥當勞鏟薯條。一座台灣形狀的小島,和身邊的人過一天。<br><a class="go" href="/island/">▶ 開始玩</a></td>
+              <td><span class="by">Chungyi</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <div class="foot">最後更新:2026-11-10 · <a href="/zh/">回 Chungyi Chi 首頁</a></div>
+</div>
+<script>
+  document.getElementById("switch").addEventListener("click", function () {
+    var next = document.documentElement.dataset.style === "modern" ? "retro" : "modern";
+    document.documentElement.dataset.style = next;
+    try { localStorage.setItem("play-style", next); } catch (e) {}
+  });
+</script>
+</body>
+</html>

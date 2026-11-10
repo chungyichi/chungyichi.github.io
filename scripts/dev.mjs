@@ -51,12 +51,15 @@ function modeBadge(mode) {
 
 const server = http.createServer((req, res) => {
   if (serveContentFile(req, new URL(req.url, "http://x").pathname, res)) return;
-  // The island game is a static page (public/island/index.html); like the real host, open it at /island/ (Vite alone answers a folder with the app's 404 page).
-  if (new URL(req.url, "http://x").pathname === "/island") { res.writeHead(301, { location: "/island/" }); res.end(); return; }
-  if (new URL(req.url, "http://x").pathname === "/island/") {
-    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-    createReadStream(join("public", "island", "index.html")).pipe(res);
-    return;
+  // The island game and the games page are static pages (public/island/, public/play/); like the real host, open it at /island/ (Vite alone answers a folder with the app's 404 page).
+  for (const dir of ["island", "play"]) {
+    const path = new URL(req.url, "http://x").pathname;
+    if (path === `/${dir}`) { res.writeHead(301, { location: `/${dir}/` }); res.end(); return; }
+    if (path === `/${dir}/`) {
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      createReadStream(join("public", dir, "index.html")).pipe(res);
+      return;
+    }
   }
   vite.middlewares(req, res, async () => {
     try {

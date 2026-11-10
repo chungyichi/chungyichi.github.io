@@ -26,7 +26,7 @@ function Layout({ route, wide, children }: { route: Route; wide?: boolean; child
           <a className="brand" href={`/${lang}/`}>{title(lang)}</a>
           {/* One non-wrapping row that scrolls sideways when the sections do not fit; the current page is marked and /src/entry-client.tsx scrolls it into view. */}
           <nav aria-label="Main" className="main-nav">
-            {([[`/${lang}/`, s.home], ...site.sections.map((sec: { id: string }) => [`/${lang}/${sec.id}/`, sectionTitle(lang, sec.id)]), ...(island(lang) ? [[ISLAND_HREF, island(lang)!.nav]] : []), [`/${lang}/search/`, s.search], [`/${lang}/about/`, s.about]] as [string, string][]).map(([href, label]) => (
+            {([[`/${lang}/`, s.home], ...site.sections.map((sec: { id: string }) => [`/${lang}/${sec.id}/`, sectionTitle(lang, sec.id)]), ...(playNav(lang) ? [[PLAY_HREF, playNav(lang)!]] : []), [`/${lang}/search/`, s.search], [`/${lang}/about/`, s.about]] as [string, string][]).map(([href, label]) => (
               <a key={href} href={href} aria-current={href === `/${lang}/` ? (route.path === href ? "page" : undefined) : route.path.startsWith(href) ? "page" : undefined}>{label}</a>
             ))}
           </nav>
@@ -86,6 +86,10 @@ const island = (lang: Lang): IslandText | null => {
 
 /** The game is a static page outside the app (no intro page): the menu item and the home card open it directly. */
 const ISLAND_HREF = "/island/";
+
+/** The games page (遊樂區, public/play/) in the menu, only in the languages that have a nav label for it. */
+const PLAY_HREF = "/play/";
+const playNav = (lang: Lang): string | null => (site as { play?: { nav?: Partial<Record<Lang, string>> } }).play?.nav?.[lang] ?? null;
 
 /** The home page's island card: the whole card opens the game (a picture, the title, one sentence, the button). No game code is loaded here. */
 function HomeIsland({ lang }: { lang: Lang }) {
