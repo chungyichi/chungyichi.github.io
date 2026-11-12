@@ -34,6 +34,9 @@ if (document.querySelector("[data-gear]")) void import("./gear-client");
 // Posts get copy-link / share buttons.
 if (document.querySelector("[data-share]")) void import("./share-client");
 
+// The "my games" page: the 懷舊 / 現代 switch.
+if (document.querySelector("[data-mygames]")) void import("./mygames-client");
+
 // A toy page with several pictures gets the picture strip's buttons.
 if (document.querySelector("[data-gallery]")) void import("./gallery-client");
 

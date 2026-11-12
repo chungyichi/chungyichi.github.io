@@ -8,6 +8,7 @@ import { gridOf, pickFeaturedToys, TOYS_SECTION } from "../src/toys.mjs";
 import { entriesOfSection, tagCounts } from "../src/grid-core.mjs";
 import { resolveGear, filledSets, overviewMode, collectionMore } from "../src/gear.mjs";
 import { evaluateAchievements, resolveProfile, questLog } from "../src/achievements.mjs";
+import { resolveMyGames } from "../src/mygames.mjs";
 
 const sectionIds = () => site.sections.map((s) => s.id);
 
@@ -104,6 +105,10 @@ export function buildRoutes(model, pages, { langs = site.langs, perPage = site.p
     routes.push({ path: tagsIndexPath(lang), kind: "tags", lang, alternates: alt(tagsIndexPath(lang), lang), shareKey: "tags", props: { index: indexHref, entries } });
     routes.push({ path: searchPath(lang), kind: "search", lang, alternates: alt(searchPath(lang), lang), shareKey: "search",
       searchIndex: { href: indexHref, text: indexText }, props: { index: indexHref, tags: tags.map((t) => ({ tag: t.tag, count: t.count })) } });
+
+    // The games I make myself (site.config.mjs myGames): one page in each language that has a title for it; no machine translation, so another language simply has no such page.
+    const mine = resolveMyGames(site, lang);
+    if (mine) routes.push({ path: mine.path, kind: "mygames", lang, alternates: alt(mine.path, lang).filter((a) => resolveMyGames(site, a.lang)), shareKey: "mygames", props: mine });
 
     for (const [name, byLang] of Object.entries(pages)) {
       const pg = byLang[lang];

@@ -12,6 +12,7 @@ export function render(route: Route) {
   else if (route.kind === "grid") { pageTitle = `${sectionTitle(route.lang, route.props.section)} · ${site}`; description = sectionTitle(route.lang, route.props.section); }
   else if (route.kind === "tags") { pageTitle = `${t[route.lang].tags} · ${site}`; }
   else if (route.kind === "search") { pageTitle = `${t[route.lang].search} · ${site}`; }
+  else if (route.kind === "mygames") { pageTitle = `${route.props.title} · ${site}`; description = route.props.intro || route.props.title; }
   else if (route.kind === "notfound") { pageTitle = `${t[route.lang].notFound} · ${site}`; }
   else if (route.kind === "entry") { pageTitle = site; description = tagline(route.lang); }
   return { html: renderToString(<App route={route} />), title: pageTitle, description: (route as { description?: string }).description || description };

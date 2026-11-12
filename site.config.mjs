@@ -2,11 +2,10 @@
 export const site = {
   title: { zh: "Chungyi Chi", en: "Chungyi Chi" },
   tagline: { zh: "認識我是你一生最大的榮幸", en: "Systems, verification and open source" },
-  // The island game (a day in the life): a static game under /island/ (no intro page: the menu item and the card open it directly). The menu item and the home card appear only in the
-  // languages that have a `title` here (zh for now). `nav` is the short menu label (not "game": the games library is the Steam collection).
+  // The island game (a day in the life): a static game under /island/. The home card shows these texts and opens the "my games" page below (not the game itself);
+  // it appears only in the languages that have a `title` here (zh for now). The "my games" page reuses them for the island's card.
   island: {
     title: { zh: "重禕的一天" },
-    nav: { zh: "小島" },
     kicker: { zh: "小遊戲" },
     blurb: { zh: "5:30 起床，送兒子上托嬰，趕在 10:00 前到麥當勞鏟薯條。一座台灣形狀的小島，和身邊的人過一天。" },
     cta: { zh: "開始玩" },
@@ -14,6 +13,26 @@ export const site = {
   },
   // The games page (遊樂區): a static page under /play/ with a retro / modern look switch. It lists the games that are ready to show (the menu item opens it).
   play: { title: { zh: "遊樂區" }, nav: { zh: "遊樂區" } },
+  // The games I make myself (not the 遊戲庫 shelf, which is the Steam / NS / PS collection): one page, /<lang>/<slug>/, with a card per game (see README "My games").
+  // The page, its menu item and the home card's link exist only in the languages that have a `title` here (zh for now). `title` is the page name AND the menu label.
+  //   games[]  id (the card's anchor), `use: "island"` takes title, kicker, blurb and picture from `island` above; otherwise give them here.
+  //            platform, status, cta { zh }; updated "YYYY-MM-DD"; news { zh } (the line in 最新更新); href (the game's address; "" = not public: a disabled button)
+  myGames: {
+    slug: "my-games",
+    title: { zh: "我的遊戲" },
+    intro: { zh: "我自己做的小遊戲，都在瀏覽器裡玩，不用安裝。" },
+    games: [
+      { id: "island", use: "island", platform: { zh: "瀏覽器（電腦、手機都可以）" }, status: { zh: "已公開" }, updated: "2026-11-04", news: { zh: "重禕的一天 上線" }, cta: { zh: "開始玩" }, href: "/island/" },
+      { id: "toast-brawl", title: { zh: "獵命師之全麥吐司大起司" }, kicker: { zh: "3D 對戰小遊戲 · 開發中" }, picture: "/media/games/toast-brawl/card.webp",
+        blurb: { zh: "動作對戰小遊戲，手機瀏覽器就能玩。25 個吐司角色和幾隻動物，可以裝命格，瞄準後把人打飛。致敬百變恰吉，還沒有完成。" },
+        platform: { zh: "瀏覽器（手機可玩，電腦也可以）" }, status: { zh: "開發中，第一版可以玩" }, updated: "2026-11-12", news: { zh: "獵命師之全麥吐司大起司 第一版上線" }, cta: { zh: "開始玩" }, href: "/toast-brawl/" },
+      // LOCAL PREVIEW ASSET: the cover was copied by hand from ~/sites/daniao-legend/sdf3d/assets/cover_wide.webp into content/games/media/street-sketch/ (git-ignored, not in the
+      // media release yet), so a deploy would not have it. It shows a real school's sign (復興國民小學). Not public: no href.
+      { id: "street-sketch", title: { zh: "街區草圖" }, kicker: { zh: "3D 小遊戲 · 名稱暫定" }, picture: "/media/games/street-sketch/cover.webp",
+        blurb: { zh: "手繪墨線草圖畫風的 3D 小遊戲。照我記憶中的樣子，重建台南復興國小附近的街區，帶一隻小狗在街上走走看看。" },
+        platform: { zh: "瀏覽器（手機可玩）" }, status: { zh: "內測中，尚未公開" }, updated: "2026-11-07", news: { zh: "街區草圖 內測中" }, cta: { zh: "即將推出" }, href: "" },
+    ],
+  },
   author: "Chungyi Chi",
   baseUrl: "https://chungyichi.github.io",
   github: "https://github.com/chungyichi",
@@ -94,7 +113,7 @@ export const site = {
   ],
   // Picture for sharing pages that have none of their own (a 1200x630 JPEG in public/); absent file = no default picture.
   ogImage: "/og-default.jpg",
-  // Share previews of the pages people send around (see README "Share previews"). Key: home | toys | books | games | search | tags.
+  // Share previews of the pages people send around (see README "Share previews"). Key: home | toys | books | games | search | tags | mygames.
   //   description  { zh, en }; {n} = published posts of that section in that language (filled at build time). A page without an entry keeps its old description.
   //   image        optional "<section>/<slug>" of a published post with an og.jpg; missing post or file = the default picture (one warning in the build output)
   meta: {
@@ -104,6 +123,7 @@ export const site = {
     games: { description: { zh: "Steam、NS、PS 上的遊戲，共 {n} 款，記下已經買過的，不要重複買。", en: "Games on Steam, NS and PS: {n} so far, so we do not buy the same one twice." } },
     search: { description: { zh: "搜尋標題、摘要與標籤，也能依誰的、類型、平台篩選。", en: "Search titles, summaries and tags. Filter by owner, type or platform." } },
     tags: { description: { zh: "所有標籤，點一個看用到它的文章與收藏。", en: "All tags. Pick one to see the posts and items that use it." } },
+    mygames: { description: { zh: "我自己做的小遊戲：重禕的一天，還有內測中的街區草圖。" } },
   },
   postsPerPage: 10,
   // Posts on the home page, as "<section>/<slug>" (a post missing in a language is skipped); newest first. An empty list shows the latest few.

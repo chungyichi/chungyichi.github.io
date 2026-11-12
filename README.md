@@ -27,7 +27,7 @@ a plain word matches tags like titles, and typing `#bpf` plus a space turns it i
 **Thumbnail in lists**: `thumb.webp` (400x210) in the post's media folder, made with `og.jpg` by `scripts/og-image.sh <original> <dir>` (publish.sh does it for the first picture). A post without one shows no thumbnail.
 **Share**: every post has a copy-link button (and a share button where the browser offers one); both appear only when JavaScript runs. `image: file.jpg` in the front matter picks the share picture.
 
-**Share previews**: the pages people send around have their own description (and the toys list its own picture), set in `meta` of `site.config.mjs`: `home`, `toys`, `books`, `games`, `search`, `tags`, each `description: { zh, en }` and optionally `image: "<section>/<slug>"` (a published post with an `og.jpg`). `{n}` in a description is the number of published posts of that section in that language, filled at build time. A page with no entry keeps its old description; a missing `image` post or file falls back to `og-default.jpg` and prints one warning in the build output. `og:title` is unchanged; the twitter tags follow. Posts are not affected. Tests: `test/share.test.mjs`.
+**Share previews**: the pages people send around have their own description (and the toys list its own picture), set in `meta` of `site.config.mjs`: `home`, `toys`, `books`, `games`, `search`, `tags`, `mygames`, each `description: { zh, en }` and optionally `image: "<section>/<slug>"` (a published post with an `og.jpg`). `{n}` in a description is the number of published posts of that section in that language, filled at build time. A page with no entry keeps its old description; a missing `image` post or file falls back to `og-default.jpg` and prints one warning in the build output. `og:title` is unchanged; the twitter tags follow. Posts are not affected. Tests: `test/share.test.mjs`.
 
 Front matter keys: `title`, `summary` (required unless draft, at most 300 characters), `draft`, `updated` (`YYYY-MM-DD`), `tags`, `image`, `trusted`.
 Raw HTML in Markdown is **escaped, not rendered**.
@@ -38,6 +38,15 @@ Raw HTML in Markdown is **escaped, not rendered**.
 Front matter: `title`, `summary`, `tags` (1 to 3), `platform: steam, ps` (one or more ids from `grid.platforms` in `site.config.mjs`, each once; required to publish, `npm run check` fails without),
 `developer`, `original` (original / English title, shown under the title and searchable) and `source` (a small muted link). Not for games: `owner`, `status`, `own`, `type`, `author`, `volumes`, `price`, `quantity`.
 The index has underlined platform tabs 「全部／Steam／NS／PS／其他」 (a game on two platforms is in both tabs) only; the routes are `/zh/games/` (`/zh/games/?platform=ps`, filtered in the browser) and `/zh/games/<game>/`. The search page has the 「遊戲」 scope with the same tabs.
+
+## My games (我的遊戲)
+
+The games I make myself, one page: `/zh/my-games/` (not the 遊戲庫 shelf above). Config: `myGames` in `site.config.mjs` (`slug`, `title` = the page name and the menu label, `intro`, `games`).
+The page, its menu item (where the island link used to be) and the home island card's target exist only in a language whose `title` is set (zh now; no English page, nothing is machine-translated).
+A card per game: cover, name, one paragraph, platform, status, last update, and 開始玩 (`href`) or a disabled 即將推出 (`href: ""`, not public). `use: "island"` takes the island's texts and picture from `island`. The game itself stays at `/island/`.
+- Two looks, one markup (`src/MyGames.tsx`, `src/styles/mygames.css`): modern (the default, plain cards) and retro, a tribute to the personal download sites of the late 90s (framed table, left category column, 最新更新, bevel buttons, a counter that is only a decoration, small pixel touches; all original). Every retro rule is under `.mygames-retro` on the page's container, so the header, menu, footer, theme and season are not affected; light and dark have their own `--mg-*` tokens; the ticker and the blinking NEW stop under `prefers-reduced-motion`.
+- The switch 「懷舊 / 現代」 sits beside the page title and needs JavaScript (`src/mygames-client.ts`); without it the switch is hidden and the page is modern. The choice is kept in `localStorage` key `mygames-look` (inside try/catch); a tiny inline script on this page only (`LOOK_INIT` in `src/mygames.mjs`) puts a saved retro look back before the first paint.
+- Share preview: `meta.mygames`. Tests: `test/mygames.test.mjs`.
 
 ## Equipment slots (裝備欄)
 
@@ -265,7 +274,7 @@ The site lives on `master`. Settings → Pages → Source is **GitHub Actions**;
 ## Known limits
 
 - Not yet looked at in a browser by a human; layout and typography are a neutral starting point.
-- GitHub Pages cannot set HTTP headers, so there is no Content-Security-Policy; the site has one tiny inline script (theme).
+- GitHub Pages cannot set HTTP headers, so there is no Content-Security-Policy; the site has one tiny inline script (theme), and the my-games page one more (`LOOK_INIT`).
 
 ## Private vault
 

@@ -1,0 +1,21 @@
+/* The loading indicator (src/loader.ts): a tank, the ASCII shark swimming in it, the water rising to --ld-p (0..1), the share in percent below. */
+.ld { display: grid; justify-items: center; gap: .5rem; padding: 1rem 0; --ld-p: 0; font-family: var(--font-mono); color: var(--fg); }
+.ld[hidden] { display: none; }
+.ld-full { position: fixed; inset: 0; z-index: 99; align-content: center; background: var(--bg); padding: 0; }
+.ld-tank { position: relative; width: 15rem; height: 8.5rem; overflow: hidden; border: 3px solid var(--fg); border-top: 0; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.ld-water { position: absolute; inset: 0; transform-origin: bottom; transform: scaleY(var(--ld-p)); transition: transform .2s linear; background: color-mix(in srgb, var(--accent) 38%, transparent); }
+.ld-shark { position: absolute; left: 0; top: 1.2rem; margin: 0; font: .6rem/1 var(--font-mono); color: var(--fg); white-space: pre; animation: ld-swim 2.4s linear infinite; }
+.ld-weed { position: absolute; bottom: 0; margin: 0; font: .7rem/1 var(--font-mono); color: color-mix(in srgb, var(--accent) 80%, var(--fg)); transform-origin: 50% 100%; animation: ld-sway 3.2s ease-in-out infinite alternate; }
+.ld-pct { font: 700 1rem var(--font-body); }
+/* one lap in 2.4 s: a load is often over in a second or two and a slower shark would look parked. Left to right, a bob, turn (mirror: the glyphs of a mirrored shark still read as a shark), back */
+@keyframes ld-swim {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  25%  { transform: translate(5rem, -.5rem) scaleX(1); }
+  49%  { transform: translate(10rem, 0) scaleX(1); }
+  50%  { transform: translate(10rem, 0) scaleX(-1); }
+  75%  { transform: translate(5rem, .5rem) scaleX(-1); }
+  99%  { transform: translate(0, 0) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
+}
+@keyframes ld-sway { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+@media (prefers-reduced-motion: reduce) { .ld-weed { animation: none; } .ld-shark { animation: none; left: 2.5rem; } .ld-water { transition: none; } }

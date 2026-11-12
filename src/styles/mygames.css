@@ -1,0 +1,155 @@
+/*
+ * The "my games" page (src/MyGames.tsx). Two looks on one markup:
+ *   modern (default): the site's clean cards.
+ *   retro (.mygames-retro on the page's container, set by the 懷舊 / 現代 switch): a tribute to the personal download sites of the late 90s,
+ *   all original: a framed table, a left category column, 最新更新, bevel buttons, a decorative counter, a few pixel touches.
+ * Every retro rule starts with .mygames-retro, so nothing outside this page changes (header, menu, footer, theme, season).
+ */
+
+/* Retro tokens, light and dark (the site's theme button picks; same pattern as tokens.css). */
+.mygames {
+  --mg-desk: #fff7d6; --mg-dot: #e8d9a0; --mg-panel: #ffffff; --mg-text: #000000; --mg-muted: #4a4a4a;
+  --mg-bar: #000080; --mg-bar-to: #1d63c9; --mg-bar-text: #ffffff; --mg-title: #000080; --mg-title-shadow: #ffd84a;
+  --mg-face: #c0c0c0; --mg-face-light: #dfdfdf; --mg-bevel-light: #ffffff; --mg-bevel-mid: #808080; --mg-bevel-dark: #000000; --mg-btn-text: #000000;
+  --mg-disabled: #808080; --mg-disabled-shadow: #ffffff; --mg-line: #9a9a9a; --mg-cell: #ececec;
+  --mg-link: #0000ee; --mg-visited: #551a8b; --mg-hover: #cc0000;
+  --mg-led-bg: #000000; --mg-led: #39ff14; --mg-digit: #ff3b3b; --mg-new-bg: #e00000; --mg-new: #ffff00;
+  --mg-px-ball: #e00000; --mg-px-shine: #ffb0b0; --mg-px-stick: #333333; --mg-px-base: #404040; --mg-px-button: #ffd400; --mg-px-edge: #000000;
+  --mg-font: "PMingLiU", "MingLiU", "新細明體", "Noto Serif CJK TC", "Noto Serif TC", "Songti TC", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .mygames {
+    --mg-desk: #0b1030; --mg-dot: #1a2252; --mg-panel: #121a40; --mg-text: #e8e8f2; --mg-muted: #b4b8cc;
+    --mg-bar: #24318f; --mg-bar-to: #3a5ccc; --mg-bar-text: #ffffff; --mg-title: #ffe14d; --mg-title-shadow: #6a2a8a;
+    --mg-face: #3a3f58; --mg-face-light: #4c526e; --mg-bevel-light: #7d84a8; --mg-bevel-mid: #23263a; --mg-bevel-dark: #05060c; --mg-btn-text: #f0f0f8;
+    --mg-disabled: #8a8ea6; --mg-disabled-shadow: #1a1d2c; --mg-line: #3d4670; --mg-cell: #1b2350;
+    --mg-link: #8fb0ff; --mg-visited: #d0a4ff; --mg-hover: #ff9a8a;
+    --mg-px-stick: #c8c8d8; --mg-px-base: #8088a8; --mg-px-edge: #c8c8d8;
+  }
+}
+:root[data-theme="dark"] .mygames {
+  --mg-desk: #0b1030; --mg-dot: #1a2252; --mg-panel: #121a40; --mg-text: #e8e8f2; --mg-muted: #b4b8cc;
+  --mg-bar: #24318f; --mg-bar-to: #3a5ccc; --mg-bar-text: #ffffff; --mg-title: #ffe14d; --mg-title-shadow: #6a2a8a;
+  --mg-face: #3a3f58; --mg-face-light: #4c526e; --mg-bevel-light: #7d84a8; --mg-bevel-mid: #23263a; --mg-bevel-dark: #05060c; --mg-btn-text: #f0f0f8;
+  --mg-disabled: #8a8ea6; --mg-disabled-shadow: #1a1d2c; --mg-line: #3d4670; --mg-cell: #1b2350;
+  --mg-link: #8fb0ff; --mg-visited: #d0a4ff; --mg-hover: #ff9a8a;
+  --mg-px-stick: #c8c8d8; --mg-px-base: #8088a8; --mg-px-edge: #c8c8d8;
+}
+
+/* ---------- Modern (default) ---------- */
+.mygames .mg-px, .mygames .mg-marquee, .mygames .mg-side, .mygames .mg-news, .mygames .mg-soon-band, .mygames .mg-top { display: none; }
+.mg-title-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem 1rem; margin-top: 1.2rem; }
+.mg-title-row h1 { margin: 0; }
+.mg-intro { color: var(--muted); margin: 0.5rem 0 1.4rem; }
+/* The switch: a small segmented pill like the books' own toggle. */
+.mg-look { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; font-size: 0.85rem; }
+.mg-look[hidden] { display: none; }
+.mg-look button { font: inherit; background: none; border: 0; cursor: pointer; padding: 0.25rem 0.9rem; color: var(--muted); }
+.mg-look button + button { border-left: 1px solid var(--line); }
+.mg-look button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); font-weight: 600; }
+.mg-look button:focus-visible { outline-offset: -3px; }
+.mg-games { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1.4rem; align-items: start; }
+.mg-game { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; background: var(--bg); scroll-margin-top: 1rem; }
+.mg-pic { position: relative; aspect-ratio: 16 / 9; background: var(--code-bg); }
+.mg-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mg-body { display: grid; gap: 0.5rem; padding: 1rem 1.1rem 1.2rem; }
+.mg-kicker { margin: 0; font: 600 0.78rem var(--font-mono); letter-spacing: 0.05em; color: var(--muted); }
+.mg-body h2 { margin: 0; font-size: 1.4rem; }
+.mg-blurb { margin: 0; line-height: 1.7; }
+.mg-facts { display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem; margin: 0.3rem 0 0; font-size: 0.9rem; }
+.mg-facts dt { color: var(--muted); }
+.mg-facts dd { margin: 0; }
+.mg-actions { margin: 0.5rem 0 0; }
+.mg-play { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 1.2rem; border: 1px solid var(--accent); border-radius: 999px; background: var(--accent); color: var(--accent-fg); font: inherit; font-weight: 600; text-decoration: none; }
+a.mg-play:hover { text-decoration: none; filter: brightness(1.1); }
+.mg-play:disabled { background: var(--code-bg); border: 1px dashed var(--line); color: var(--muted); cursor: not-allowed; }
+
+/* ---------- Retro (.mygames-retro) ---------- */
+.mygames-retro { margin: 1rem 0 2rem; padding: 0.5rem; font-family: var(--mg-font); font-size: 1rem; line-height: 1.65; color: var(--mg-text);
+  background: var(--mg-desk) radial-gradient(var(--mg-dot) 1px, transparent 1.3px) 0 0 / 8px 8px;
+  border: 3px solid; border-color: var(--mg-bevel-light) var(--mg-bevel-dark) var(--mg-bevel-dark) var(--mg-bevel-light); outline: 1px solid var(--mg-bevel-mid); }
+.mygames-retro .mg-px, .mygames-retro .mg-marquee, .mygames-retro .mg-side, .mygames-retro .mg-news, .mygames-retro .mg-soon-band, .mygames-retro .mg-top { display: block; }
+.mygames-retro a { color: var(--mg-link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.15em; transition: none; }
+.mygames-retro a:visited { color: var(--mg-visited); }
+.mygames-retro a:hover { color: var(--mg-hover); }
+.mygames-retro a:focus-visible, .mygames-retro button:focus-visible { outline: 2px dotted var(--mg-text); outline-offset: 2px; border-radius: 0; }
+/* A panel: a sunken white table cell; its heading is a title bar. */
+.mygames-retro .mg-head, .mygames-retro .mg-side nav, .mygames-retro .mg-news, .mygames-retro .mg-game {
+  background: var(--mg-panel); border: 2px solid; border-color: var(--mg-bevel-mid) var(--mg-bevel-light) var(--mg-bevel-light) var(--mg-bevel-mid); border-radius: 0; }
+.mygames-retro .mg-side h2, .mygames-retro .mg-news h2 { margin: 0; padding: 0.15rem 0.5rem; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.1em;
+  color: var(--mg-bar-text); background: linear-gradient(90deg, var(--mg-bar), var(--mg-bar-to)); }
+/* Banner */
+.mygames-retro .mg-head { padding: 0.6rem 0.8rem 0.5rem; margin-bottom: 0.5rem; }
+.mygames-retro .mg-title-row { margin: 0; }
+.mygames-retro h1 { display: flex; align-items: center; gap: 0.5rem; font-family: inherit; font-size: clamp(1.4rem, 6vw, 2rem); letter-spacing: 0.12em; color: var(--mg-title); text-shadow: 2px 2px 0 var(--mg-title-shadow); }
+.mygames-retro .mg-px { flex: none; width: 2rem; height: 2rem; image-rendering: pixelated; }
+.mg-px-ball { fill: var(--mg-px-ball); } .mg-px-shine { fill: var(--mg-px-shine); } .mg-px-stick { fill: var(--mg-px-stick); }
+.mg-px-base { fill: var(--mg-px-base); } .mg-px-button { fill: var(--mg-px-button); } .mg-px-edge { fill: var(--mg-px-edge); }
+.mygames-retro .mg-intro { color: var(--mg-text); margin: 0.4rem 0; }
+/* The switch as two bevel buttons; the chosen one stays pushed in. */
+.mygames-retro .mg-look { border: 0; border-radius: 0; overflow: visible; gap: 0.25rem; font-size: 0.9rem; }
+.mygames-retro .mg-look button + button { border-left: 0; }
+/* Bevel buttons: a raised grey face; pushed in when pressed, chosen or active. */
+.mygames-retro .mg-look button, .mygames-retro .mg-play { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.3rem 0.9rem; border: 0; border-radius: 0; font: inherit; font-weight: 700;
+  background: var(--mg-face); color: var(--mg-btn-text); text-decoration: none; filter: none;
+  box-shadow: inset -1px -1px var(--mg-bevel-dark), inset 1px 1px var(--mg-bevel-light), inset -2px -2px var(--mg-bevel-mid), inset 2px 2px var(--mg-face-light); }
+.mygames-retro .mg-look button[aria-pressed="true"], .mygames-retro .mg-look button:active, .mygames-retro a.mg-play:active {
+  background: repeating-conic-gradient(var(--mg-face) 0 25%, var(--mg-face-light) 0 50%) 0 0 / 2px 2px; color: var(--mg-btn-text); padding: 0.35rem 0.85rem 0.25rem 0.95rem;
+  box-shadow: inset -1px -1px var(--mg-bevel-light), inset 1px 1px var(--mg-bevel-dark), inset -2px -2px var(--mg-face-light), inset 2px 2px var(--mg-bevel-mid); }
+.mygames-retro a.mg-play:visited, .mygames-retro a.mg-play:hover { color: var(--mg-btn-text); }
+.mygames-retro .mg-play:disabled { color: var(--mg-disabled); text-shadow: 1px 1px 0 var(--mg-disabled-shadow); cursor: not-allowed; border: 0; }
+/* A ticker of the welcome line (still when motion is reduced). */
+.mygames-retro .mg-marquee { margin: 0.4rem 0 0.1rem; overflow: hidden; white-space: nowrap; padding: 0.1rem 0; font-size: 0.9rem;
+  background: var(--mg-led-bg); color: var(--mg-led); border: 2px solid; border-color: var(--mg-bevel-mid) var(--mg-bevel-light) var(--mg-bevel-light) var(--mg-bevel-mid); }
+.mygames-retro .mg-marquee span { display: inline-block; padding-left: 0.5rem; }
+@media (prefers-reduced-motion: no-preference) {
+  .mygames-retro .mg-marquee span { padding-left: 100%; animation: mg-marquee 16s linear infinite; }
+  @keyframes mg-marquee { to { transform: translateX(-100%); } }
+}
+/* Layout: one column on a phone; a left category column from a tablet up. */
+.mygames-retro .mg-layout { display: grid; gap: 0.5rem; }
+@media (min-width: 44rem) { .mygames-retro .mg-layout { grid-template-columns: 12.5rem minmax(0, 1fr); align-items: start; } }
+.mygames-retro .mg-side { display: grid; gap: 0.5rem; }
+.mygames-retro .mg-side nav { display: block; }   /* the site styles every nav as a flex row */
+.mygames-retro .mg-side ul, .mygames-retro .mg-news ul { list-style: none; margin: 0; padding: 0.35rem 0.6rem 0.5rem; }
+.mygames-retro .mg-side li { position: relative; padding-left: 0.9rem; }
+.mygames-retro .mg-side li::before { content: ""; position: absolute; left: 0; top: 0.55em; width: 0; height: 0; border: 0.3em solid transparent; border-left: 0.45em solid var(--mg-hover); border-right: 0; }   /* a pixel arrow */
+@media (max-width: 43.99rem) {
+  .mygames-retro .mg-side { grid-template-columns: minmax(0, 1fr); }
+  .mygames-retro .mg-side ul { display: flex; flex-wrap: wrap; gap: 0 1.2rem; }
+}
+/* The counter: decorative only (aria-hidden, and it says so). */
+.mygames-retro .mg-counter > span { white-space: nowrap; }
+.mygames-retro .mg-counter { padding: 0.4rem 0.5rem; text-align: center; font-size: 0.85rem; background: var(--mg-panel);
+  border: 2px solid; border-color: var(--mg-bevel-mid) var(--mg-bevel-light) var(--mg-bevel-light) var(--mg-bevel-mid); }
+.mygames-retro .mg-digits { display: inline-block; margin: 0.15rem 0.3rem; padding: 0 0.2rem; font: 700 1rem/1.3 var(--font-mono); letter-spacing: 0.2em; color: var(--mg-digit); background: var(--mg-led-bg);
+  border: 1px solid var(--mg-bevel-mid); }
+.mygames-retro .mg-counter small { display: block; color: var(--mg-muted); font-size: 0.75rem; }
+/* 最新更新: dated lines with dotted rules; the newest has a blinking NEW. */
+.mygames-retro .mg-news { margin-bottom: 0.5rem; }
+.mygames-retro .mg-news li { padding: 0.2rem 0; border-bottom: 1px dotted var(--mg-line); }
+.mygames-retro .mg-news li:last-child { border-bottom: 0; }
+.mygames-retro .mg-news time { font-family: var(--font-mono); font-size: 0.85rem; color: var(--mg-muted); }
+.mg-new { display: none; }
+.mygames-retro .mg-new { display: inline-block; margin-left: 0.4rem; padding: 0 0.25rem; font: 700 0.7rem/1.4 var(--font-mono); color: var(--mg-new); background: var(--mg-new-bg); vertical-align: 0.1em; }
+@media (prefers-reduced-motion: no-preference) {
+  .mygames-retro .mg-new { animation: mg-blink 1.2s steps(2, jump-none) infinite; }
+  @keyframes mg-blink { 50% { visibility: hidden; } }
+}
+/* A game: a table row, picture cell beside the text cell on a wide screen. */
+.mygames-retro .mg-games { grid-template-columns: minmax(0, 1fr); gap: 0.5rem; }
+.mygames-retro .mg-game { display: grid; }
+@media (min-width: 44rem) { .mygames-retro .mg-game { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); } }
+.mygames-retro .mg-pic { margin: 0.4rem; align-self: start; border: 2px solid; border-color: var(--mg-bevel-mid) var(--mg-bevel-light) var(--mg-bevel-light) var(--mg-bevel-mid); background: var(--mg-cell); }
+.mygames-retro .mg-body { padding: 0.4rem 0.7rem 0.7rem; gap: 0.4rem; }
+.mygames-retro .mg-kicker { font-family: inherit; color: var(--mg-muted); letter-spacing: 0; }
+.mygames-retro .mg-body h2 { font-family: inherit; font-size: 1.3rem; color: var(--mg-title); border-bottom: 1px dashed var(--mg-line); padding-bottom: 0.15rem; }
+/* The facts as a ruled table. */
+.mygames-retro .mg-facts { gap: 0; border-top: 1px solid var(--mg-line); border-left: 1px solid var(--mg-line); }
+.mygames-retro .mg-facts dt, .mygames-retro .mg-facts dd { padding: 0.15rem 0.5rem; border-right: 1px solid var(--mg-line); border-bottom: 1px solid var(--mg-line); }
+.mygames-retro .mg-facts dt { color: var(--mg-text); background: var(--mg-cell); }
+/* Not public yet: a striped "under construction" band over the picture. */
+.mygames-retro .mg-soon-band { position: absolute; left: 0; right: 0; bottom: 0; padding: 0.3rem; text-align: center;
+  background: repeating-linear-gradient(-45deg, #ffd400 0 10px, #111111 10px 20px); }
+.mygames-retro .mg-soon-band span { display: inline-block; padding: 0 0.6rem; font-weight: 700; font-size: 0.9rem; color: #000000; background: #ffd400; border: 1px solid #000000; }
+.mygames-retro .mg-top { margin: 0.4rem 0 0; text-align: right; font-size: 0.85rem; }

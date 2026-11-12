@@ -25,6 +25,10 @@ export type QuestLog = { done: number; volumes: number; web: number; games: numb
 /** One person's sheet: all slots in the order of SLOTS, `filled` of them with an item; plus the 閱歷 tab (achievements and quest log). */
 export type GearSet = { owner: string; filled: number; slots: GearSlotData[]; profile: GearProfile; achievements: AchievementState[]; log: QuestLog; more?: { section: string; slug: string; title: string }[] };
 
+/** One card of the "my games" page (src/mygames.mjs resolveMyGames): every text already in the page's language; href "" = not public (a disabled button). */
+export type MyGame = { id: string; title: string; kicker: string; blurb: string; picture: string; platform: string; status: string; news: string; cta: string; updated: string; href: string };
+/** The "my games" page: its address and name, the intro line, the cards, and the 最新更新 lines (newest first). */
+export type MyGamesPage = { path: string; title: string; intro: string; games: MyGame[]; news: { id: string; date: string; text: string }[] };
 
 export type Route =
   | { kind: "entry"; path: string; lang: Lang; alternates: Alt[] }
@@ -35,4 +39,5 @@ export type Route =
   | { kind: "grid"; path: string; lang: Lang; alternates: Alt[]; props: { section: string; index: string; entries: Entry[] } }
   | { kind: "tags"; path: string; lang: Lang; alternates: Alt[]; props: { index: string; entries: Entry[] } }
   | { kind: "search"; path: string; lang: Lang; alternates: Alt[]; props: { index: string; tags: { tag: string; count: number }[] } }
-  | { kind: "page"; path: string; lang: Lang; alternates: Alt[]; props: { name: string; title: string; summary: string; html: string } };
+  | { kind: "page"; path: string; lang: Lang; alternates: Alt[]; props: { name: string; title: string; summary: string; html: string } }
+  | { kind: "mygames"; path: string; lang: Lang; alternates: Alt[]; props: MyGamesPage };

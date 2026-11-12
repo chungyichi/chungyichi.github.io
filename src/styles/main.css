@@ -2,6 +2,7 @@
 @import "./season.css";
 @import "./ink.css";
 @import "./gear.css";
+@import "./mygames.css";
 
 /* The site is static pages (no client router): a link is a real page load. Where the browser supports it, cross-fade between our own pages instead of flashing blank. */
 @view-transition { navigation: auto; }

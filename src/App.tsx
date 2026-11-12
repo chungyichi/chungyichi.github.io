@@ -10,6 +10,8 @@ import { tagPath } from "./tags.mjs";
 import { BookTile, PostItem, PostList, TagList, platformLine, postHref } from "./cards";
 import { GridBrowser, TagsBrowser } from "./Browse";
 import { GearSheet, GearTabs, GearViews, GearDialog } from "./Gear";
+import { MyGames } from "./MyGames";
+import { resolveMyGames } from "./mygames.mjs";
 
 const pageHref = (lang: Lang, section: string, n: number) => (n === 1 ? `/${lang}/${section}/` : `/${lang}/${section}/page/${n}/`);
 
@@ -26,7 +28,7 @@ function Layout({ route, wide, children }: { route: Route; wide?: boolean; child
           <a className="brand" href={`/${lang}/`}>{title(lang)}</a>
           {/* One non-wrapping row that scrolls sideways when the sections do not fit; the current page is marked and /src/entry-client.tsx scrolls it into view. */}
           <nav aria-label="Main" className="main-nav">
-            {([[`/${lang}/`, s.home], ...site.sections.map((sec: { id: string }) => [`/${lang}/${sec.id}/`, sectionTitle(lang, sec.id)]), ...(playNav(lang) ? [[PLAY_HREF, playNav(lang)!]] : []), [`/${lang}/search/`, s.search], [`/${lang}/about/`, s.about]] as [string, string][]).map(([href, label]) => (
+            {([[`/${lang}/`, s.home], ...site.sections.map((sec: { id: string }) => [`/${lang}/${sec.id}/`, sectionTitle(lang, sec.id)]), ...(myGames(lang) ? [[myGames(lang)!.path, myGames(lang)!.title]] : []), ...(playNav(lang) ? [[PLAY_HREF, playNav(lang)!]] : []), [`/${lang}/search/`, s.search], [`/${lang}/about/`, s.about]] as [string, string][]).map(([href, label]) => (
               <a key={href} href={href} aria-current={href === `/${lang}/` ? (route.path === href ? "page" : undefined) : route.path.startsWith(href) ? "page" : undefined}>{label}</a>
             ))}
           </nav>
@@ -75,29 +77,32 @@ function Gallery({ lang, slides, keys, badges, counter, below, className, label,
   );
 }
 
-type IslandText = { title: string; nav: string; kicker: string; blurb: string; cta: string; picture: string };
-/** The island game's texts in this language, or null when it has none (then no menu item and no home card). */
+type IslandText = { title: string; kicker: string; blurb: string; cta: string; picture: string };
+/** The island game's texts in this language, or null when it has none (then no home card). */
 const island = (lang: Lang): IslandText | null => {
   const c = (site as { island?: Record<string, Partial<Record<Lang, string>> | string> }).island;
   if (!c || typeof c.title === "string" || !c.title?.[lang]) return null;
   const pick = (k: string) => { const v = c[k]; return typeof v === "string" ? v : v?.[lang] ?? ""; };
-  return { title: pick("title"), nav: pick("nav"), kicker: pick("kicker"), blurb: pick("blurb"), cta: pick("cta"), picture: pick("picture") };
+  return { title: pick("title"), kicker: pick("kicker"), blurb: pick("blurb"), cta: pick("cta"), picture: pick("picture") };
 };
 
-/** The game is a static page outside the app (no intro page): the menu item and the home card open it directly. */
+/** The "my games" page in this language (site.config.mjs myGames), or null: then no menu item. */
+const myGames = (lang: Lang) => resolveMyGames(site, lang);
+
+/** The game itself is a static page outside the app; it is the home card's target only in a language without a "my games" page. */
 const ISLAND_HREF = "/island/";
 
 /** The games page (遊樂區, public/play/) in the menu, only in the languages that have a nav label for it. */
 const PLAY_HREF = "/play/";
 const playNav = (lang: Lang): string | null => (site as { play?: { nav?: Partial<Record<Lang, string>> } }).play?.nav?.[lang] ?? null;
 
-/** The home page's island card: the whole card opens the game (a picture, the title, one sentence, the button). No game code is loaded here. */
+/** The home page's island card: the whole card opens the "my games" page, where the game starts (a picture, the title, one sentence, the button). No game code is loaded here. */
 function HomeIsland({ lang }: { lang: Lang }) {
   const g = island(lang);
   if (!g) return null;
   return (
     <section className="home-island">
-      <a className="home-island-link" href={ISLAND_HREF}>
+      <a className="home-island-link" href={myGames(lang)?.path ?? ISLAND_HREF}>
         <img src={g.picture} alt="" width={1200} height={675} decoding="async" />
         <span className="home-island-body">
           <span className="home-island-kicker">{g.kicker}</span>
@@ -382,5 +387,6 @@ export function App({ route }: { route: Route }) {
     case "page": return <Layout route={route}><Page route={route} /></Layout>;
     case "search": return <Layout route={route}><Search route={route} /></Layout>;
     case "tags": return <Layout route={route}><TagsPage route={route} /></Layout>;
+    case "mygames": return <Layout route={route} wide><MyGames lang={route.lang} page={route.props} /></Layout>;
   }
 }

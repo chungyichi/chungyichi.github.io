@@ -21,6 +21,8 @@ export const t = {
     gearTitle: "我們的裝備", gearHint: "點一個裝備看說明", gearViews: "總覽或格子", gearViewOverview: "總覽", gearViewSlots: "格子", gearNone: "還沒有裝備", gearNoTitle: "還沒有稱號", gearOverview: (who: string) => `${who}的裝備總覽`, gearWord: (full: string, rarity: string) => `${full}（${rarity}）`, gearOpenItem: "看物品 →", gearClose: "關閉", gearTabs: "裝備或閱歷", gearTabGear: "裝備", gearTabLog: "閱歷", gearLevel: (n: number) => `Lv.${n}`,
     gearSheet: (who: string) => `${who}的裝備欄`, gearSlotEmpty: (slot: string) => `${slot}：空`, gearSlotLabel: (slot: string, name: string, rarity: string) => `${slot}：${name}（${rarity}）`,
     achTitle: "成就", achUnlocked: "已解鎖", achLocked: "未解鎖", achGrants: (title: string) => `稱號「${title}」`,
+    lookLabel: "版面風格", lookRetro: "懷舊", lookModern: "現代", gameStatus: "狀態", gameUpdated: "最後更新", gameShot: (name: string) => `${name} 的畫面`,
+    mgCategories: "分類", mgAll: "全部遊戲", mgNews: "最新更新", mgWelcome: "歡迎光臨！這裡放的都是我自己做的遊戲，有空就更新。", mgCounterBefore: "你是第", mgCounterAfter: "位訪客", mgCounterNote: "（裝飾用，不會真的計數）", mgTop: "回到頂端",
   },
   en: {
     home: "Home", about: "About", github: "GitHub", featured: "Featured", all: "All posts",
@@ -40,6 +42,8 @@ export const t = {
     gearTitle: "Our gear", gearHint: "Tap an item for details", gearViews: "Overview or slots", gearViewOverview: "Overview", gearViewSlots: "Slots", gearNone: "Nothing equipped yet", gearNoTitle: "No title yet", gearOverview: (who: string) => `Gear overview of ${who}`, gearWord: (full: string, rarity: string) => `${full} (${rarity})`, gearOpenItem: "Open the item →", gearClose: "Close", gearTabs: "Equipment or log", gearTabGear: "Gear", gearTabLog: "Log", gearLevel: (n: number) => `Lv.${n}`,
     gearSheet: (who: string) => `Equipment of ${who}`, gearSlotEmpty: (slot: string) => `${slot}: empty`, gearSlotLabel: (slot: string, name: string, rarity: string) => `${slot}: ${name} (${rarity})`,
     achTitle: "Achievements", achUnlocked: "Unlocked", achLocked: "Locked", achGrants: (title: string) => `Title: ${title}`,
+    lookLabel: "Page style", lookRetro: "Retro", lookModern: "Modern", gameStatus: "Status", gameUpdated: "Last updated", gameShot: (name: string) => `A picture of ${name}`,
+    mgCategories: "Categories", mgAll: "All games", mgNews: "What's new", mgWelcome: "Welcome! These are games I made myself, updated now and then.", mgCounterBefore: "You are visitor no.", mgCounterAfter: "", mgCounterNote: "(decoration only, it does not count)", mgTop: "Back to top",
   },
 } as const;
 
