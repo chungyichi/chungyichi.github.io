@@ -247,6 +247,12 @@ main { padding-bottom: 3rem; min-height: 60vh; }
 .home-island-blurb { color: var(--muted); line-height: 1.65; }
 .home-island-cta { justify-self: start; margin-top: .3rem; padding: .45rem 1.15rem; border-radius: 99px; background: var(--accent); color: var(--accent-fg); font-weight: 600; }
 .home-island-link:hover .home-island-cta, .home-island-link:focus-visible .home-island-cta { filter: brightness(1.12); }
+/* the games carousel on the home page: the toy Gallery's fixed square frame does not fit a card, so the frame takes the card's own height */
+.home-games .gallery { aspect-ratio: auto; background: none; border-radius: var(--radius-lg); }
+.home-games .gallery-strip { height: auto; }
+.home-games .gallery-slide { height: auto; }
+.home-games .gallery-slide img { height: auto; object-fit: cover; }
+.home-games .gallery-slide .home-island-link { height: 100%; }
 @media (min-width: 50rem) {
   .home-island-link { grid-template-columns: 1.4fr 1fr; }
   .home-island-link img { height: 100%; aspect-ratio: auto; min-height: 16rem; }

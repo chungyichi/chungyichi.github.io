@@ -115,6 +115,29 @@ function HomeIsland({ lang }: { lang: Lang }) {
   );
 }
 
+/** The home page's games: one card per published game (newest first). One game: the plain island card; several: a carousel (a "1 / N" counter) like the toys. Each card opens the "my games" page at that game. */
+function HomeGames({ lang }: { lang: Lang }) {
+  const mg = myGames(lang);
+  type Card = { id: string; title: string; kicker: string; blurb: string; picture: string; cta: string; updated: string; href: string };
+  const games = ((mg?.games ?? []) as Card[]).filter((g) => g.href && g.picture).sort((a, b) => b.updated.localeCompare(a.updated));
+  if (!mg || games.length < 2) return <HomeIsland lang={lang} />;
+  return (
+    <section className="home-island home-games">
+      <Gallery lang={lang} below label={mg.title} keys={games.map((g) => g.id)} idPrefix="game" slides={games.map((g) => (
+        <a className="home-island-link" href={`${mg.path}#${g.id}`}>
+          <img src={g.picture} alt="" width={1200} height={675} decoding="async" />
+          <span className="home-island-body">
+            <span className="home-island-kicker">{g.kicker}</span>
+            <span className="home-island-title">{g.title}</span>
+            <span className="home-island-blurb">{g.blurb}</span>
+            <span className="home-island-cta">▶ {g.cta}</span>
+          </span>
+        </a>
+      ))} />
+    </section>
+  );
+}
+
 /** The home page's toy carousel: one toy per slide (picture and name, the whole slide opens the toy), a "1 / N" counter, a link to the library. */
 function HomeToys({ lang, toys }: { lang: Lang; toys: ToySlide[] }) {
   const s = t[lang];
@@ -154,7 +177,7 @@ function Home({ route }: { route: Extract<Route, { kind: "home" }> }) {
   return (
     <>
       <h1 className="motto">{tagline(lang)}</h1>
-      <HomeIsland lang={lang} />
+      <HomeGames lang={lang} />
       <HomeToys lang={lang} toys={route.props.toys} />
       <HomeGear lang={lang} gear={route.props.gear} mode={route.props.gearOverview} />
       <section>
