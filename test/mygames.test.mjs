@@ -32,7 +32,8 @@ test("routes: the page exists only in the languages the config names, with its s
   assert.deepEqual(mine[0].alternates, []);   // no English page, so no alternate
   assert.equal(mine[0].description, site.meta.mygames.description.zh);
   assert.ok(mine[0].props.games.some((g) => g.href === "/island/"));
-  assert.ok(mine[0].props.games.some((g) => g.href === ""), "the unreleased game has no link");
+  assert.ok(mine[0].props.games.some((g) => g.href === "/toast-brawl/"));
+  assert.ok(mine[0].props.games.every((g) => g.href === "" || g.href.startsWith("/")), "a game without a link has an empty address, never a half one");   // (the held-back street-sketch card was the unreleased one)
   assert.ok(!JSON.stringify(mine[0].props).match(/192\.168\.|localhost|:\d{4}\//), "no LAN address on the page");
 });
 
