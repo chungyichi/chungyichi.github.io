@@ -26,11 +26,13 @@ export const site = {
       { id: "toast-brawl", title: { zh: "獵命師之全麥吐司大起司" }, kicker: { zh: "3D 對戰小遊戲 · 開發中" }, picture: "/media/games/toast-brawl/card.webp",
         blurb: { zh: "動作對戰小遊戲，手機瀏覽器就能玩。25 個吐司角色和幾隻動物，可以裝命格，瞄準後把人打飛。致敬百變恰吉，還沒有完成。" },
         platform: { zh: "瀏覽器（手機可玩，電腦也可以）" }, status: { zh: "開發中，第一版可以玩" }, updated: "2026-11-12", news: { zh: "獵命師之全麥吐司大起司 第一版上線" }, cta: { zh: "開始玩" }, href: "/toast-brawl/" },
-      // LOCAL PREVIEW ASSET: the cover was copied by hand from ~/sites/daniao-legend/sdf3d/assets/cover_wide.webp into content/games/media/street-sketch/ (git-ignored, not in the
-      // media release yet), so a deploy would not have it. It shows a real school's sign (復興國民小學). Not public: no href.
-      { id: "street-sketch", title: { zh: "街區草圖" }, kicker: { zh: "3D 小遊戲 · 名稱暫定" }, picture: "/media/games/street-sketch/cover.webp",
-        blurb: { zh: "手繪墨線草圖畫風的 3D 小遊戲。照我記憶中的樣子，重建台南復興國小附近的街區，帶一隻小狗在街上走走看看。" },
-        platform: { zh: "瀏覽器（手機可玩）" }, status: { zh: "內測中，尚未公開" }, updated: "2026-11-07", news: { zh: "街區草圖 內測中" }, cta: { zh: "即將推出" }, href: "" },
+      // HELD BACK (2026-11-12): the street-sketch card is not published yet. Its cover is a local-only preview that shows a real school's sign, and it is not in the media
+      // release, so the deploy check failed on it. Put the entry back when the cover is cleared and pushed with scripts/media.sh.
+      // // LOCAL PREVIEW ASSET: the cover was copied by hand from ~/sites/daniao-legend/sdf3d/assets/cover_wide.webp into content/games/media/street-sketch/ (git-ignored, not in the
+      // // media release yet), so a deploy would not have it. It shows a real school's sign (復興國民小學). Not public: no href.
+      // { id: "street-sketch", title: { zh: "街區草圖" }, kicker: { zh: "3D 小遊戲 · 名稱暫定" }, picture: "/media/games/street-sketch/cover.webp",
+      // blurb: { zh: "手繪墨線草圖畫風的 3D 小遊戲。照我記憶中的樣子，重建台南復興國小附近的街區，帶一隻小狗在街上走走看看。" },
+      // platform: { zh: "瀏覽器（手機可玩）" }, status: { zh: "內測中，尚未公開" }, updated: "2026-11-07", news: { zh: "街區草圖 內測中" }, cta: { zh: "即將推出" }, href: "" },
     ],
   },
   author: "Chungyi Chi",
