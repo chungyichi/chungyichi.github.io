@@ -160,10 +160,9 @@ Extra front matter, toys only: `owner: me` (required to publish), `source: https
 The owner and a wish are shown as icon badges in a colour per owner (`--owner-<id>` in `tokens.css`), never as text.
 The toy page is two columns on a wide screen: the picture panel beside the facts; the toys pages use a wider column than the reading sections.
 
-## Games page (遊樂區)
+## Games page (遊樂區): merged
 
-`public/play/index.html` is one static page at `/play/` (like the island game: no app code, no build step) with two looks, 懷舊 (a 1990s personal-site homage: tables, bevels, a left column) and 現代; the switch is remembered per visitor, and without script it stays retro. The menu item comes from `play` in `site.config.mjs`.
-It lists only the games that are ready to show: add one as a row of the games table and a line to the news table. A game that is not announced yet is simply not on the page.
+`/play/` was a second page for my own games and overlapped 我的遊戲. On 2026-11-13 it was merged: the `play` key is gone from `site.config.mjs` (no menu item) and `public/play/index.html` is only a redirect to `/zh/my-games/`. Add games to `myGames` (see "My games").
 
 ## Books
 

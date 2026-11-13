@@ -11,8 +11,7 @@ export const site = {
     cta: { zh: "開始玩" },
     picture: "/media/games/island/card.webp",
   },
-  // The games page (遊樂區): a static page under /play/ with a retro / modern look switch. It lists the games that are ready to show (the menu item opens it).
-  play: { title: { zh: "遊樂區" }, nav: { zh: "遊樂區" } },
+  // The old games page (遊樂區, /play/) was merged into 我的遊戲 on 2026-11-13: no menu item; public/play/index.html only redirects.
   // The games I make myself (not the 遊戲庫 shelf, which is the Steam / NS / PS collection): one page, /<lang>/<slug>/, with a card per game (see README "My games").
   // The page, its menu item and the home card's link exist only in the languages that have a `title` here (zh for now). `title` is the page name AND the menu label.
   //   games[]  id (the card's anchor), `use: "island"` takes title, kicker, blurb and picture from `island` above; otherwise give them here.
