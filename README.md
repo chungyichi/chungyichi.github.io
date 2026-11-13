@@ -118,6 +118,7 @@ Trust is yours to give: the importer never writes `trusted`, and `npm run check`
   Replacing or deleting a post's pictures leaves no blob in git. The bundle is public, like the pictures on the site. `scripts/media.sh migrate` / `prune-old` moved the old one-archive-per-post layout into the bundle.
 - The bundle is untrusted input in the deploy: `scripts/media-extract.sh` accepts only plain files named `<section>/media/<slug>/<file>.<image extension>` and refuses everything else.
 - `npm run check` fails if a picture is tracked by git.
+- A media folder holds pictures only (`.webp .jpg .jpeg .png .gif .avif`): the deploy's unpack refuses the WHOLE bundle for one other file and then every picture is broken ("unpacked 0 pictures"). So `media.sh push` / `push-many` refuse such a folder before uploading, `npm run check` fails on it, and `photo.sh` no longer leaves `manifest.tsv`.
 - Order for a new post: `scripts/publish.sh` (or put the pictures in place), look at it with `npm run dev`, `scripts/media.sh push ...`, then commit and push the post file. Uploading changes nothing on the site until a deploy runs.
 - `scripts/backup.sh` copies texts to the vault and deliberately skips every `media/` folder and all picture files.
 - **Preview switch**: with originals in `sites/blog-originals/<section>/<post>/<name>.<any image extension>` (same path and name as the web version, extension may differ),

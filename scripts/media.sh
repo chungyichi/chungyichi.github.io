@@ -54,11 +54,19 @@ upload_bundle() {
   echo "uploaded $name ($(du -h "$tmp/$name" | cut -f1), $(tar -tf "$tmp/$name" | wc -l) pictures)"
   rm -rf "$tmp"
 }
+# Refuse a folder that holds anything but pictures: the deploy's unpack (media-extract.sh) rejects the WHOLE bundle for one stray file
+# (photo.sh used to leave manifest.tsv), and then every picture on the site is broken.
+only_pictures() {
+  local bad
+  bad=$(find "$1" -mindepth 1 \( -type d -o ! -type f -o ! -regex '.*/[A-Za-z0-9._-]+\.\(webp\|jpg\|jpeg\|png\|gif\|avif\)' \) | head -5)
+  [ -z "$bad" ] || { echo "$1 has files that are not pictures; the deploy would refuse the whole bundle. Delete them first:" >&2; echo "$bad" >&2; exit 1; }
+}
 case $cmd in
   push)
     ok "$section"; ok "$slug"
     dir=content/$section/media/$slug
     [ -d "$dir" ] && [ -n "$(ls -A "$dir")" ] || { echo "no pictures in $dir" >&2; exit 1; }
+    only_pictures "$dir"
     work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
     fetch_all "$work"
     rm -rf "${work:?}/$section/media/$slug"; mkdir -p "$work/$section/media"; cp -r "$dir" "$work/$section/media/$slug"
@@ -66,6 +74,7 @@ case $cmd in
     echo "Deploy with: gh workflow run deploy.yml   (or push a commit)" ;;
   push-many)
     shift; [ $# -ge 1 ] || { echo "usage: media.sh push-many <section>/<slug> ..." >&2; exit 2; }
+    for a in "$@"; do only_pictures "content/${a%%/*}/media/${a#*/}"; done
     work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
     fetch_all "$work"
     for a in "$@"; do

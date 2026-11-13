@@ -120,6 +120,19 @@ for (const p of all.filter((p) => p.author)) {
   if (pics.length) fail(`pictures are tracked by git (${pics.slice(0, 3).join(", ")}${pics.length > 3 ? ", ..." : ""}); keep them out: scripts/media.sh push <section> <slug>, and git rm --cached`);
 }
 
+// 3a2. a media folder may hold pictures only: the deploy refuses the whole bundle for one other file (every picture then breaks)
+{
+  const PIC = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png|gif|avif)$/;
+  const stray = [];
+  for (const sec of existsSync("content") ? readdirSync("content") : []) {
+    if (sec.startsWith("_")) continue;
+    const root = join("content", sec, "media");
+    if (!existsSync(root)) continue;
+    for (const slug of readdirSync(root)) for (const f of readdirSync(join(root, slug), { withFileTypes: true })) if (!f.isFile() || !PIC.test(f.name)) stray.push(join(root, slug, f.name));
+  }
+  if (stray.length) fail(`media folders hold files that are not pictures (${stray.slice(0, 3).join(", ")}${stray.length > 3 ? ", ..." : ""}); the deploy would refuse the whole bundle. Delete them`);
+}
+
 // 3b. trusted (hand-written, unsanitized) posts: list them and the outside hosts they use
 for (const p of loadPosts({ includePrivate: true }).filter((p) => p.trusted)) {
   const hosts = externalHosts([p.html, p.css, p.js].join("\n"));

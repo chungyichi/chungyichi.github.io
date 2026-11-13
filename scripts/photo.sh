@@ -23,3 +23,4 @@ dk run --rm --network none --user "$(id -u):$(id -g)" --read-only --cap-drop ALL
   -v "$in:/in:ro" -v "$out:/out" -v "$PWD/scripts/photo/run.sh:/run.sh:ro" \
   "$IMAGE" sh /run.sh
 awk -F'\t' 'NR>1 {n++; a+=$4; b+=$5} END {printf "%d pictures: %.1f MB -> %.1f MB (%.0f%%)\n", n, a/1048576, b/1048576, (a? 100*b/a : 0)}' "$out/manifest.tsv"
+rm -f "$out/manifest.tsv"   # not a picture: the deploy refuses a bundle that holds it

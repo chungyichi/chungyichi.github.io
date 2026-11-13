@@ -94,3 +94,16 @@ test("prune-old refuses when there is no bundle", () => {
   assert.notEqual(media(d, "prune-old").status, 0);
   assert.deepEqual(store(d), ["media-toys-car.tar"]);
 });
+
+test("push and push-many refuse a folder with a file that is not a picture, and upload nothing", () => {
+  const d = setup();
+  pic(d, "books", "ok-book"); pic(d, "books", "bad-book"); pic(d, "books", "bad-book", "manifest.tsv");
+  for (const args of [["push", "books", "bad-book"], ["push-many", "books/ok-book", "books/bad-book"]]) {
+    const r = media(d, ...args);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /not pictures/);
+    assert.match(r.stderr, /manifest\.tsv/);
+  }
+  assert.deepEqual(store(d), []);
+  assert.equal(media(d, "push", "books", "ok-book").status, 0);
+});
