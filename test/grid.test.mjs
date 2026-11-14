@@ -48,13 +48,14 @@ test("combinations: type, own and owner together; an empty combination has no it
   assert.deepEqual([nobody.items.length, nobody.pages, nobody.page], [0, 1, 1]);
 });
 
-test("games have no owners and no status: the platform tabs are the only filter", () => {
+test("games have owners (me, brother) and no status: the owner and the platform tabs are the filters", () => {
   const games = [{ pf: ["steam", "ps"] }, { pf: ["ps"] }, { pf: ["ns"] }].map((x, i) => ({ t: `G${i}`, s: "", h: [], d: `2026-10-0${i + 1}`, c: "G", u: `/zh/games/g${i}/`, ...x }));
   const g = gridOf("games"); games.reverse();   // newest first, as entriesOfSection gives
   const v = gridView(games, g, { filters: { platform: "ps" } });
-  assert.deepEqual([v.items.map((e) => e.t), v.owners, v.facets.map((f) => f.id)], [["G1", "G0"], [], ["platform"]]);
-  assert.deepEqual(v.facets[0].values, [{ id: "steam", total: 1 }, { id: "ns", total: 1 }, { id: "ps", total: 2 }, { id: "other", total: 0 }]);
-  assert.deepEqual(parseFilters("owner=me&platform=ps", g), { owner: "", filters: { platform: "ps" } });   // an owner no grid has is ignored
+  assert.deepEqual([v.items.map((e) => e.t), v.owners, v.facets.map((f) => f.id)], [["G1", "G0"], [{ id: "me", total: 0 }, { id: "brother", total: 0 }], ["platform"]]);
+  assert.deepEqual(v.facets[0].values, [{ id: "steam", total: 1 }, { id: "ns", total: 1 }, { id: "ns2", total: 0 }, { id: "ps", total: 2 }, { id: "other", total: 0 }]);
+  assert.deepEqual(parseFilters("owner=me&platform=ps", g), { owner: "me", filters: { platform: "ps" } });
+  assert.deepEqual(parseFilters("owner=son&platform=ps", g), { owner: "", filters: { platform: "ps" } });   // an owner this grid does not list is ignored
 });
 
 test("query parsing and building: only chosen filters are in the address, and it round-trips", () => {

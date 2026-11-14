@@ -15,11 +15,11 @@ test("games: platform (one or more ids, each once), developer, original are read
   const g = game("2026-10-21-a.zh.md", "platform: steam, ps\ndeveloper: Asobo Studio\noriginal: ELDEN RING\nsource: https://example.com/g\n");
   assert.deepEqual([g.platform, g.developer, g.original, g.source, g.section], [["steam", "ps"], "Asobo Studio", "ELDEN RING", "https://example.com/g", "games"]);
   assert.deepEqual(game("2026-10-21-a.zh.md", "").platform, []);
-  assert.throws(() => game("2026-10-21-a.zh.md", "platform: xbox\n"), /'platform' must be one or more of steam, ns, ps, other/);
+  assert.throws(() => game("2026-10-21-a.zh.md", "platform: xbox\n"), /'platform' must be one or more of steam, ns, ns2, ps, other/);
   assert.throws(() => game("2026-10-21-a.zh.md", "platform: ps, ps\n"), /'platform' must be one or more/);
   assert.throws(() => game("2026-10-21-a.zh.md", "platform: \"\"\n"), /'platform' must be one or more/);
   assert.throws(() => game("2026-10-21-a.zh.md", "status: done\n"), /'status' is only for posts in content\/toys\//);
-  assert.throws(() => game("2026-10-21-a.zh.md", "owner: me\n"), /'owner' is only for posts/);
+  assert.equal(game("2026-10-21-a.zh.md", "owner: brother\nplatform: ns\n").owner, "brother");   // a game has an owner like a toy or a book
   assert.throws(() => game("2026-10-21-a.zh.md", "own: no\n"), /'own' is only for posts in content\/books\//);
   assert.throws(() => game("2026-10-21-a.zh.md", "platform: steam\n", "toys"), /'platform' is only for posts in content\/games\//);
   assert.throws(() => game("2026-10-21-a.zh.md", "type: 漫畫\n"), /'type' is only for posts in content\/books\//);
@@ -43,8 +43,8 @@ test("games: a game on two platforms is in both platform tabs; ONE grid route ho
   assert.deepEqual(slugs({ platform: "ns" }), ["d"]);
   assert.deepEqual(slugs({}).length, 4);                                                  // 全部 once
   const v = gridView(grid[0].props.entries, gridOf("games"), {});
-  assert.deepEqual(v.facets.find((f) => f.id === "platform").values, [{ id: "steam", total: 2 }, { id: "ns", total: 1 }, { id: "ps", total: 2 }, { id: "other", total: 0 }]);
-  assert.deepEqual(v.owners, []);                                                          // games have no owners
+  assert.deepEqual(v.facets.find((f) => f.id === "platform").values, [{ id: "steam", total: 2 }, { id: "ns", total: 1 }, { id: "ns2", total: 0 }, { id: "ps", total: 2 }, { id: "other", total: 0 }]);
+  assert.deepEqual(v.owners, [{ id: "me", total: 0 }, { id: "brother", total: 0 }]);   // the owners of the games grid (these test posts have none)
 });
 
 test("search: games carry platform ids in the index and the platform name is searchable; filters combine", () => {

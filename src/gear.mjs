@@ -138,7 +138,7 @@ export function shortTitle(title, max = LABEL_WIDTH) {
 export function collectionMore(posts, owner, equipped, max = OVERVIEW_TOTAL - OVERVIEW_MAX) {
   const shelf = (section, mine) => posts.filter((p) => p.section === section && mine(p) && !equipped.has(`${p.section}/${p.slug}`))
     .sort((a, b) => (b.date || "").localeCompare(a.date || "") || a.slug.localeCompare(b.slug)).map((p) => ({ section: p.section, slug: p.slug, title: p.title }));
-  const shelves = [shelf("games", () => owner === GAMES_OWNER), shelf("books", (p) => p.owner === owner), shelf("toys", (p) => p.owner === owner && p.status !== "want")];
+  const shelves = [shelf("games", (p) => (p.owner || GAMES_OWNER) === owner), shelf("books", (p) => p.owner === owner), shelf("toys", (p) => p.owner === owner && p.status !== "want")];
   const out = [];
   for (let i = 0; out.length < max && shelves.some((s) => i < s.length); i++) for (const s of shelves) if (i < s.length && out.length < max) out.push(s[i]);
   return out;

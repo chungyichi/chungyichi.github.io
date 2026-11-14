@@ -40,7 +40,7 @@ export function resolveAuthors(raw, authors = gridOf(BOOKS_SECTION)?.authors) {
 }
 
 /** The front matter keys only some sections take, and which: owner and source for every grid, the rest per section (scripts/content.mjs checks). */
-export const SECTION_KEYS = { owner: [TOYS_SECTION, BOOKS_SECTION], source: [TOYS_SECTION, BOOKS_SECTION, GAMES_SECTION], status: [TOYS_SECTION], platform: [GAMES_SECTION], developer: [GAMES_SECTION], type: [BOOKS_SECTION], price: [TOYS_SECTION], quantity: [TOYS_SECTION], author: [BOOKS_SECTION], volumes: [BOOKS_SECTION], own: [BOOKS_SECTION], original: [BOOKS_SECTION, GAMES_SECTION] };
+export const SECTION_KEYS = { owner: [TOYS_SECTION, BOOKS_SECTION, GAMES_SECTION], source: [TOYS_SECTION, BOOKS_SECTION, GAMES_SECTION], status: [TOYS_SECTION], platform: [GAMES_SECTION], developer: [GAMES_SECTION], type: [BOOKS_SECTION], price: [TOYS_SECTION], quantity: [TOYS_SECTION], author: [BOOKS_SECTION], volumes: [BOOKS_SECTION], own: [BOOKS_SECTION], original: [BOOKS_SECTION, GAMES_SECTION] };
 /** `status:` of a toy: owned (the default when absent) or on the wish list. */
 export const TOY_STATUSES = ["own", "want"];
 

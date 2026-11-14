@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { site } from "../site.config.mjs";
-import { t, title, tagline, sectionTitle, ownerShort, gridOf, facetLabel, facetValueLabel, type Lang } from "./i18n";
+import { t, title, tagline, sectionTitle, collectionOf, ownerShort, gridOf, facetLabel, facetValueLabel, type Lang } from "./i18n";
 import type { Route, ToySlide, GearSet } from "./types";
 import { ThemeToggle } from "./ThemeToggle";
 import { SEASON_ISLAND_ID } from "./SeasonToggle";
@@ -28,8 +28,8 @@ function Layout({ route, wide, children }: { route: Route; wide?: boolean; child
           <a className="brand" href={`/${lang}/`}>{title(lang)}</a>
           {/* One non-wrapping row that scrolls sideways when the sections do not fit; the current page is marked and /src/entry-client.tsx scrolls it into view. */}
           <nav aria-label="Main" className="main-nav">
-            {([[`/${lang}/`, s.home], ...site.sections.map((sec: { id: string }) => [`/${lang}/${sec.id}/`, sectionTitle(lang, sec.id)]), ...(myGames(lang) ? [[myGames(lang)!.path, myGames(lang)!.title]] : []), ...(playNav(lang) ? [[PLAY_HREF, playNav(lang)!]] : []), [`/${lang}/search/`, s.search], [`/${lang}/about/`, s.about]] as [string, string][]).map(([href, label]) => (
-              <a key={href} href={href} aria-current={href === `/${lang}/` ? (route.path === href ? "page" : undefined) : route.path.startsWith(href) ? "page" : undefined}>{label}</a>
+            {([[`/${lang}/`, s.home], ...menuSections(lang), ...(myGames(lang) ? [[myGames(lang)!.path, myGames(lang)!.title]] : []), ...(playNav(lang) ? [[PLAY_HREF, playNav(lang)!]] : []), [`/${lang}/search/`, s.search], [`/${lang}/about/`, s.about]] as [string, string][]).map(([href, label]) => (
+              <a key={href} href={href} aria-current={isCurrent(lang, href, route.path) ? "page" : undefined}>{label}</a>
             ))}
           </nav>
           <div className="tools">
@@ -85,6 +85,33 @@ const island = (lang: Lang): IslandText | null => {
   const pick = (k: string) => { const v = c[k]; return typeof v === "string" ? v : v?.[lang] ?? ""; };
   return { title: pick("title"), kicker: pick("kicker"), blurb: pick("blurb"), cta: pick("cta"), picture: pick("picture") };
 };
+
+/** The section items of the menu: a collection (see site.config.mjs) is ONE item, at the place of its first section, that opens that section. */
+function menuSections(lang: Lang): [string, string][] {
+  const col = collectionOf(), out: [string, string][] = [];
+  for (const sec of site.sections as { id: string }[]) {
+    if (col?.sections.includes(sec.id)) { if (sec.id === col.sections[0]) out.push([`/${lang}/${sec.id}/`, col.title[lang] ?? col.title.zh]); }
+    else out.push([`/${lang}/${sec.id}/`, sectionTitle(lang, sec.id)]);
+  }
+  return out;
+}
+/** Is this menu item the current page? The collection's item stays marked on every page of its sections. */
+function isCurrent(lang: Lang, href: string, path: string): boolean {
+  if (href === `/${lang}/`) return path === href;
+  const col = collectionOf();
+  if (col && href === `/${lang}/${col.sections[0]}/`) return col.sections.some((id) => path.startsWith(`/${lang}/${id}/`));
+  return path.startsWith(href);
+}
+/** The tabs 玩具庫 | 書庫 | 遊戲庫 above a page of the collection, or nothing for any other section. */
+function CollectionTabs({ lang, current }: { lang: Lang; current: string }) {
+  const col = collectionOf();
+  if (!col?.sections.includes(current)) return null;
+  return (
+    <nav className="collection-tabs" aria-label={col.title[lang] ?? col.title.zh}>
+      {col.sections.map((id) => <a key={id} href={`/${lang}/${id}/`} aria-current={id === current ? "page" : undefined}>{sectionTitle(lang, id)}</a>)}
+    </nav>
+  );
+}
 
 /** The "my games" page in this language (site.config.mjs myGames), or null: then no menu item. */
 const myGames = (lang: Lang) => resolveMyGames(site, lang);
@@ -196,6 +223,7 @@ function ToyGrid({ route }: { route: Extract<Route, { kind: "grid" }> }) {
   const { lang } = route, s = t[lang], { section, index, entries } = route.props;
   return (
     <>
+      <CollectionTabs lang={lang} current={section} />
       <h1>{sectionTitle(lang, section)}</h1>
       <div id="browse" data-kind="grid" data-index={index} data-section={section}><GridBrowser lang={lang} section={section} entries={entries} state={{ owner: "", filters: {}, page: 1 }} /></div>
       <noscript><p className="notice">{s.filterNoJs}</p></noscript>

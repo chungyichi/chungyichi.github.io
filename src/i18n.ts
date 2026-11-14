@@ -47,6 +47,9 @@ export const t = {
   },
 } as const;
 
+type Collection = { title: Record<Lang, string>; sections: string[] };
+/** The menu item that groups several sections (site.config.mjs collection), or undefined. */
+export const collectionOf = (): Collection | undefined => (site as { collection?: Collection }).collection;
 export const sectionTitle = (lang: Lang, id: string) => site.sections.find((s: { id: string }) => s.id === id)?.title[lang] ?? id;
 type Owner = { id: string; title: Record<Lang, string>; short?: Record<Lang, string>; icon?: string };
 type Grid = { perPage: number; facets?: string[]; platforms?: { id: string; title: string }[]; owners?: Owner[]; ownerLabel?: Record<Lang, string>; empty: Record<Lang, string>; scope: Record<Lang, string> };

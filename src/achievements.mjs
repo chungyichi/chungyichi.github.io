@@ -32,7 +32,7 @@ const text = (v, lang) => (v && typeof v === "object" ? v[lang] || v.zh || v.en 
 
 /** True when the post matches the filters of the rule (person, section, tag, own). */
 function matches(p, rule, owner, section) {
-  if ((p.section === GAMES_SECTION ? GAMES_OWNER : p.owner) !== owner) return false;
+  if ((p.owner || (p.section === GAMES_SECTION ? GAMES_OWNER : "")) !== owner) return false;
   if (section && p.section !== section) return false;
   if (rule.tag !== undefined && !(p.tags || []).includes(rule.tag)) return false;
   if (rule.own !== undefined && p.section === BOOKS_SECTION && (rule.own === "no") !== (p.own === false)) return false;
@@ -162,7 +162,7 @@ export function lockedTitleProblems(gear, achievements, posts, owners) {
 /**
  * The reading summary (閱歷) of one person: every book of theirs counts as one finished quest (there is no reading-progress data); the quests themselves are not listed.
  * `volumes` = the listed volumes of all books; a book that lists none (a web novel) is not in it but in `web`, so the summary says "56 卷 + 3 部網文".
- * `games` = the games on the shelf (they have no owner, so only GAMES_OWNER has them).
+ * `games` = the games on the shelf (a game without `owner` belongs to GAMES_OWNER).
  * @returns {{ done: number, volumes: number, web: number, games: number }}
  */
 export function questLog(posts, owner) {
@@ -171,7 +171,7 @@ export function questLog(posts, owner) {
     done: mine.length,
     volumes: mine.reduce((a, p) => a + (p.volumes || []).length, 0),
     web: mine.filter((p) => !(p.volumes || []).length).length,
-    games: owner === GAMES_OWNER ? posts.filter((p) => p.section === GAMES_SECTION).length : 0,
+    games: posts.filter((p) => p.section === GAMES_SECTION && (p.owner || GAMES_OWNER) === owner).length,
   };
 }
 

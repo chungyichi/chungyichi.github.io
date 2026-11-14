@@ -34,12 +34,12 @@ Raw HTML in Markdown is **escaped, not rendered**.
 
 ## Games
 
-`content/games/` is the game shelf (遊戲庫), `/zh/games/`, built like the books: one small file per game, a card grid (24 per page, `grid` of the games section in `site.config.mjs`), no owners and no progress (it is a list of what is bought and what is recommended), no cover needed (the card is a tile with the title and the platforms).
+`content/games/` is the game shelf (遊戲庫), `/zh/games/`, built like the books: one small file per game, a card grid (24 per page, `grid` of the games section in `site.config.mjs`), an `owner` (me or brother) and no progress (it is a list of what is bought and what is recommended); covers come from `scripts/game-cover.mjs` (a card without one is a tile with the title and the platforms).
 Front matter: `title`, `summary`, `tags` (1 to 3), `platform: steam, ps` (one or more ids from `grid.platforms` in `site.config.mjs`, each once; required to publish, `npm run check` fails without),
 `developer`, `original` (original / English title, shown under the title and searchable) and `source` (a small muted link). Not for games: `owner`, `status`, `own`, `type`, `author`, `volumes`, `price`, `quantity`.
 The index has underlined platform tabs 「全部／Steam／NS／PS／其他」 (a game on two platforms is in both tabs) only; the routes are `/zh/games/` (`/zh/games/?platform=ps`, filtered in the browser) and `/zh/games/<game>/`. The search page has the 「遊戲」 scope with the same tabs.
 
-## My games (我的遊戲)
+## My games (作品; the menu label was 我的遊戲 until 2026-11-14, the address is still /my-games/)
 
 The games I make myself, one page: `/zh/my-games/` (not the 遊戲庫 shelf above). Config: `myGames` in `site.config.mjs` (`slug`, `title` = the page name and the menu label, `intro`, `games`).
 The page, its menu item (where the island link used to be) and the home island card's target exist only in a language whose `title` is set (zh now; no English page, nothing is machine-translated).
@@ -62,7 +62,7 @@ gear: { me: { head: { item: "toys/mayday-max", rarity: "epic" }, mainhand: { ite
 - Click a slot (or an orbiting word): ONE shared native `<dialog>` opens as a card (picture, title in the rarity colour, rarity and slot, summary, tags, date, 「看物品 →」 to the item). Esc, the backdrop or × closes it and the focus returns to the slot. The item is in the button's `data-item` JSON, so there is no fetch. Needs JavaScript.
 - `profile` per person (optional, none set now): `{ level, title: { zh, en } | "text" | "ach:<achievement id>", mood: { zh, en, icon } }`, shown under the name. `"ach:<id>"` shows that achievement's title once unlocked (`npm run check` fails for an unknown or a locked one).
 - Tabs 裝備 | 閱歷 (one bar for the whole block; without JavaScript only 裝備). 閱歷: the summary 「完成 15 項任務 · 共 56 卷」 (listed volumes only; books with no volumes are added as 「+ K 部網文」; for me also 「· 遊戲 N 款」, the games on the shelf), and the achievement shelf (unlocked first, locked dim with progress). The finished quests are not listed (the home block stays short).
-- Achievements: `achievements` in `site.config.mjs`, `{ id, name, desc, title, rule }` (texts `{ zh, en }`), judged per person at build time. A rule is data: `kind` `count` (posts of a `section` — toys, books or games; games have no owner and count for `GAMES_OWNER` = me — optional `tag`, `own`) | `volumes` | `tag` | `things` | `item`, plus `min` and optional `owner`. `npm run check` rejects an unknown kind or field, a bad `min`, a duplicate id and an unpublished item.
+- Achievements: `achievements` in `site.config.mjs`, `{ id, name, desc, title, rule }` (texts `{ zh, en }`), judged per person at build time. A rule is data: `kind` `count` (posts of a `section` — toys, books or games; a game counts for its `owner`, `GAMES_OWNER` = me when absent — optional `tag`, `own`) | `volumes` | `tag` | `things` | `item`, plus `min` and optional `owner`. `npm run check` rejects an unknown kind or field, a bad `min`, a duplicate id and an unpublished item.
 - Code: `src/Gear.tsx` (the block), `src/gear-client.ts` (dialog, tabs, views), `src/gearfigure.mjs` (the figures and their frames), `src/sharkfx/` (the swimming shark), pure rules in `src/gear.mjs` and `src/achievements.mjs` (tests `test/gear.test.mjs`, `test/achievements.test.mjs`).
 
 ## Main menu
@@ -145,7 +145,7 @@ The picture grids and the tag page are **one page each**, not one page per filte
 |---|---|---|
 | Toys | `/zh/toys/` | `?owner=me\|son\|brother`, `&page=2` |
 | Books | `/zh/books/` | `?owner=me&own=no&type=comic`, `&page=2` |
-| Games | `/zh/games/` | `?platform=ps`, `&page=2` (no owners, no status) |
+| Games | `/zh/games/` | `?owner=brother`, `?platform=ps`, `&page=2` (no status) |
 | Tags | `/zh/tags/` | `?tag=日本`, `&page=2` |
 
 The build renders the first page of the unfiltered list (24 toys, 48 books, 24 games; `grid.perPage`), the counts on the buttons and every control as a plain link with its query URL, so without JavaScript the page is complete and nothing is broken (a click then loads the same first page).
@@ -284,3 +284,6 @@ confirm that repo is private, and it never pushes: review, then `git -C ../site-
 so the vault's history keeps what a later snapshot no longer has.
 
 `/` is only a redirect: browser language `zh*` goes to `/zh/`, anything else to `/en/` (no JavaScript: `/zh/`).
+
+## Menu (收藏 and 作品)
+The menu is 首頁, 技術, 生活, 收藏, 作品, 搜尋, 關於. `collection` in `site.config.mjs` (`{ title, sections }`) turns several grid sections into ONE menu item (收藏 = 玩具庫, 書庫, 遊戲庫): it opens the first section, stays marked on every page of the three, and each of their grid pages has tabs `玩具庫 | 書庫 | 遊戲庫` above the title (`CollectionTabs` in `src/App.tsx`). The addresses of the sections do not change. 作品 is `myGames.title` (my own games; room for other things I make later).

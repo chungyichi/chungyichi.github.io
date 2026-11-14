@@ -18,7 +18,7 @@ export const site = {
   //            platform, status, cta { zh }; updated "YYYY-MM-DD"; news { zh } (the line in 最新更新); href (the game's address; "" = not public: a disabled button)
   myGames: {
     slug: "my-games",
-    title: { zh: "我的遊戲" },
+    title: { zh: "作品" },   // the menu label and the page name; the address stays /my-games/
     intro: { zh: "我自己做的小遊戲，都在瀏覽器裡玩，不用安裝。" },
     games: [
       { id: "island", use: "island", platform: { zh: "瀏覽器（電腦、手機都可以）" }, status: { zh: "已公開" }, updated: "2026-11-04", news: { zh: "重禕的一天 上線" }, cta: { zh: "開始玩" }, href: "/island/" },
@@ -50,6 +50,9 @@ export const site = {
   //   facets   more filters that combine with the owner, in the address too (?own=no&type=comic): own | type (books), platform (games)
   //   platforms (games) the platform ids a game may list (`platform: steam, ps`), each with its shown name
   //   ownerLabel, empty, scope  the filter's name, the text of an empty grid, the search page's scope button
+  // One menu item for several grid sections (2026-11-14): `title` is the menu label; `sections` are shown as tabs on each of their pages.
+  // The menu item opens the first one. Their addresses do not change.
+  collection: { title: { zh: "收藏", en: "Collection" }, sections: ["toys", "books", "games"] },
   sections: [
     { id: "tech", title: { zh: "技術", en: "Tech" } },
     { id: "life", title: { zh: "生活", en: "Life" } },
@@ -113,8 +116,10 @@ export const site = {
           { id: "son", title: { zh: "兒子", en: "Son" }, icon: "block" },
         ] } },
     { id: "games", title: { zh: "遊戲庫", en: "Games" },   // one post per game; `owner` is who plays it
-      grid: { perPage: 24, facets: ["platform"], platforms: [{ id: "steam", title: "Steam" }, { id: "ns", title: "NS" }, { id: "ps", title: "PS" }, { id: "other", title: "其他" }],
-        empty: { zh: "還沒有遊戲。", en: "No games yet." }, scope: { zh: "遊戲", en: "Games" } } },   // no owners: the platform is the only filter
+      grid: { perPage: 24, facets: ["platform"], ownerLabel: { zh: "擁有者", en: "Owner" },
+        owners: [{ id: "me", title: { zh: "我", en: "Me" }, icon: "person" }, { id: "brother", title: { zh: "弟弟", en: "Brother" }, icon: "star" }],
+        platforms: [{ id: "steam", title: "Steam" }, { id: "ns", title: "NS" }, { id: "ns2", title: "NS2" }, { id: "ps", title: "PS" }, { id: "other", title: "其他" }],
+        empty: { zh: "還沒有遊戲。", en: "No games yet." }, scope: { zh: "遊戲", en: "Games" } } },   // `owner` is whose copy it is (only people who have games are listed)
   ],
   // Picture for sharing pages that have none of their own (a 1200x630 JPEG in public/); absent file = no default picture.
   ogImage: "/og-default.jpg",
@@ -125,7 +130,7 @@ export const site = {
     home: { description: { zh: "認識我是你一生最大的榮幸。收藏、書庫、遊戲庫，還有我們三個人的裝備欄。", en: "Chungyi Chi's site: toys, books, games and our equipment sheets." } },
     toys: { description: { zh: "我們家的玩具收藏，共 {n} 件：戰鬥陀螺、公仔、迪士尼爆米花桶。", en: "Our toy collection: {n} items, mostly Beyblade X tops, figures and Disney popcorn buckets." }, image: "toys/mayday-max" },
     books: { description: { zh: "共 {n} 本書，奇幻小說和網路小說，也有原名與作者資料。", en: "{n} books: fantasy and web novels, with original titles and authors." } },
-    games: { description: { zh: "Steam、NS、PS 上的遊戲，共 {n} 款，記下已經買過的，不要重複買。", en: "Games on Steam, NS and PS: {n} so far, so we do not buy the same one twice." } },
+    games: { description: { zh: "Steam、NS、NS2、PS 上的遊戲，共 {n} 款，記下已經買過的，不要重複買。", en: "Games on Steam, NS, NS2 and PS: {n} so far, so we do not buy the same one twice." } },
     search: { description: { zh: "搜尋標題、摘要與標籤，也能依誰的、類型、平台篩選。", en: "Search titles, summaries and tags. Filter by owner, type or platform." } },
     tags: { description: { zh: "所有標籤，點一個看用到它的文章與收藏。", en: "All tags. Pick one to see the posts and items that use it." } },
     mygames: { description: { zh: "我自己做的小遊戲：重禕的一天，還有內測中的街區草圖。" } },

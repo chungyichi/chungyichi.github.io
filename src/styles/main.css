@@ -327,3 +327,9 @@ span.wc-word:hover { text-decoration: none; }
 .share[hidden], .share [hidden] { display: none; }
 .share button { font: inherit; font-size: 0.9rem; padding: 0.25rem 0.8rem; color: var(--fg); background: none; border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
 .share button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* The collection's tabs (玩具庫 | 書庫 | 遊戲庫) above the grid pages: a small segmented row, apart from the filter tabs below the title. */
+.collection-tabs { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; margin: 1rem 0 0.9rem; padding: 0.2rem; border: 1px solid var(--line); border-radius: 999px; }
+.collection-tabs a { padding: 0.25rem 0.9rem; border-radius: 999px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+.collection-tabs a:hover { color: var(--fg); }
+.collection-tabs a[aria-current] { color: var(--fg); background: var(--tint, rgba(127, 127, 127, 0.14)); font-weight: 600; }
