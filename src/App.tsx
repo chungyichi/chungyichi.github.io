@@ -204,8 +204,8 @@ function Home({ route }: { route: Extract<Route, { kind: "home" }> }) {
   return (
     <>
       <h1 className="motto">{tagline(lang)}</h1>
-      <HomeGames lang={lang} />
       <HomeToys lang={lang} toys={route.props.toys} />
+      <HomeGames lang={lang} />
       <HomeGear lang={lang} gear={route.props.gear} mode={route.props.gearOverview} />
       <section>
         <h2>{s.featured}</h2>
