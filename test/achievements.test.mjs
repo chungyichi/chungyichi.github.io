@@ -95,7 +95,12 @@ test("profile: plain text, { zh, en }, an achievement title only when unlocked, 
 
 test("validate achievements: the real config is fine; unknown kind, bad min, duplicates, unknown item / person / field are rejected", () => {
   assert.deepEqual(validateAchievements(site.achievements, { owners, published: [...published, "books/wheel-of-time", "books/dark-tower"] }), []);
-  assert.ok(site.achievements.length >= 8 && site.achievements.length <= 16);
+  // every achievement is for one person (a person is never shown goals that are not theirs), and each person's list stays short
+  assert.ok(site.achievements.every((a) => a.rule.owner), "every achievement needs rule.owner");
+  for (const o of owners) {
+    const n = site.achievements.filter((a) => a.rule.owner === o).length;
+    assert.ok(n >= 3 && n <= 16, `${o} has ${n} achievements`);
+  }
   const ok = { id: "x", name: { zh: "a", en: "a" }, desc: { zh: "a", en: "a" }, title: { zh: "a", en: "a" }, rule: { kind: "count", section: "books", min: 1 } };
   const msgs = validateAchievements([
     ok, { ...ok },

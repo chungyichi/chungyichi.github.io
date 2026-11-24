@@ -146,49 +146,73 @@ export const site = {
   // A DRAFT first pick (by loose theme), edit freely. `npm run check` fails for an unknown slot or rarity, an item that is not a published toy or game (a book is refused), or an item twice for one person.
   //
   // profile (optional, per person): level, title and mood shown under the name on the home sheet.
+  //   Refreshed 2026-11-25 from the real collection: level = unlocked achievements + 1 (a plain number, so raise it by hand when more unlock), title = the achievement that fits now.
   //   level  a whole number >= 1;  title  "text" | { zh, en } | "ach:<achievement id>" (the title that achievement grants, shown once it is unlocked);
   //   mood   { zh, en, icon } with one simple emoji (or none)
   gear: {
     // What orbits the stick figure of the home overview (the word cloud): "items" (the equipped things, coloured by rarity; default) or "title" (title, level, mood and unlocked achievements). Not a person.
     overview: "items",
+    // Re-picked 2026-11-25 from the real collection: all 18 slots where there are enough things. Slot fit and rarity are a loose theme pick (the data has no ratings or hours), edit freely.
     me: {
-      head: { item: "toys/mayday-max", rarity: "legendary" },           // 25th anniversary 究極合體, NT$15,525: the most expensive thing
-      chest: { item: "toys/mivi-king-of-destruction-3", rarity: "epic" },  // 1/6 figure
-      mainhand: { item: "games/elden-ring", rarity: "legendary" },     // the sword-and-shield game
-      offhand: { item: "toys/yoyo-dragon-claw", rarity: "rare" },      // a yo-yo is a weapon too
-      back: { item: "games/death-stranding", rarity: "epic" },         // carrying the cargo on the back
-      ring1: { item: "games/dave-the-diver", rarity: "rare" },
-      trinket1: { item: "games/microsoft-flight-simulator-2020", rarity: "rare" },
-      shoulder: { item: "games/witcher-3", rarity: "legendary" },       // DRAFT: the new games, edit freely
-      legs: { item: "games/the-elder-scrolls-v-skyrim-special-edition", rarity: "legendary" },
-      waist: { item: "games/black-myth-wukong", rarity: "legendary" },   // the staff at the belt
-      hands: { item: "games/portal-2", rarity: "epic" },               // the portal gun
-      ring2: { item: "games/sid-meiers-civilization-vi", rarity: "rare" },
+      head: { item: "toys/mayday-max", rarity: "legendary" },            // 25th anniversary 究極合體, NT$15,525: the most expensive thing
+      neck: { item: "games/zelda-breath-of-the-wild", rarity: "legendary" },
+      shoulder: { item: "games/witcher-3", rarity: "legendary" },
+      back: { item: "games/death-stranding", rarity: "epic" },           // carrying the cargo on the back
+      chest: { item: "toys/mivi-king-of-destruction-3", rarity: "epic" },   // 1/6 figure
+      shirt: { item: "games/tunic", rarity: "rare" },                   // TUNIC, the tunic
       wrist: { item: "games/celeste", rarity: "rare" },
+      hands: { item: "games/portal-2", rarity: "epic" },               // the portal gun
+      waist: { item: "games/black-myth-wukong", rarity: "legendary" },   // the staff at the belt
+      legs: { item: "games/the-elder-scrolls-v-skyrim-special-edition", rarity: "legendary" },
+      feet: { item: "toys/traxxas-trx4m-defender", rarity: "epic" },    // the new favourite: a 1/18 crawler on four wheels
+      ring1: { item: "games/dave-the-diver", rarity: "rare" },
+      ring2: { item: "games/clair-obscur-expedition-33", rarity: "epic" },
+      trinket1: { item: "games/microsoft-flight-simulator-2020", rarity: "rare" },
       trinket2: { item: "games/slay-the-spire", rarity: "rare" },
-      feet: { item: "games/euro-truck-simulator-2", rarity: "uncommon" },   // always on the road
+      emblem: { item: "toys/east-star-lpg-truck", rarity: "uncommon" },   // the RC gas truck
+      mainhand: { item: "games/elden-ring", rarity: "legendary" },      // the sword-and-shield game
+      offhand: { item: "toys/yoyo-dragon-claw", rarity: "rare" },       // a yo-yo is a weapon too
+      profile: { level: 11, title: "ach:rc-driver", mood: { zh: "在玩遙控車", en: "Driving RC cars", icon: "\u{1F699}" } },
     },
     son: {
       head: { item: "toys/playmate-air", rarity: "epic" },             // the priciest one (about NT$7,000-8,000)
-      mainhand: { item: "toys/uppsta", rarity: "common" },             // a hitting toy: NT$299
-      offhand: { item: "toys/anpanman-steering-wheel", rarity: "rare" },   // round, like a shield
+      neck: { item: "toys/basilic-play-table-2", rarity: "uncommon" },
+      shoulder: { item: "toys/dvargmas", rarity: "uncommon" },         // a play tunnel
+      back: { item: "toys/kidus-clown-sofa", rarity: "rare" },         // his own armchair
       chest: { item: "toys/weplay-big-blocks-45", rarity: "rare" },    // the big 45-piece set
+      wrist: { item: "toys/ikea-majbagge-explorer-set", rarity: "common" },   // the compass has a wrist strap
       hands: { item: "toys/fisher-price-animal-piano", rarity: "uncommon" },   // a piano played by kicking
+      waist: { item: "toys/grejsimojs", rarity: "uncommon" },          // the balance board
       legs: { item: "toys/bebehaha-rocking-car", rarity: "uncommon" },
       feet: { item: "toys/buzz-lightyear-ride-on", rarity: "rare" },   // a vehicle you ride
+      ring1: { item: "toys/anpanman-pullback-car", rarity: "common" },
+      ring2: { item: "toys/anpanman-pullback-train", rarity: "common" },
       trinket1: { item: "toys/my-first-book-4", rarity: "rare" },      // cloth book, NT$1,856
+      trinket2: { item: "toys/anpanman-pullback-rainbow-train", rarity: "common" },
+      mainhand: { item: "toys/uppsta", rarity: "common" },             // a hitting toy: NT$299
+      offhand: { item: "toys/anpanman-steering-wheel", rarity: "rare" },   // round, like a shield
+      profile: { level: 3, title: "ach:picture-books", mood: { zh: "坐在小沙發上", en: "In his armchair", icon: "\u{1F6CB}\uFE0F" } },
     },
     brother: {
       head: { item: "toys/soc-franky-general", rarity: "legendary" },  // die-cast robot (超合金)
-      mainhand: { item: "toys/beyx-bx-01", rarity: "epic" },           // the first blade of the line, "God Sword"
-      offhand: { item: "toys/usj-minion-bottle", rarity: "rare" },     // a bottle
       neck: { item: "toys/beyx-cx-16", rarity: "epic" },               // the alternate-colour edition
-      back: { item: "toys/beyx-ux-17", rarity: "rare" },               // two of them
+      shoulder: { item: "toys/beyx-ux-20", rarity: "rare" },
+      back: { item: "toys/beyx-ux-17", rarity: "rare" },
       chest: { item: "toys/mcdonalds-eva-robots", rarity: "uncommon" },   // the transforming robots from a meal
-      hands: { item: "toys/beyx-bxg-57", rarity: "epic" },             // the EVA collaboration, two of them
+      shirt: { item: "toys/beyx-bx-49", rarity: "uncommon" },
+      wrist: { item: "toys/beyx-cx-12", rarity: "rare" },
+      hands: { item: "toys/beyx-bxg-57", rarity: "epic" },             // the EVA collaboration
+      waist: { item: "toys/beyx-ux-11", rarity: "rare" },
+      legs: { item: "toys/beyx-cx-13", rarity: "rare" },
+      feet: { item: "toys/beyx-ux-15-01", rarity: "rare" },
+      ring1: { item: "toys/hkdl-cookieann-train-popcorn", rarity: "uncommon" },
+      ring2: { item: "toys/beyx-cx-02", rarity: "uncommon" },
       trinket1: { item: "toys/usj-eva-unit01-popcorn", rarity: "epic" },   // popcorn buckets are trinkets
       trinket2: { item: "toys/tdr-monsters-inc-popcorn", rarity: "rare" },
-      ring1: { item: "toys/hkdl-cookieann-train-popcorn", rarity: "uncommon" },
+      emblem: { item: "toys/beyx-ux-01", rarity: "rare" },
+      mainhand: { item: "toys/beyx-bx-01", rarity: "epic" },           // the first blade of the line, "God Sword"
+      offhand: { item: "toys/usj-minion-bottle", rarity: "rare" },     // a bottle
+      profile: { level: 5, title: "ach:bey-ux", mood: { zh: "轉陀螺中", en: "Spinning tops", icon: "\u{1F300}" } },
     },
   },
   // Achievements (成就), shown on the 閱歷 tab of the home gear block; each is judged for every person from the published posts (src/achievements.mjs).
@@ -196,20 +220,32 @@ export const site = {
   //   kind  count (posts of a section) | volumes (volumes of books) | tag (things that carry a tag) | things (all things) | item (volumes / quantity of one post)
   //   section toys | books, tag, own "yes" | "no" (books we have / only read), owner (the person it is for; the others stay locked), item "books/slug", min (the goal)
   achievements: [
-    { id: "fantasy-5", name: { zh: "奇幻讀者", en: "Fantasy Reader" }, desc: { zh: "閱讀 5 本奇幻", en: "Read 5 fantasy books" }, title: { zh: "奇幻旅人", en: "Fantasy Wanderer" }, rule: { kind: "count", section: "books", tag: "奇幻", min: 5 } },
-    { id: "wheel-of-time", name: { zh: "讀完時光之輪", en: "Wheel of Time, Done" }, desc: { zh: "讀完《時光之輪》全部 21 卷", en: "Finish all 21 volumes of The Wheel of Time" }, title: { zh: "時光編織者", en: "Weaver of Time" }, rule: { kind: "item", item: "books/wheel-of-time", min: 21 } },
-    { id: "web-reader", name: { zh: "網文讀者", en: "Web Novel Reader" }, desc: { zh: "讀 5 本網路小說", en: "Read 5 web novels" }, title: { zh: "網文老司機", en: "Web Novel Veteran" }, rule: { kind: "count", section: "books", own: "no", min: 5 } },
-    { id: "hundred-volumes", name: { zh: "讀滿百卷", en: "A Hundred Volumes" }, desc: { zh: "共讀 100 卷", en: "Read 100 volumes in all" }, title: { zh: "百卷書蟲", en: "Bookworm" }, rule: { kind: "volumes", min: 100 } },
-    { id: "collector", name: { zh: "收藏家", en: "Collector" }, desc: { zh: "擁有 50 件東西", en: "Own 50 things" }, title: { zh: "收藏大師", en: "Master Collector" }, rule: { kind: "things", min: 50 } },
-    { id: "toy-trove", name: { zh: "玩具滿箱", en: "Toy Trove" }, desc: { zh: "擁有 20 款玩具", en: "Own 20 different toys" }, title: { zh: "玩具大亨", en: "Toy Tycoon" }, rule: { kind: "count", section: "toys", min: 20 } },
+    { id: "fantasy-5", name: { zh: "奇幻讀者", en: "Fantasy Reader" }, desc: { zh: "閱讀 5 本奇幻", en: "Read 5 fantasy books" }, title: { zh: "奇幻旅人", en: "Fantasy Wanderer" }, rule: { kind: "count", section: "books", tag: "奇幻", owner: "me", min: 5 } },
+    { id: "wheel-of-time", name: { zh: "讀完時光之輪", en: "Wheel of Time, Done" }, desc: { zh: "讀完《時光之輪》全部 21 卷", en: "Finish all 21 volumes of The Wheel of Time" }, title: { zh: "時光編織者", en: "Weaver of Time" }, rule: { kind: "item", item: "books/wheel-of-time", owner: "me", min: 21 } },
+    { id: "web-reader", name: { zh: "網文讀者", en: "Web Novel Reader" }, desc: { zh: "讀 5 本網路小說", en: "Read 5 web novels" }, title: { zh: "網文老司機", en: "Web Novel Veteran" }, rule: { kind: "count", section: "books", own: "no", owner: "me", min: 5 } },
+    { id: "hundred-volumes", name: { zh: "讀滿百卷", en: "A Hundred Volumes" }, desc: { zh: "共讀 100 卷", en: "Read 100 volumes in all" }, title: { zh: "百卷書蟲", en: "Bookworm" }, rule: { kind: "volumes", owner: "me", min: 100 } },
+    { id: "collector", name: { zh: "收藏家", en: "Collector" }, desc: { zh: "擁有 50 件東西", en: "Own 50 things" }, title: { zh: "收藏大師", en: "Master Collector" }, rule: { kind: "things", owner: "me", min: 50 } },
+    { id: "toy-trove", name: { zh: "玩具滿箱", en: "Toy Trove" }, desc: { zh: "擁有 20 款玩具", en: "Own 20 different toys" }, title: { zh: "玩具大亨", en: "Toy Tycoon" }, rule: { kind: "count", section: "toys", owner: "brother", min: 20 } },
     { id: "bey-starter", name: { zh: "陀螺入門", en: "Top Starter" }, desc: { zh: "弟弟有 10 個戰鬥陀螺", en: "Brother has 10 battle tops" }, title: { zh: "陀螺新手", en: "Top Rookie" }, rule: { kind: "tag", tag: "戰鬥陀螺", owner: "brother", min: 10 } },
     { id: "bey-master", name: { zh: "陀螺大師", en: "Top Master" }, desc: { zh: "弟弟有 50 個戰鬥陀螺", en: "Brother has 50 battle tops" }, title: { zh: "陀螺大師", en: "Top Master" }, rule: { kind: "tag", tag: "戰鬥陀螺", owner: "brother", min: 50 } },
-    { id: "anpanman-fan", name: { zh: "麵包超人迷", en: "Anpanman Fan" }, desc: { zh: "有 5 件麵包超人", en: "Have 5 Anpanman things" }, title: { zh: "麵包超人小英雄", en: "Little Anpanman Hero" }, rule: { kind: "tag", tag: "麵包超人", min: 5 } },
-    { id: "baby-toys", name: { zh: "嬰幼兒玩具", en: "Baby Toys" }, desc: { zh: "有 8 件嬰幼兒玩具", en: "Have 8 baby toys" }, title: { zh: "遊戲小達人", en: "Play Expert" }, rule: { kind: "tag", tag: "嬰幼兒", min: 8 } },
-    { id: "dark-tower", name: { zh: "讀完黑塔", en: "The Dark Tower, Done" }, desc: { zh: "讀完《黑塔》全部 10 本", en: "Finish all 10 books of The Dark Tower" }, title: { zh: "槍客", en: "Gunslinger" }, rule: { kind: "item", item: "books/dark-tower", min: 10 } },
-    { id: "game-shelf", name: { zh: "遊戲滿架", en: "Full Game Shelf" }, desc: { zh: "遊戲庫有 50 款遊戲", en: "Have 50 games on the shelf" }, title: { zh: "遊戲收藏家", en: "Game Collector" }, rule: { kind: "count", section: "games", min: 50 } },
-    { id: "game-hundred", name: { zh: "百款遊戲", en: "A Hundred Games" }, desc: { zh: "遊戲庫有 100 款遊戲", en: "Have 100 games on the shelf" }, title: { zh: "遊戲館長", en: "Game Curator" }, rule: { kind: "count", section: "games", min: 100 } },
+    { id: "anpanman-fan", name: { zh: "麵包超人迷", en: "Anpanman Fan" }, desc: { zh: "有 5 件麵包超人", en: "Have 5 Anpanman things" }, title: { zh: "麵包超人小英雄", en: "Little Anpanman Hero" }, rule: { kind: "tag", tag: "麵包超人", owner: "son", min: 5 } },
+    { id: "baby-toys", name: { zh: "嬰幼兒玩具", en: "Baby Toys" }, desc: { zh: "有 8 件嬰幼兒玩具", en: "Have 8 baby toys" }, title: { zh: "遊戲小達人", en: "Play Expert" }, rule: { kind: "tag", tag: "嬰幼兒", owner: "son", min: 8 } },
+    { id: "dark-tower", name: { zh: "讀完黑塔", en: "The Dark Tower, Done" }, desc: { zh: "讀完《黑塔》全部 10 本", en: "Finish all 10 books of The Dark Tower" }, title: { zh: "槍客", en: "Gunslinger" }, rule: { kind: "item", item: "books/dark-tower", owner: "me", min: 10 } },
+    { id: "game-shelf", name: { zh: "遊戲滿架", en: "Full Game Shelf" }, desc: { zh: "遊戲庫有 50 款遊戲", en: "Have 50 games on the shelf" }, title: { zh: "遊戲收藏家", en: "Game Collector" }, rule: { kind: "count", section: "games", owner: "me", min: 50 } },
+    { id: "game-hundred", name: { zh: "百款遊戲", en: "A Hundred Games" }, desc: { zh: "遊戲庫有 100 款遊戲", en: "Have 100 games on the shelf" }, title: { zh: "遊戲館長", en: "Game Curator" }, rule: { kind: "count", section: "games", owner: "me", min: 100 } },
     { id: "picture-books", name: { zh: "繪本小書迷", en: "Picture Book Fan" }, desc: { zh: "兒子有 10 本繪本", en: "Son has 10 picture books" }, title: { zh: "繪本小書迷", en: "Little Bookworm" }, rule: { kind: "count", section: "books", tag: "繪本", owner: "son", min: 10 } },
+    { id: "son-toys", name: { zh: "小玩具王", en: "Little Toy King" }, desc: { zh: "兒子有 20 件玩具", en: "Son has 20 toys" }, title: { zh: "小玩具王", en: "Little Toy King" }, rule: { kind: "count", section: "toys", owner: "son", min: 20 } },
+    { id: "game-150", name: { zh: "一百五十款", en: "A Hundred and Fifty" }, desc: { zh: "遊戲庫有 150 款遊戲", en: "Have 150 games on the shelf" }, title: { zh: "遊戲大館長", en: "Grand Game Curator" }, rule: { kind: "count", section: "games", owner: "me", min: 150 } },
+    { id: "volumes-200", name: { zh: "讀滿兩百卷", en: "Two Hundred Volumes" }, desc: { zh: "共讀 200 卷", en: "Read 200 volumes in all" }, title: { zh: "兩百卷書蟲", en: "Grand Bookworm" }, rule: { kind: "volumes", owner: "me", min: 200 } },
+    { id: "fantasy-30", name: { zh: "奇幻老饕", en: "Fantasy Glutton" }, desc: { zh: "閱讀 30 本奇幻", en: "Read 30 fantasy books" }, title: { zh: "奇幻領主", en: "Fantasy Lord" }, rule: { kind: "count", section: "books", tag: "奇幻", owner: "me", min: 30 } },
+    { id: "taiwan-lit", name: { zh: "台灣文學讀者", en: "Taiwan Literature Reader" }, desc: { zh: "讀 5 本台灣文學", en: "Read 5 Taiwanese literature books" }, title: { zh: "台灣文學讀者", en: "Taiwan Literature Reader" }, rule: { kind: "count", section: "books", tag: "台灣文學", owner: "me", min: 5 } },
+    { id: "rc-driver", name: { zh: "遙控車手", en: "RC Driver" }, desc: { zh: "有 1 台遙控車", en: "Have an RC car" }, title: { zh: "遙控車手", en: "RC Driver" }, rule: { kind: "tag", tag: "遙控車", owner: "me", min: 1 } },
+    { id: "rc-garage", name: { zh: "遙控車庫", en: "RC Garage" }, desc: { zh: "有 5 台遙控車", en: "Have 5 RC cars" }, title: { zh: "車庫主人", en: "Garage Owner" }, rule: { kind: "tag", tag: "遙控車", owner: "me", min: 5 } },
+    { id: "ikea-kid", name: { zh: "IKEA 小探險家", en: "IKEA Little Explorer" }, desc: { zh: "兒子有 5 件 IKEA 玩具", en: "Son has 5 IKEA toys" }, title: { zh: "IKEA 小探險家", en: "IKEA Little Explorer" }, rule: { kind: "tag", tag: "IKEA", owner: "son", min: 5 } },
+    { id: "picture-20", name: { zh: "二十本繪本", en: "Twenty Picture Books" }, desc: { zh: "兒子有 20 本繪本", en: "Son has 20 picture books" }, title: { zh: "繪本大書迷", en: "Big Bookworm" }, rule: { kind: "count", section: "books", tag: "繪本", owner: "son", min: 20 } },
+    { id: "bey-ux", name: { zh: "UX 玩家", en: "UX Player" }, desc: { zh: "弟弟有 10 個 UX 系列陀螺", en: "Brother has 10 UX tops" }, title: { zh: "UX 玩家", en: "UX Player" }, rule: { kind: "tag", tag: "UX", owner: "brother", min: 10 } },
+    { id: "bey-cx", name: { zh: "CX 玩家", en: "CX Player" }, desc: { zh: "弟弟有 10 個 CX 系列陀螺", en: "Brother has 10 CX tops" }, title: { zh: "CX 玩家", en: "CX Player" }, rule: { kind: "tag", tag: "CX", owner: "brother", min: 10 } },
+    { id: "popcorn-5", name: { zh: "爆米花桶收藏", en: "Popcorn Bucket Shelf" }, desc: { zh: "弟弟有 5 個爆米花桶", en: "Brother has 5 popcorn buckets" }, title: { zh: "爆米花桶大王", en: "Popcorn Bucket King" }, rule: { kind: "tag", tag: "爆米花桶", owner: "brother", min: 5 } },
   ],
   // Seasonal decoration (see README "Seasons"). The first season whose window holds today (Asia/Taipei) wins, so the order is the priority.
   //   window  { from: "MM-DD", to: "MM-DD" } every year (from > to wraps over New Year) | { around: "cny", daysBefore, daysAfter } around a date of
