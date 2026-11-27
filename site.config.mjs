@@ -139,7 +139,7 @@ export const site = {
   // Posts on the home page, as "<section>/<slug>" (a post missing in a language is skipped); newest first. An empty list shows the latest few.
   featured: ["tech/site-design", "tech/technique-behind-git", "life/part-1", "life/2023-nikko-day-1-jr", "life/2019-day-1"],
   // Toys in the home page's picture carousel (between the motto and the featured posts), "toys/<slug>" in this order; unpublished ones are skipped, none hides the carousel.
-  featuredToys: ["toys/traxxas-trx4m-defender", "toys/mayday-max", "toys/mivi-king-of-destruction-3", "toys/soc-franky-general", "toys/mcdonalds-eva-robots"],
+  featuredToys: ["toys/traxxas-trx4m-defender", "toys/mayday-max", "toys/mivi-king-of-destruction-3", "toys/soc-franky-general", "toys/mcdonalds-eva-robots", "toys/hot-wheels-city-ultimate-t-rex-transporter"],
   // Equipment slots (裝備欄): the home page's character-sheet carousel (see README "Equipment slots").
   // <person>: { <slot>: { item: "<section>/<slug>" of a published toy or game (a book cannot be equipped), rarity: poor | common | uncommon | rare | epic | legendary (default rare) } }
   // slots: head neck shoulder back chest shirt wrist hands | waist legs feet ring1 ring2 trinket1 trinket2 emblem | mainhand offhand. An item once per person.
