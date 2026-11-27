@@ -29,7 +29,8 @@ a plain word matches tags like titles, and typing `#bpf` plus a space turns it i
 
 **Share previews**: the pages people send around have their own description (and the toys list its own picture), set in `meta` of `site.config.mjs`: `home`, `toys`, `books`, `games`, `search`, `tags`, `mygames`, each `description: { zh, en }` and optionally `image: "<section>/<slug>"` (a published post with an `og.jpg`). `{n}` in a description is the number of published posts of that section in that language, filled at build time. A page with no entry keeps its old description; a missing `image` post or file falls back to `og-default.jpg` and prints one warning in the build output. `og:title` is unchanged; the twitter tags follow. Posts are not affected. Tests: `test/share.test.mjs`.
 
-Front matter keys: `title`, `summary` (required unless draft, at most 300 characters), `draft`, `updated` (`YYYY-MM-DD`), `tags`, `image`, `trusted`.
+Front matter keys: `title`, `summary` (required unless draft, at most 300 characters), `draft`, `updated` (`YYYY-MM-DD`), `date` (`YYYY-MM-DD`, see below), `tags`, `image`, `trusted`.
+**Shown date**: `date: 2026-12-14` in the front matter changes the date that is shown ("加入 ..."), sorted and grouped (lists, grids, tag page, search data, gear card). The date in the file name stays the publish date and the identity: the post goes live on the file-name date, and the address and the zh/en pairing come from the slug. So `2026-11-27-x.zh.md` with `date: 2026-12-14` is published today but shows 2026-12-14 and sorts as the newest. The value must be a real date, any date is allowed; `npm run check` prints a `warn` for each live post that shows a later date than today. The sitemap has no dates and there is no RSS feed, so nothing else announces it; `article:published_time` in the share tags uses the shown date. Tests: `test/content.test.mjs`.
 Raw HTML in Markdown is **escaped, not rendered**.
 
 ## Games

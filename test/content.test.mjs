@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   parseFrontMatter, parsePost, selectPublished, sortPosts, buildModel, paginate, groupByDate,
-  todayIn, sitemap, postPath, indexPath, ContentError,
+  todayIn, shownInFuture, sitemap, postPath, indexPath, ContentError,
 } from "../scripts/content.mjs";
 
 const fm = (extra = "") => `---\ntitle: "Hello"\nsummary: A short summary.\n${extra}---\nBody **text**.\n`;
@@ -67,6 +67,27 @@ test("publishing: drafts and future dates are held back, today is published, dev
   const today = "2026-10-21";
   assert.deepEqual(selectPublished([a, b, c, d], today).map((p) => p.slug), ["a", "b"]);
   assert.equal(selectPublished([a, b, c, d], today, { includeDrafts: true }).length, 4);
+});
+
+test("front matter date: shown and sorted by it, published and identified by the file name", () => {
+  const a = post("2026-11-27-a.en.md", "date: 2026-12-14\n"), b = post("2026-12-01-b.en.md", ""), c = post("2026-11-27-c.en.md", "");
+  assert.equal(a.date, "2026-12-14");
+  assert.equal(a.fileDate, "2026-11-27");
+  assert.equal(b.date, b.fileDate);
+  assert.equal(a.slug, "a");
+  assert.deepEqual(selectPublished([a, b, c], "2026-11-27").map((p) => p.slug), ["a", "c"]);     // gate = file name date
+  assert.deepEqual(selectPublished([a, b, c], "2026-11-26"), []);
+  assert.deepEqual(sortPosts([c, b, a]).map((p) => p.slug), ["a", "b", "c"]);                    // sorted by shown date
+  assert.deepEqual(groupByDate(sortPosts([c, a])).map((g) => g.date), ["2026-12-14", "2026-11-27"]);
+  assert.deepEqual(shownInFuture([a, b, c], "2026-11-27").map((p) => p.slug), ["a", "b"]);
+  assert.deepEqual(shownInFuture([a, c], "2026-12-14"), []);
+  const model = buildModel([a, post("2026-11-27-a.zh.md", "date: 2026-12-14\n")], ["zh", "en"], SECTIONS);
+  assert.equal(model.missing.length, 0);                                                         // pairing by slug, not by shown date
+});
+
+test("front matter date: must be a real YYYY-MM-DD", () => {
+  for (const bad of ["2026-13-01", "2026-02-30", "12/14/2026", "tomorrow", "true"]) assert.throws(() => post("2026-11-27-a.en.md", `date: ${bad}\n`), ContentError, bad);
+  assert.equal(post("2026-11-27-a.en.md", 'date: "2026-12-14"\n').date, "2026-12-14");
 });
 
 test("today is computed in the site's zone, not UTC", () => {

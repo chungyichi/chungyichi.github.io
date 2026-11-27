@@ -4,7 +4,7 @@ import { join, posix } from "node:path";
 import { spawnSync } from "node:child_process";
 import { site } from "../site.config.mjs";
 import { loadPosts } from "./load.mjs";
-import { buildModel, externalHosts, selectPublished, todayIn } from "./content.mjs";
+import { buildModel, externalHosts, selectPublished, shownInFuture, todayIn } from "./content.mjs";
 import { resolveAuthors, isAdultText as adultText, gridOf, TOYS_SECTION } from "../src/toys.mjs";
 import { validateGear } from "../src/gear.mjs";
 import { validateAchievements, lockedTitleProblems } from "../src/achievements.mjs";
@@ -54,9 +54,10 @@ else {
 // 2. translations (a reminder, not a failure)
 const all = loadPosts();
 const { missing } = buildModel(all, site.langs, site.sections);
-if (site.languageSwitcher !== false) for (const p of missing) warn(`${p.section}/${p.date}-${p.slug}.${p.lang} has no translation`);
-for (const p of all.filter((p) => !p.draft && !p.tags?.length)) fail(`${p.section}/${p.date}-${p.slug}.${p.lang} has no tag (every published post needs 1 to 3)`);
-for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slug}.${p.lang} is a draft (not published)`);
+if (site.languageSwitcher !== false) for (const p of missing) warn(`${p.section}/${p.fileDate}-${p.slug}.${p.lang} has no translation`);
+for (const p of all.filter((p) => !p.draft && !p.tags?.length)) fail(`${p.section}/${p.fileDate}-${p.slug}.${p.lang} has no tag (every published post needs 1 to 3)`);
+for (const p of shownInFuture(selectPublished(all, todayIn(site.timezone)), todayIn(site.timezone))) warn(`${p.section}/${p.fileDate}-${p.slug}.${p.lang} is live but shows the later date ${p.date} (front matter date:)`);
+for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.fileDate}-${p.slug}.${p.lang} is a draft (not published)`);
 
 
 // 2a. picture grids (toys, books): a published post has an owner from the section's config; a toy also at least one picture (books and games none) (the grid needs thumb.webp; the page a picture in the body). A book needs none.
@@ -64,7 +65,7 @@ for (const p of all.filter((p) => p.draft)) warn(`${p.section}/${p.date}-${p.slu
 for (const sec of site.sections.filter((s) => s.grid)) {
   const owners = (sec.grid.owners ?? []).map((o) => o.id);
   for (const p of all.filter((p) => p.section === sec.id && !p.draft)) {
-    const name = `${p.section}/${p.date}-${p.slug}.${p.lang}`;
+    const name = `${p.section}/${p.fileDate}-${p.slug}.${p.lang}`;
     if (!owners.length) { /* no owners in this grid (games) */ }
     else if (!p.owner) fail(`${name} has no owner (add owner: ${owners.join(" | ")})`);
     else if (!owners.includes(p.owner)) fail(`${name}: owner '${p.owner}' is not in site.config.mjs ${sec.id} grid.owners (${owners.join(", ")})`);
@@ -90,14 +91,14 @@ for (const sec of site.sections.filter((s) => s.grid)) {
 
 // 2c. adult books you only read (own: no, tag 成人) are text only: no source link and no picture (body or media folder), draft or not.
 for (const p of all.filter((p) => adultText(p))) {
-  const name = `${p.section}/${p.date}-${p.slug}.${p.lang}`, dir = join("content", p.section, "media", p.slug);
+  const name = `${p.section}/${p.fileDate}-${p.slug}.${p.lang}`, dir = join("content", p.section, "media", p.slug);
   if (p.source) fail(`${name}: an adult book (own: no, tag 成人) has no source link (text only)`);
   if (/<img\b/.test(p.html) || (existsSync(dir) && readdirSync(dir).some((f) => /\.(webp|jpe?g|png)$/i.test(f)))) fail(`${name}: an adult book (own: no, tag 成人) has no picture (text only)`);
 }
 
 // 2b. books: every author is in the list in site.config.mjs (one spelling per author)
 for (const p of all.filter((p) => p.author)) {
-  for (const u of resolveAuthors(p.author).unknown) fail(`${p.section}/${p.date}-${p.slug}.${p.lang}: author "${u.name}" is not in site.config.mjs (sections books, grid.authors). Nearest: ${u.nearest.join(", ") || "(none)"}. A new author is a new entry there: { name: "${u.name}", aliases: [] }`);
+  for (const u of resolveAuthors(p.author).unknown) fail(`${p.section}/${p.fileDate}-${p.slug}.${p.lang}: author "${u.name}" is not in site.config.mjs (sections books, grid.authors). Nearest: ${u.nearest.join(", ") || "(none)"}. A new author is a new entry there: { name: "${u.name}", aliases: [] }`);
 }
 
 // 3. private material must never be tracked or built
@@ -136,7 +137,7 @@ for (const p of all.filter((p) => p.author)) {
 // 3b. trusted (hand-written, unsanitized) posts: list them and the outside hosts they use
 for (const p of loadPosts({ includePrivate: true }).filter((p) => p.trusted)) {
   const hosts = externalHosts([p.html, p.css, p.js].join("\n"));
-  warn(`${p.section}/${p.date}-${p.slug}.${p.lang} is trusted (not sanitized)${p.js ? ", has its own script" : ""}${hosts.length ? `; talks to: ${hosts.join(", ")}` : ""}`);
+  warn(`${p.section}/${p.fileDate}-${p.slug}.${p.lang} is trusted (not sanitized)${p.js ? ", has its own script" : ""}${hosts.length ? `; talks to: ${hosts.join(", ")}` : ""}`);
 }
 
 // 4. dependency advisories

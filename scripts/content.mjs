@@ -11,9 +11,12 @@ import { gridOf, TOY_STATUSES, BOOK_OWN, BOOK_TYPES, SECTION_KEYS, resolveAuthor
 export { ContentError };
 
 const FILE_RE = /^(\d{4}-\d{2}-\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.(zh|en)\.(md|html)$/;
-const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author", "volumes", "own", "original", "type", "platform", "developer"]);
+const ALLOWED_KEYS = new Set(["title", "summary", "draft", "updated", "trusted", "image", "tags", "owner", "source", "status", "price", "quantity", "author", "volumes", "own", "original", "type", "platform", "developer", "date"]);
 const IMAGE_NAME = /^[A-Za-z0-9._-]+\.(webp|jpe?g|png)$/;
 
+// `date: YYYY-MM-DD` (any post, optional) changes the date that is SHOWN, SORTED and GROUPED (pages, grids, lists, search index). The date in the file name stays the
+// publish date (a post goes live when the file-name date is today or earlier) and the identity (post.fileDate; the address comes from the slug). A later `date:` is a
+// "shown as" date in the future: allowed, and `npm run check` lists those posts.
 // Toys (content/toys/): one post per toy. `owner: me` says whose it is (the ids are in site.config.mjs; scripts/check.mjs compares),
 // `source: https://...` where it was bought (shown as a link), `status: want` marks a wish rather than something owned,
 // `price: "NT$15,525"` is shown as written (text, so any currency or "about 500" works), `quantity: 2` how many of the same toy
@@ -128,6 +131,10 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   const d = new Date(`${date}T00:00:00Z`);
   if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== date) throw new ContentError(`${filename}: ${date} is not a real date`);
   const { data, body } = parseFrontMatter(text, filename);
+  if ("date" in data) {
+    const shown = new Date(`${data.date}T00:00:00Z`);
+    if (typeof data.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(data.date) || Number.isNaN(shown.getTime()) || shown.toISOString().slice(0, 10) !== data.date) throw new ContentError(`${filename}: 'date' must be a real date, YYYY-MM-DD`);
+  }
   const isDraft = data.draft === true;
   if (typeof data.title !== "string" || !data.title.trim()) throw new ContentError(`${filename}: front matter 'title' is required`);
   // `author` is stored in its one spelling (site.config.mjs books authors); scripts/check.mjs fails for an author that is not in the list.
@@ -162,7 +169,7 @@ export function parsePost(filename, text, md = createMarkdown(), section = "tech
   if ("price" in data && !(typeof data.price === "string" && data.price.trim() && data.price.trim().length <= MAX_PRICE)) throw new ContentError(`${filename}: 'price' must be a short text such as "NT$1,250" (quote it; at most ${MAX_PRICE} characters)`);
   if ("quantity" in data && !/^[1-9]\d{0,5}$/.test(String(data.quantity).trim())) throw new ContentError(`${filename}: 'quantity' must be a whole number from 1 up (how many of this toy), such as quantity: 2`);
   return {
-    section, slug, lang, date, title: data.title.trim(), summary: data.summary.trim(),
+    section, slug, lang, date: data.date || date, fileDate: date, title: data.title.trim(), summary: data.summary.trim(),
     draft: data.draft === true, updated: data.updated || "",
     // .md: raw HTML off (trusted .md may add a script and {{widget: name}} mount points). .html: allowlist sanitizer, unless the post is marked `trusted: true` (your own hand-written page: the body is used as is).
     trusted: data.trusted === true, image: data.image || "", tags: normalizeTags(data.tags, filename),
@@ -178,9 +185,14 @@ export function todayIn(zone, now = new Date()) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 
-/** Published = not a draft and dated today or earlier (in the site's zone), unless drafts are included (dev). */
+/** Published = not a draft and its FILE-NAME date (fileDate) is today or earlier (in the site's zone), unless drafts are included (dev). The shown `date` does not matter here. */
 export function selectPublished(posts, today, { includeDrafts = false } = {}) {
-  return posts.filter((p) => includeDrafts || (!p.draft && p.date <= today));
+  return posts.filter((p) => includeDrafts || (!p.draft && (p.fileDate ?? p.date) <= today));
+}
+
+/** Published posts whose shown date (front matter `date`) is after today: they are live, but dated ahead. */
+export function shownInFuture(posts, today) {
+  return posts.filter((p) => p.date > today);
 }
 
 export function sortPosts(posts) {
